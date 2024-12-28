@@ -1,0 +1,15 @@
+## StorageClass resource example:
+storageClass:
+  create: true
+  name: nfs-csi
+  annotations:
+    storageclass.kubernetes.io/is-default-class: "true"
+  parameters:
+    server: 192.168.0.151
+    share: /export/pvcs
+    subDir: /${pv.metadata.name}
+    mountPermissions: "777"
+  reclaimPolicy: Delete
+  volumeBindingMode: Immediate
+  mountOptions:
+    - nfsvers=3
