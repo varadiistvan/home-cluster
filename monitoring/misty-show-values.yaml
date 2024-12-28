@@ -1,0 +1,94 @@
+# https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/values.yaml
+grafana:
+  enabled: true
+
+# https://grafana.com/docs/loki/next/installation/helm/monitor-and-alert/with-local-monitoring/
+# https://github.com/lensapp/lens/issues/51#issuecomment-852824146
+kubelet:
+  serviceMonitor:
+    cAdvisorRelabelings:
+      - action: replace
+        replacement: melodic-sky
+        targetLabel: cluster
+      - targetLabel: metrics_path
+        sourceLabels:
+          - "__metrics_path__"
+      - targetLabel: "instance"
+        sourceLabels:
+          - "node"
+
+    # https: false
+    metricRelabelings:
+      - action: replace
+        sourceLabels:
+          - node
+        targetLabel: instance
+
+defaultRules:
+  additionalRuleLabels:
+    cluster: melodic-sky
+
+"kube-state-metrics":
+  prometheus:
+    monitor:
+      relabelings:
+        - action: replace
+          replacement: melodic-sky
+          targetLabel: cluster
+        - targetLabel: "instance"
+          sourceLabels:
+            - "__meta_kubernetes_pod_node_name"
+
+"prometheus-node-exporter":
+  prometheus:
+    monitor:
+      relabelings:
+        - action: replace
+          replacement: melodic-sky
+          targetLabel: cluster
+        - targetLabel: "instance"
+          sourceLabels:
+            - "__meta_kubernetes_pod_node_name"
+
+nodeExporter:
+  serviceMonitor:
+    relabelings:
+      - action: replace
+        regex: (.*)
+        replacement: $1
+        sourceLabels:
+          - __meta_kubernetes_pod_node_name
+        targetLabel: kubernetes_node
+
+prometheus:
+  ingress:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+      kubernetes.io/ingress.class: nginx
+      nginx.ingress.kubernetes.io/whitelist-source-range: >-
+        77.60.68.146,
+        45.138.52.120,
+        45.142.145.215,
+        31.223.166.80/29
+    hosts:
+      - prometheus.test.momoyoga.com
+    paths:
+      - /
+    tls:
+      - secretName: grafana-tls
+        hosts:
+          - prometheus.test.momoyoga.com
+
+  monitor:
+    relabelings:
+      - action: replace
+        replacement: melodic-sky
+        targetLabel: cluster
+
+  prometheusSpec:
+    podMonitorSelector:
+      matchLabels: null
+
+    serviceMonitorSelector:
+      matchLabels: null

@@ -1,0 +1,11 @@
+config:
+  clients:
+    - url: http://melodic-sky-loki-gateway.monitoring.svc.cluster.local/loki/api/v1/push
+
+resources:
+  limits:
+    cpu: 100m
+    memory: 256Mi
+  requests:
+    cpu: 50m
+    memory: 128Mi

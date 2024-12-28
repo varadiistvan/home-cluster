@@ -1,0 +1,75 @@
+admin:
+  existingSecret: grafana
+  passwordKey: admin-password
+  userKey: admin-user
+deploymentStrategy:
+  rollingUpdate:
+    maxSurge: 1
+    maxUnavailable: 1
+  type: RollingUpdate
+grafana.ini:
+  analytics:
+    check_for_updates: true
+  feature_toggles:
+    enable: ngalert
+  grafana_net:
+    url: https://grafana.net
+  log:
+    mode: console
+  paths:
+    data: /var/lib/grafana/data
+    logs: /var/log/grafana
+    plugins: /var/lib/grafana/plugins
+    provisioning: /etc/grafana/provisioning
+  server:
+    domain: grafana.test.momoyoga.com
+    root_url: https://grafana.test.momoyoga.com/
+  smtp:
+    enabled: true
+    from_address: grafana@momoyoga.com
+    host: smtp.postmarkapp.com:587
+imageRenderer:
+  enabled: true
+  resources:
+    limits:
+      cpu: 100m
+      memory: 256Mi
+    requests:
+      cpu: 100m
+      memory: 256Mi
+ingress:
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/whitelist-source-range:
+      77.60.68.146, 45.138.52.120,
+      45.142.145.215, 31.223.166.80/29
+  enabled: true
+  hosts:
+    - grafana.test.momoyoga.com
+  path: /
+  tls:
+    - hosts:
+        - grafana.test.momoyoga.com
+      secretName: grafana-tls
+namespaceOverride: monitoring
+persistence:
+  accessModes:
+    - ReadWriteOnce
+  enabled: true
+  finalizers:
+    - kubernetes.io/pvc-protection
+  size: 8Gi
+  storageClassName: managed-premium-retain
+  type: pvc
+resources:
+  limits:
+    cpu: 200m
+    memory: 512Mi
+  requests:
+    cpu: 100m
+    memory: 256Mi
+smtp:
+  existingSecret: grafana-postmark
+  passwordKey: password
+  userKey: username
