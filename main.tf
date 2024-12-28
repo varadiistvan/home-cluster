@@ -18,6 +18,20 @@ terraform {
     }
   }
 
+  backend "s3" {
+    bucket                      = "tfstate"
+    key                         = "home-cluster.tfstate"
+    region                      = "main"
+    skip_region_validation      = true
+    skip_credentials_validation = true # Skip AWS related checks and validations
+    skip_requesting_account_id  = true
+    skip_metadata_api_check     = true
+    use_path_style              = true
+    endpoints = {
+      s3 = "http://192.168.0.151:9000"
+    }
+  }
+
   required_version = "~> 1.10.2"
 }
 
@@ -64,6 +78,7 @@ module "networking" {
     helm       = helm
   }
 
+  depends_on = [helm_release.nfs_provisioner]
 }
 
 
@@ -78,4 +93,5 @@ module "networking" {
 #     helm       = helm
 #     kubectl    = kubectl
 #   }
+# depends_on = [ helm_release.nfs_provisioner ]
 # }
