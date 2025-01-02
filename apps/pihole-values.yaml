@@ -1,0 +1,49 @@
+
+# Persistence configuration
+persistentVolumeClaim:
+  enabled: true
+  accessModes:
+    - ReadWriteOnce
+  size: 5Gi
+  storageClass: "local-path" # Use your storage class
+
+# Monitoring configuration
+monitoring:
+  sidecar:
+    enabled: true
+    port: 9617
+    image:
+      repository: ekofr/pihole-exporter
+      tag: v0.3.0
+      pullPolicy: IfNotPresent
+    resources:
+      limits:
+        memory: 128Mi
+
+dnsmasq:
+  customDnsEntries:
+    - address=/nas.stevevaradi.me/192.168.0.151
+    - address=/*.stevevaradi.me/192.168.0.145
+
+sserviceWeb:
+  type: ClusterIP
+    
+ingress:
+  enabled: true
+  annotations: 
+    cert-manager.io/cluster-issuer: letsencrypt
+    # nginx.ingress.kubernetes.io/whitelist-source-range: >-
+    #   192.168.0.1/24,
+    #   10.192.1.1/24
+  hosts:
+    - pihole.stevevaradi.me
+  tls: 
+    - secretName: pihole-tls
+      hosts:
+        - pihole.stevevaradi.me
+
+serviceDns:
+  loadBalancerIP: 192.168.0.146
+  annotations:
+    metallb.universe.tf/allow-shared-ip: pihole-svc
+  type: LoadBalancer
