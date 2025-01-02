@@ -81,6 +81,8 @@ module "networking" {
   depends_on = [helm_release.nfs_provisioner]
 }
 
+module "apps" {
+  source = "./apps/"
 
 # module "monitoring" {
 #   source     = "./monitoring/"
@@ -95,3 +97,11 @@ module "networking" {
 #   }
 # depends_on = [ helm_release.nfs_provisioner ]
 # }
+  providers = {
+    kubernetes = kubernetes
+    helm       = helm
+  }
+
+  depends_on = [module.networking, helm_release.nfs_provisioner]
+}
+

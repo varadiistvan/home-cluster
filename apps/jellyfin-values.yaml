@@ -1,0 +1,94 @@
+# -- Ingress configuration. See: https://kubernetes.io/docs/concepts/services-networking/ingress/
+ingress:
+  enabled: true
+  annotations: 
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/whitelist-source-range: >-
+      192.168.0.1/24,
+      10.192.1.1/24
+  hosts:
+    - host: jellyfin.stevevaradi.me
+      paths:
+        - path: /
+          pathType: Prefix
+  tls: 
+    - secretName: jellyfin-tls
+      hosts:
+        - jellyfin.stevevaradi.me
+
+
+# -- Additional volumes to mount in the Jellyfin pod.
+volumes: 
+  - name: nfs-media
+    nfs:
+      server: 192.168.0.151
+      path: /export/media
+# - name: foo
+#   secret:
+#     secretName: mysecret
+#     optional: false
+
+# -- Additional volume mounts for the Jellyfin container.
+volumeMounts: 
+  - name: nfs-media
+    mountPath: "/nfs_media"
+# - name: foo
+#   mountPath: "/etc/foo"
+#   readOnly: true
+
+jellyfin:
+  # -- Enable DLNA. Requires host network. See: https://jellyfin.org/docs/general/networking/dlna.html
+  enableDLNA: false
+  # -- Custom command to use as container entrypoint.
+  command: []
+  # -- Additional arguments for the entrypoint command.
+  args: []
+  # -- Additional environment variables for the container.
+  env: []
+
+persistence:
+  config:
+    # -- set to false to use emptyDir
+    enabled: true
+    accessMode: ReadWriteOnce
+    size: 5Gi
+    storageClass: nfs-csi
+  media:
+    enabled: false
+    
+# # -- Configuration for metrics collection and monitoring
+# metrics:
+#   # -- Enable or disable metrics collection
+#   enabled: false
+#   command:
+#     - bash
+#     - '-c'
+#     - >-
+#       sed 's,<EnableMetrics>false</EnableMetrics>,<EnableMetrics>true</EnableMetrics>,' -i /config/config/system.xml &&
+#       /jellyfin/jellyfin
+#   # -- Configuration for the Prometheus ServiceMonitor
+#   serviceMonitor:
+#     # -- Enable or disable the creation of a ServiceMonitor resource
+#     enabled: false
+#     # -- Namespace where the ServiceMonitor resource should be created. Defaults to Release.Namespace
+#     namespace: ''
+#     # -- Labels to add to the ServiceMonitor resource
+#     labels: {}
+#     # -- Interval at which metrics should be scraped
+#     interval: 30s
+#     # -- Timeout for scraping metrics
+#     scrapeTimeout: 30s
+#     # -- Path to scrape for metrics
+#     path: /metrics
+#     # -- Scheme to use for scraping metrics (http or https)
+#     scheme: http
+#     # -- TLS configuration for scraping metrics
+#     tlsConfig: {}
+#     # -- Relabeling rules for the scraped metrics
+#     relabelings: []
+#     # -- Relabeling rules for the metrics before ingestion
+#     metricRelabelings: []
+#     # -- Target labels to add to the scraped metrics
+#     targetLabels: []
+#
+
