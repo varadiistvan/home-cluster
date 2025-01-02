@@ -13,7 +13,7 @@ loki:
     retention_enabled: true
     retention_delete_delay: 2h
     retention_delete_worker_count: 150
-    delete_request_store: azure
+    delete_request_store: pvc
 
   frontend:
     max_outstanding_per_tenant: 4096
@@ -33,12 +33,19 @@ loki:
       index:
         period: 24h      
         prefix: loki_index_
-      object_store: azure
+      object_store: pvc
       schema: v13
       store: tsdb
 
   storage:
-    
+    type: pvc
+
+    pvc:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 100Gi
+      storageClassName: nfs-csi
 
 gateway:
   replicas: 1
@@ -53,7 +60,7 @@ singleBinary:
   
   persistence:
     size: 8Gi
-    storageClass: managed-premium
+    storageClass: nfs-csi
 
   resources:
     limits:

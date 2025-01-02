@@ -1,9 +1,7 @@
-# https://github.com/prometheus-community/helm-charts/blob/main/charts/kube-prometheus-stack/values.yaml
+
 grafana:
   enabled: true
 
-# https://grafana.com/docs/loki/next/installation/helm/monitor-and-alert/with-local-monitoring/
-# https://github.com/lensapp/lens/issues/51#issuecomment-852824146
 kubelet:
   serviceMonitor:
     cAdvisorRelabelings:
@@ -17,7 +15,6 @@ kubelet:
         sourceLabels:
           - "node"
 
-    # https: false
     metricRelabelings:
       - action: replace
         sourceLabels:
@@ -65,20 +62,17 @@ prometheus:
     enabled: true
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt
-      kubernetes.io/ingress.class: nginx
       nginx.ingress.kubernetes.io/whitelist-source-range: >-
-        77.60.68.146,
-        45.138.52.120,
-        45.142.145.215,
-        31.223.166.80/29
+        192.168.0.1/24,
+        10.192.1.1/24
     hosts:
-      - prometheus.test.momoyoga.com
+      - prometheus.stevevaradi.me
     paths:
       - /
     tls:
       - secretName: grafana-tls
         hosts:
-          - prometheus.test.momoyoga.com
+          - prometheus.stevevaradi.me
 
   monitor:
     relabelings:
@@ -92,3 +86,24 @@ prometheus:
 
     serviceMonitorSelector:
       matchLabels: null
+
+  storageSpec:
+    volumeClaimTemplate:
+      spec:
+        storageClassName: nfs-csi
+        accessModes: ["ReadWriteOnce"]
+        resources:
+          requests:
+            storage: 100Gi
+    remoteWriteInterval: 30m
+    retentionSize: 8Gi
+
+    localStorage:
+      volumeClaimTemplate:
+        spec:
+          storageClassName: local-path
+          accessModes: ["ReadWriteOnce"]
+          resources:
+            requests:
+              storage: 10Gi
+

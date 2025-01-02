@@ -84,19 +84,6 @@ module "networking" {
 module "apps" {
   source = "./apps/"
 
-# module "monitoring" {
-#   source     = "./monitoring/"
-#   depends_on = [module.networking]
-#
-#   domain = ""
-#
-#   providers = {
-#     kubernetes = kubernetes
-#     helm       = helm
-#     kubectl    = kubectl
-#   }
-# depends_on = [ helm_release.nfs_provisioner ]
-# }
   providers = {
     kubernetes = kubernetes
     helm       = helm
@@ -105,3 +92,16 @@ module "apps" {
   depends_on = [module.networking, helm_release.nfs_provisioner]
 }
 
+module "monitoring" {
+  source = "./monitoring/"
+
+
+  domain = var.domain
+
+  providers = {
+    kubernetes = kubernetes
+    helm       = helm
+    kubectl    = kubectl
+  }
+  depends_on = [helm_release.nfs_provisioner, module.networking]
+}

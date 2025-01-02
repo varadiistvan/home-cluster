@@ -139,14 +139,9 @@ resource "kubernetes_namespace" "monitoring" {
 #   }
 # }
 
-
-data "kubectl_file_documents" "crds" {
-  content = file("${path.module}/prometheus-crds.yaml")
-}
-
-resource "kubectl_manifest" "prometheus_crds" {
-  for_each          = data.kubectl_file_documents.crds.manifests
-  yaml_body         = each.value
+resource "kubectl_manifest" "crds" {
+  for_each          = fileset("${path.module}/crds", "*.yaml")
+  yaml_body         = file("${path.module}/crds/${each.value}")
   server_side_apply = true
 }
 
@@ -160,7 +155,7 @@ resource "helm_release" "misty-show" {
   depends_on = [
     kubernetes_namespace.monitoring,
     # helm_release.melodic-sky,
-    kubectl_manifest.prometheus_crds
+    kubectl_manifest.crds
   ]
 
   set {
