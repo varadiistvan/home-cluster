@@ -70,6 +70,66 @@ resource "helm_release" "nfs_provisioner_nolock" {
 
 }
 
+resource "helm_release" "nfs_provisioner_retain" {
+  name       = "nfs-provisioner-retain"
+  namespace  = "kube-system"
+  chart      = "csi-driver-nfs"
+  version    = "v4.9.0"
+  repository = "https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts"
+  timeout    = 600
+  values     = [file("${path.module}/nfs-provisioner-values.yaml")]
+
+  set {
+    name  = "storageClass.reclaimPolicy"
+    value = "Retain"
+  }
+
+  set {
+    name  = "storageClass.name"
+    value = "nfs-csi-retain"
+  }
+
+  set {
+    name  = "serviceAccount.controller"
+    value = "csi-nfs-retain-controller-sa"
+  }
+
+  set {
+    name  = "serviceAccount.node"
+    value = "csi-nfs-retain-node-sa"
+  }
+
+  set {
+    name  = "rbac.name"
+    value = "nfs-retain"
+  }
+
+  set {
+    name  = "node.name"
+    value = "csi-nfs-retain-node"
+  }
+
+  set {
+    name  = "controller.name"
+    value = "csi-nfs-retain-controller"
+  }
+
+  set {
+    name  = "driver.name"
+    value = "nfs-retain.csi.k8s.io"
+  }
+
+  set {
+    name  = "controller.livenessProbe.healthPort"
+    value = "29656"
+  }
+
+  set {
+    name  = "node.livenessProbe.healthPort"
+    value = "29657"
+  }
+
+}
 # resource "helm_release" "nfs_provisioner_easy" {
 #   name       = "nfs-provisioner-easy"
 #   namespace  = "kube-system"
