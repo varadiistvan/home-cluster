@@ -1,7 +1,7 @@
 # -- Ingress configuration. See: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ingress:
   enabled: true
-  annotations: 
+  annotations:
     cert-manager.io/cluster-issuer: letsencrypt
     nginx.ingress.kubernetes.io/whitelist-source-range: >-
       192.168.0.1/24,
@@ -11,14 +11,13 @@ ingress:
       paths:
         - path: /
           pathType: Prefix
-  tls: 
+  tls:
     - secretName: jellyfin-tls
       hosts:
         - jellyfin.stevevaradi.me
 
-
 # -- Additional volumes to mount in the Jellyfin pod.
-volumes: 
+volumes:
   - name: nfs-media
     nfs:
       server: 192.168.0.151
@@ -29,7 +28,7 @@ volumes:
 #     optional: false
 
 # -- Additional volume mounts for the Jellyfin container.
-volumeMounts: 
+volumeMounts:
   - name: nfs-media
     mountPath: "/nfs_media"
 # - name: foo
@@ -52,10 +51,9 @@ persistence:
     enabled: true
     accessMode: ReadWriteOnce
     size: 5Gi
-    storageClass: nfs-csi
+    storageClass: nfs-csi-nolock
   media:
     enabled: false
-    
 # # -- Configuration for metrics collection and monitoring
 # metrics:
 #   # -- Enable or disable metrics collection
