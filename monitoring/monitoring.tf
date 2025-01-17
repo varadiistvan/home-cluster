@@ -7,7 +7,7 @@ terraform {
       source = "hashicorp/kubernetes"
     }
     kubectl = {
-      source = "gavinbunney/kubectl"
+      source = "alekc/kubectl"
     }
   }
 }
@@ -178,3 +178,8 @@ resource "helm_release" "misty-show" {
   }
 }
 
+# resource "helm_release" "scaphandre" {
+#   name = "power-usage"
+#   namespace = "monitoring"
+#   chart = ""
+# }

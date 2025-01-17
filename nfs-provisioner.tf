@@ -8,128 +8,43 @@ resource "helm_release" "nfs_provisioner" {
   values     = [file("${path.module}/nfs-provisioner-values.yaml")]
 }
 
-resource "helm_release" "nfs_provisioner_nolock" {
-  name       = "nfs-provisioner-nolock"
-  namespace  = "kube-system"
-  chart      = "csi-driver-nfs"
-  version    = "v4.9.0"
-  repository = "https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts"
-  timeout    = 600
-  values     = [file("${path.module}/nfs-provisioner-values.yaml")]
 
-
-  set {
-    name  = "storageClass.name"
-    value = "nfs-csi-nolock"
+resource "kubernetes_storage_class" "nfs_nolock" {
+  metadata {
+    name = "nfs-csi-nolock"
+  }
+  storage_provisioner = "nfs.csi.k8s.io"
+  mount_options       = ["nfsvers=3", "nolock"]
+  volume_binding_mode = "Immediate"
+  reclaim_policy      = "Delete"
+  parameters = {
+    mountPermissions = "777"
+    server           = "192.168.0.151"
+    share            = "/export/pvcs"
+    subDir           = "/$${pv.metadata.name}"
   }
 
-  set_list {
-    name  = "storageClass.mountOptions"
-    value = ["nfsvers=3", "nolock"]
-  }
-
-  set {
-    name  = "serviceAccount.controller"
-    value = "csi-nfs-nolock-controller-sa"
-  }
-
-  set {
-    name  = "serviceAccount.node"
-    value = "csi-nfs-nolock-node-sa"
-  }
-
-  set {
-    name  = "rbac.name"
-    value = "nfs-nolock"
-  }
-
-  set {
-    name  = "node.name"
-    value = "csi-nfs-nolock-node"
-  }
-
-  set {
-    name  = "controller.name"
-    value = "csi-nfs-nolock-controller"
-  }
-
-  set {
-    name  = "driver.name"
-    value = "nfs-nolock.csi.k8s.io"
-  }
-
-  set {
-    name  = "controller.livenessProbe.healthPort"
-    value = "29654"
-  }
-
-  set {
-    name  = "node.livenessProbe.healthPort"
-    value = "29655"
-  }
-
+  depends_on = [helm_release.nfs_provisioner]
 }
 
-resource "helm_release" "nfs_provisioner_retain" {
-  name       = "nfs-provisioner-retain"
-  namespace  = "kube-system"
-  chart      = "csi-driver-nfs"
-  version    = "v4.9.0"
-  repository = "https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts"
-  timeout    = 600
-  values     = [file("${path.module}/nfs-provisioner-values.yaml")]
-
-  set {
-    name  = "storageClass.reclaimPolicy"
-    value = "Retain"
+resource "kubernetes_storage_class" "nfs_retain" {
+  metadata {
+    name = "nfs-csi-retain"
+  }
+  storage_provisioner = "nfs.csi.k8s.io"
+  mount_options       = ["nfsvers=3"]
+  volume_binding_mode = "Immediate"
+  reclaim_policy      = "Retain"
+  parameters = {
+    mountPermissions = "777"
+    server           = "192.168.0.151"
+    share            = "/export/pvcs"
+    subDir           = "/$${pv.metadata.name}"
   }
 
-  set {
-    name  = "storageClass.name"
-    value = "nfs-csi-retain"
-  }
-
-  set {
-    name  = "serviceAccount.controller"
-    value = "csi-nfs-retain-controller-sa"
-  }
-
-  set {
-    name  = "serviceAccount.node"
-    value = "csi-nfs-retain-node-sa"
-  }
-
-  set {
-    name  = "rbac.name"
-    value = "nfs-retain"
-  }
-
-  set {
-    name  = "node.name"
-    value = "csi-nfs-retain-node"
-  }
-
-  set {
-    name  = "controller.name"
-    value = "csi-nfs-retain-controller"
-  }
-
-  set {
-    name  = "driver.name"
-    value = "nfs-retain.csi.k8s.io"
-  }
-
-  set {
-    name  = "controller.livenessProbe.healthPort"
-    value = "29656"
-  }
-
-  set {
-    name  = "node.livenessProbe.healthPort"
-    value = "29657"
-  }
-
+  depends_on = [helm_release.nfs_provisioner]
 }
+
 # resource "helm_release" "nfs_provisioner_easy" {
 #   name       = "nfs-provisioner-easy"
 #   namespace  = "kube-system"

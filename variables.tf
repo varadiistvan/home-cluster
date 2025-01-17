@@ -29,3 +29,13 @@ variable "domain" {
   default = "stevevaradi.me"
 }
 
+variable "postgres_apps_password" {
+  type      = string
+  sensitive = true
+  default   = null
+}
+
+variable "home_registry_password" {
+  type      = string
+  sensitive = true
+}

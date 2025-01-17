@@ -9,8 +9,8 @@ terraform {
       version = "2.33.0"
     }
     kubectl = {
-      source  = "gavinbunney/kubectl"
-      version = "1.14.0"
+      source  = "alekc/kubectl"
+      version = "2.1.3"
     }
     random = {
       source  = "hashicorp/random"
@@ -76,6 +76,7 @@ module "networking" {
   providers = {
     kubernetes = kubernetes
     helm       = helm
+    kubectl    = kubectl
   }
 
   depends_on = [helm_release.nfs_provisioner]
@@ -84,9 +85,13 @@ module "networking" {
 module "apps" {
   source = "./apps/"
 
+  postgres_apps_password = var.postgres_apps_password
+  home_registry_password = var.home_registry_password
+
   providers = {
     kubernetes = kubernetes
     helm       = helm
+    kubectl    = kubectl
   }
 
   depends_on = [module.networking, helm_release.nfs_provisioner]
@@ -105,3 +110,4 @@ module "monitoring" {
   }
   depends_on = [helm_release.nfs_provisioner, module.networking]
 }
+

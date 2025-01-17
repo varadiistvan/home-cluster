@@ -13,7 +13,6 @@ resource "helm_release" "ingress" {
   values     = [file("${path.module}/ingress-nginx-values.yaml")]
   timeout    = 500
   depends_on = [helm_release.cert_manager, kubectl_manifest.advertisement, kubernetes_namespace.ingress]
-
 }
 
 resource "kubernetes_namespace" "metallb" {

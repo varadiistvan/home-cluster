@@ -7,7 +7,7 @@ terraform {
       source = "hashicorp/kubernetes"
     }
     kubectl = {
-      source = "gavinbunney/kubectl"
+      source = "alekc/kubectl"
     }
   }
   required_version = "~> 1.10.2"

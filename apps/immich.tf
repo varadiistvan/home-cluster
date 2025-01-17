@@ -4,7 +4,7 @@
 #   chart      = "immich"
 #   version    = "2.1.0"
 #   repository = "https://immich-app.github.io/immich-charts"
-#   values     = [file("${path.module}/immich-values.yaml")]
+#   values     = [file("${path.module}/values/immich-values.yaml")]
 #   timeout    = 600
 #   depends_on = [kubernetes_namespace.apps]
 # }
