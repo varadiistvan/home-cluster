@@ -1,0 +1,31 @@
+replicaCount: 1
+
+image:
+  registry: registry.stevevaradi.me
+  repository: postgres-operator
+  tag: latest
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+serviceAccount:
+  create: true
+  name: postgres-operator-sa
+
+rbac:
+  create: true
+  rules:
+    - apiGroups: [""]
+      resources:
+        ["pods", "services", "endpoints", "secrets", "namespaces", "events"]
+      verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    - apiGroups: ["apps"]
+      resources: ["deployments"]
+      verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    - apiGroups: ["stevevaradi.me"]
+      resources: ["postgresdatabases", "postgresusers"]
+      verbs: ["get", "list", "watch", "create", "update", "patch", "delete"]
+    - apiGroups: ["apiextensions.k8s.io"]
+      resources: ["customresourcedefinitions"]
+      verbs: ["get", "list", "watch"]
+
+resources: {}

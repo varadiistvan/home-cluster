@@ -1,4 +1,4 @@
-# Copyright Broadcom, Inc. All Rights Reserved.
+# Copyright Broadcom, Inc. All Rights Resetrue
 # SPDX-License-Identifier: APACHE-2.0
 
 ## @section Global parameters
@@ -10,23 +10,9 @@ global:
   ##
   defaultStorageClass: "nfs-csi-retain"
   storageClass: "nfs-csi-retain"
-  postgresql:
-    ## @param global.postgresql.auth.postgresPassword Password for the "postgres" admin user (overrides `auth.postgresPassword`)
-    ## @param global.postgresql.auth.username Name for a custom user to create (overrides `auth.username`)
-    ## @param global.postgresql.auth.password Password for the custom user to create (overrides `auth.password`)
-    ## @param global.postgresql.auth.database Name for a custom database to create (overrides `auth.database`)
-    ## @param global.postgresql.auth.existingSecret Name of existing secret to use for PostgreSQL credentials (overrides `auth.existingSecret`).
-    ## @param global.postgresql.auth.secretKeys.adminPasswordKey Name of key in existing secret to use for PostgreSQL credentials (overrides `auth.secretKeys.adminPasswordKey`). Only used when `global.postgresql.auth.existingSecret` is set.
-    ## @param global.postgresql.auth.secretKeys.userPasswordKey Name of key in existing secret to use for PostgreSQL credentials (overrides `auth.secretKeys.userPasswordKey`). Only used when `global.postgresql.auth.existingSecret` is set.
-    ## @param global.postgresql.auth.secretKeys.replicationPasswordKey Name of key in existing secret to use for PostgreSQL credentials (overrides `auth.secretKeys.replicationPasswordKey`). Only used when `global.postgresql.auth.existingSecret` is set.
-    ##
-    auth:
-      username: "apps"
-      existingSecret: "postgres-auth"
-      secretKeys:
-        adminPasswordKey: "adminpass"
-        userPasswordKey: "userpass"
-        replicationPasswordKey: "replicationpass"
+  security:
+    allowInsecureImages: true
+
 ## @section Common parameters
 ##
 diagnosticMode:
@@ -63,7 +49,7 @@ image:
   ## Defaults to 'Always' if image tag is 'latest', else set to 'IfNotPresent'
   ## ref: https://kubernetes.io/docs/concepts/containers/images/#pre-pulled-images
   ##
-  pullPolicy: IfNotPresent
+  pullPolicy: Always
   ## Optionally specify an array of imagePullSecrets.
   ## Secrets must be manually created in the namespace.
   ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
@@ -102,7 +88,7 @@ auth:
     replicationPasswordKey: "replicationpass"
   ## @param auth.usePasswordFiles Mount credentials as a files instead of using an environment variable
   ##
-  usePasswordFiles: false
+  usePasswordFiles: true
 ## @param architecture PostgreSQL architecture (`standalone` or `replication`)
 ##
 architecture: standalone
@@ -242,7 +228,12 @@ primary:
     ##      #!/bin/sh
     ##      echo "Do something."
     ##
-    scripts: {}
+    scripts:
+      {}
+      # add_extensions.sql: |
+      #   CREATE EXTENSION IF NOT EXIST vectors;
+      #   CREATE EXTENSION IF NOT EXIST cube;
+      #   CREATE EXTENSION IF NOT EXIST earthdistance;
     ## @param primary.initdb.scriptsConfigMap ConfigMap with scripts to be run at first boot
     ## NOTE: This will override `primary.initdb.scripts`
     ##
@@ -253,7 +244,7 @@ primary:
     scriptsSecret: ""
     ## @param primary.initdb.user Specify the PostgreSQL username to execute the initdb scripts
     ##
-    user: ""
+    user: postgres
     ## @param primary.initdb.password Specify the PostgreSQL password to execute the initdb scripts
     ##
     password: ""
@@ -267,12 +258,7 @@ primary:
     ##   my_pre_init_script.sh: |
     ##      #!/bin/sh
     ##      echo "Do something."
-    scripts:
-      add_extensions.sql: |
-        DROP EXTENSION IF EXISTS vectors;
-        CREATE EXTENSION vectors;
-        CREATE EXTENSION cube;
-        CREATE EXTENSION earthdistance;
+    scripts: {}
 
     ## @param primary.preInitDb.scriptsConfigMap ConfigMap with pre-init scripts to be run
     ## NOTE: This will override `primary.preInitDb.scripts`

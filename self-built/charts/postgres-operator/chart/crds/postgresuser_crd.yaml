@@ -1,0 +1,76 @@
+apiVersion: apiextensions.k8s.io/v1
+kind: CustomResourceDefinition
+metadata:
+  name: postgresusers.stevevaradi.me
+spec:
+  group: stevevaradi.me
+  versions:
+    - name: v1
+      served: true
+      storage: true
+      schema:
+        openAPIV3Schema:
+          type: object
+          properties:
+            spec:
+              type: object
+              properties:
+                instance:
+                  type: object
+                  properties:
+                    host:
+                      type: string
+                      description: "The hostname or IP address of the PostgreSQL server."
+                    port:
+                      type: integer
+                      description: "The port number on which the PostgreSQL server is listening."
+                      default: 5432
+                    adminCredentials:
+                      type: object
+                      properties:
+                        username:
+                          type: string
+                          description: "The admin username for the PostgreSQL instance."
+                        secretRef:
+                          type: object
+                          properties:
+                            name:
+                              type: string
+                              description: "The name of the Kubernetes Secret containing the admin credentials."
+                            usernameKey:
+                              type: string
+                              description: "The key within the Secret that holds the admin username."
+                            passwordKey:
+                              type: string
+                              description: "The key within the Secret that holds the admin password."
+                      description: "Admin credentials for the PostgreSQL instance. If both plaintext and secretRef are provided, secretRef takes precedence."
+                  required: ["host", "adminCredentials"]
+                user:
+                  type: object
+                  properties:
+                    username:
+                      type: string
+                      description: "The name of the user to be created."
+                    passwordSecret:
+                      type: object
+                      properties:
+                        name:
+                          type: string
+                          description: "The name of the Kubernetes Secret containing the user's password."
+                        key:
+                          type: string
+                          description: "The key within the Secret that holds the password."
+                    privileges:
+                      type: array
+                      items:
+                        type: string
+                      description: "A list of privileges to grant to the user."
+                  required: ["username", "passwordSecret"]
+              required: ["instance", "user"]
+  scope: Namespaced
+  names:
+    plural: postgresusers
+    singular: postgresuser
+    kind: PostgresUser
+    shortNames:
+      - pguser
