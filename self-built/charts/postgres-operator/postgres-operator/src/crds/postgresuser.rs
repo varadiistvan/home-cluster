@@ -17,7 +17,14 @@ pub struct PostgresUserSpec {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
 pub struct SpecUser {
-    pub username: Option<String>,
-    pub password_secret: SecretRef,
+    pub username: String,
+    #[serde(rename = "secretRef")]
+    pub secret_ref: UserPasswordSecretRef,
     pub privileges: Option<Vec<String>>,
+}
+
+#[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
+pub struct UserPasswordSecretRef {
+    pub name: String,
+    pub key: String,
 }

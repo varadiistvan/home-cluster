@@ -1,4 +1,4 @@
 apiVersion: v2
 name: postgres-operator-chart
 description: A helm chart for creating postgres databases and users through crds
-version: 0.2.6
+version: 0.3.2

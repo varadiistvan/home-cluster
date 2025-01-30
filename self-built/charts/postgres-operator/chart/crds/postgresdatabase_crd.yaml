@@ -37,8 +37,6 @@ spec:
                               type: string
                             passwordKey:
                               type: string
-                            namespace:
-                              type: string
                 database:
                   type: object
                   properties:
@@ -46,19 +44,12 @@ spec:
                       type: string
                     owner:
                       type: string
-                    ownerSecret:
-                      type: object
-                      properties:
-                        name:
-                          type: string
-                        key:
-                          type: string
                     extensions:
                       type: array
                       items:
                         type: string
                       description: "List of extensions to enable for the database."
-                  required: ["dbName", "owner", "ownerSecret"]
+                  required: ["dbName", "owner"]
               required: ["instance", "database"]
   scope: Namespaced
   names:

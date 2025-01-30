@@ -2,7 +2,7 @@ replicaCount: 1
 
 image:
   registry: registry.stevevaradi.me
-  repository: postgres-operator
+  repository: postgres-operator-rust
   tag: latest
   pullPolicy: IfNotPresent
   pullSecrets: []

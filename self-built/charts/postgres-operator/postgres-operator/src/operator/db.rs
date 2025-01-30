@@ -10,17 +10,22 @@ pub enum DatabaseError {
 
 pub async fn create_db(
     connection: &mut tokio_postgres::Client,
-    name: String,
-    owner: String,
-    extensions: Vec<String>,
+    db_name: String,
+    db_owner: String,
+    extensions: &[String],
 ) -> Result<(), DatabaseError> {
+    tracing::info!("Running queries for database {db_name}");
+
     let tr = connection
         .transaction()
         .await
         .map_err(DatabaseError::Other)?;
 
     let owner_res = tr
-        .query_one("SELECT usename FROM pg_user WHERE usename = $1", &[&owner])
+        .query_one(
+            "SELECT usename FROM pg_user WHERE usename = $1",
+            &[&db_owner],
+        )
         .await
         .map_err(DatabaseError::Other)?;
 
@@ -31,24 +36,24 @@ pub async fn create_db(
     let existing_database = tr
         .query_one(
             "SELECT datname FROM pg_database WHERE datname = $1",
-            &[&name],
+            &[&db_name],
         )
         .await
         .map_err(DatabaseError::Other)?;
 
     if existing_database.is_empty() {
-        tr.execute("CREATE DATABASE $1", &[&name])
+        tr.execute("CREATE DATABASE $1", &[&db_name])
             .await
             .map_err(DatabaseError::Other)?;
     }
 
-    tr.execute("ALTER DATABASE $1 OWNER TO $2", &[&name, &owner])
+    tr.execute("ALTER DATABASE $1 OWNER TO $2", &[&db_name, &db_owner])
         .await
         .map_err(DatabaseError::Other)?;
 
     tr.execute(
         "GRANT ALL PRIVILEGES ON DATABASE $1 TO $2",
-        &[&name, &owner],
+        &[&db_name, &db_owner],
     )
     .await
     .map_err(DatabaseError::Other)?;
@@ -72,5 +77,10 @@ pub async fn create_db(
             }
         });
 
-    tr.commit().await.map_err(DatabaseError::Other)
+    let res = tr.commit().await.map_err(DatabaseError::Other);
+    if res.is_ok() {
+        tracing::info!("Database {db_name} created/updated");
+    };
+
+    res
 }

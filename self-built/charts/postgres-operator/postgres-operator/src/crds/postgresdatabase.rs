@@ -18,6 +18,7 @@ pub struct PostgresDatabaseSpec {
 
 #[derive(Serialize, Deserialize, Debug, Clone, PartialEq, JsonSchema)]
 pub struct SpecDatabase {
+    #[serde(rename = "dbName")]
     pub db_name: String,
     pub owner: String,
     pub extensions: Option<Vec<String>>,

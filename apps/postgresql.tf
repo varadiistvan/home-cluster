@@ -30,7 +30,7 @@ resource "helm_release" "postgres-operator" {
   namespace  = kubernetes_namespace.apps.metadata[0].name
   chart      = "postgres-operator-chart"
   repository = "oci://registry.stevevaradi.me"
-  version    = "0.2.6"
+  version    = "0.3.2"
 
   count = 1
 
@@ -43,8 +43,9 @@ resource "helm_release" "postgres-operator" {
 
   set {
     name  = "image.tag"
-    value = "0.10.3"
+    value = "0.1.14"
   }
+
 }
 
 resource "kubernetes_secret" "immich_password" {
@@ -77,7 +78,7 @@ resource "kubectl_manifest" "immich_user" {
             passwordKey: adminpass
       user:
         username: immich
-        passwordSecret:
+        secretRef:
           name: postgres-immich
           key: password
         privileges:
