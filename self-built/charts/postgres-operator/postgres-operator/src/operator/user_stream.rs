@@ -132,9 +132,14 @@ pub async fn user_crd_created(user: PostgresUser, secret_api: &Api<Secret>) {
     config.host(&host);
     config.port(port.unwrap_or(5432));
 
-    if let Ok((mut connection, _)) = config.connect(tokio_postgres::NoTls).await {
+    if let Ok((mut client, connection)) = config.connect(tokio_postgres::NoTls).await {
+        tokio::spawn(async move {
+            if let Err(e) = connection.await {
+                tracing::error!("{e:?}");
+            }
+        });
         let create_res = super::create_user(
-            &mut connection,
+            &mut client,
             username,
             password,
             &privileges.unwrap_or_default(),

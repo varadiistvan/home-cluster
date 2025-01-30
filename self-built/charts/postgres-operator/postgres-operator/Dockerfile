@@ -7,46 +7,40 @@
 # Want to help us make this template better? Share your feedback here: https://forms.gle/ybq9Krt8jtBL3iCk7
 
 ARG RUST_VERSION=1.84.0
-ARG APP_NAME=postgres-operator
 
-################################################################################
-# Create a stage for building the application.
-
-FROM rust:${RUST_VERSION}-alpine AS build
-ARG APP_NAME
+# (1) this stage will be run always on current arch
+# zigbuild & Cargo targets added
+FROM --platform=$BUILDPLATFORM rust:$RUST_VERSION-alpine AS chef
 WORKDIR /app
+ENV PKGCONFIG_SYSROOTDIR=/
+RUN apk add --no-cache musl-dev openssl-dev zig
+RUN cargo install --locked cargo-zigbuild cargo-chef
+RUN rustup target add x86_64-unknown-linux-musl aarch64-unknown-linux-musl
 
-# Install host build dependencies.
-RUN apk add --no-cache clang lld musl-dev git
+# (2) nothing changed
+FROM chef AS planner
+COPY . .
+RUN cargo chef prepare --recipe-path recipe.json
 
-# Build the application.
-# Leverage a cache mount to /usr/local/cargo/registry/
-# for downloaded dependencies, a cache mount to /usr/local/cargo/git/db
-# for git repository dependencies, and a cache mount to /app/target/ for
-# compiled dependencies which will speed up subsequent builds.
-# Leverage a bind mount to the src directory to avoid having to copy the
-# source code into the container. Once built, copy the executable to an
-# output directory before the cache mounted /app/target is unmounted.
-RUN --mount=type=bind,source=src,target=src \
-  --mount=type=bind,source=Cargo.toml,target=Cargo.toml \
-  --mount=type=bind,source=Cargo.lock,target=Cargo.lock \
-  --mount=type=cache,target=/app/target/ \
-  --mount=type=cache,target=/usr/local/cargo/git/db \
-  --mount=type=cache,target=/usr/local/cargo/registry/ \
-  cargo build --locked --release && \
-  cp ./target/release/$APP_NAME /bin/server
+# (3) building project deps: need to specify all targets; zigbuild used
+FROM chef AS builder
+COPY --from=planner /app/recipe.json recipe.json
+RUN cargo chef cook --recipe-path recipe.json --release --zigbuild \
+  --target x86_64-unknown-linux-musl --target aarch64-unknown-linux-musl
 
-################################################################################
-# Create a new stage for running the application that contains the minimal
-# runtime dependencies for the application. This often uses a different base
-# image from the build stage where the necessary files are copied from the build
-# stage.
-#
-# The example below uses the alpine image as the foundation for running the app.
-# By specifying the "3.18" tag, it will use version 3.18 of alpine. If
-# reproducibility is important, consider using a digest
-# (e.g., alpine@sha256:664888ac9cfd28068e062c991ebcff4b4c7307dc8dd4df9e728bedde5c449d91).
+ARG APP_NAME=postgres-operator
+# (4) actuall project build for all targets
+# binary renamed to easier copy in runtime stage
+COPY . .
+RUN cargo zigbuild -r --target x86_64-unknown-linux-musl --target aarch64-unknown-linux-musl && \
+  mkdir /app/linux && \
+  cp /app/target/aarch64-unknown-linux-musl/release/${APP_NAME} /app/linux/arm64 && \
+  cp /app/target/x86_64-unknown-linux-musl/release/${APP_NAME} /app/linux/amd64
+
+
 FROM alpine:3.18 AS final
+
+ARG TARGETPLATFORM
 
 # Create a non-privileged user that the app will run under.
 # See https://docs.docker.com/go/dockerfile-user-best-practices/
@@ -62,7 +56,7 @@ RUN adduser \
 USER appuser
 
 # Copy the executable from the "build" stage.
-COPY --from=build /bin/server /bin/
+COPY --from=builder /app/${TARGETPLATFORM} /bin/server
 
 # What the container should run when it is started.
 CMD ["/bin/server"]

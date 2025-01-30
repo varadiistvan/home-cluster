@@ -15,7 +15,7 @@ async fn main() -> Result<()> {
         .context("Failed to create K8s client")?;
 
     let subscriber = tracing_subscriber::FmtSubscriber::builder()
-        .with_max_level(tracing::Level::DEBUG)
+        .with_max_level(tracing::Level::INFO)
         .finish();
 
     tracing::subscriber::set_global_default(subscriber).context("Failed to set subscriber")?;

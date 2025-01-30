@@ -9,6 +9,7 @@ docker buildx build --platform="linux/arm64" \
   -f ./Dockerfile \
   --tag "${REPO}:$1" \
   --tag "${REPO}:latest" \
+  --load \
   .
 
 docker push "${REPO}:$1"
