@@ -9,6 +9,9 @@ terraform {
     kubectl = {
       source = "alekc/kubectl"
     }
+    time = {
+      source = "hashicorp/time"
+    }
   }
   required_version = "~> 1.10.2"
 }

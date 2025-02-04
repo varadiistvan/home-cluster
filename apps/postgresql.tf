@@ -43,7 +43,7 @@ resource "helm_release" "postgres-operator" {
 
   set {
     name  = "image.tag"
-    value = "0.1.24"
+    value = "0.1.38"
   }
 
 }
@@ -86,4 +86,36 @@ resource "kubectl_manifest" "immich_user" {
   YAML
 
   depends_on = [helm_release.postgres-operator, kubernetes_secret.immich_password, helm_release.postgres]
+}
+
+resource "time_sleep" "wait_for_postgres" {
+  depends_on      = [kubectl_manifest.immich_user]
+  create_duration = "10s"
+}
+
+resource "kubectl_manifest" "immich_database" {
+  yaml_body  = <<YAML
+    apiVersion: stevevaradi.me/v1
+    kind: PostgresDatabase
+    metadata:
+      name: immich-database
+      namespace: apps
+    spec:
+      instance:
+        host: postgres-postgresql.apps.svc.cluster.local
+        port: 5432
+        adminCredentials:
+          username: postgres
+          secretRef:
+            name: postgres_auth
+            passwordKey: adminpass
+      database:
+        dbName: immich
+        owner: immich
+        extensions:
+          - earthdistance
+          - vectors
+          - cube
+  YAML
+  depends_on = [time_sleep.wait_for_postgres]
 }

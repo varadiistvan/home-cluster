@@ -19,20 +19,20 @@ image:
 immich:
   metrics:
     # Enabling this will create the service monitors needed to monitor immich with the prometheus operator
-    enabled: true
+    enabled: false
   persistence:
     # Main data store for all photos shared between different components.
     library:
       # Automatically creating the library volume is not supported by this chart
       # You have to specify an existing PVC to use
-      existingClaim:
+      existingClaim: "immich-pvc"
   # configuration is immich-config.json converted to yaml
   # ref: https://immich.app/docs/install/config-file/
   #
   configuration:
     {}
     # trash:
-    #   enabled: false
+    #   enabled: true
     #   days: 30
     # storageTemplate:
     #   enabled: true
@@ -43,51 +43,27 @@ immich:
 # DEPRECATED
 # The postgres subchart is deprecated and will be removed in chart version 0.10.0
 # See https://github.com/immich-app/immich-charts/issues/149 for more detail.
-postgresql:
-  enabled: false
-  image:
-    repository: tensorchord/pgvecto-rs
-    tag: pg14-v0.2.0
-  global:
-    postgresql:
-      auth:
-        username: immich
-        database: immich
-        password: immich
-  primary:
-    containerSecurityContext:
-      readOnlyRootFilesystem: false
-    initdb:
-      scripts:
-        create-extensions.sql: |
-          CREATE EXTENSION cube;
-          CREATE EXTENSION earthdistance;
-          CREATE EXTENSION vectors;
-
-redis:
-  enabled: false
-  architecture: standalone
-  auth:
-    enabled: false
 
 # Immich components
 
-ingress:
-  enabled: true
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
-    nginx.ingress.kubernetes.io/whitelist-source-range: >-
-      192.168.0.1/24,
-      10.192.1.1/24
-  hosts:
-    - host: immich.stevevaradi.me
-      paths:
-        - path: /
-          pathType: Prefix
-  tls:
-    - secretName: immich-tls
+server:
+  ingress:
+    main:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+        nginx.ingress.kubernetes.io/whitelist-source-range: >-
+          192.168.0.1/24,
+          10.192.1.1/24
       hosts:
-        - immich.stevevaradi.me
+        - host: immich.stevevaradi.me
+          paths:
+            - path: /
+              pathType: Prefix
+      tls:
+        - secretName: immich-tls
+          hosts:
+            - immich.stevevaradi.me
 
 machine-learning:
   enabled: false

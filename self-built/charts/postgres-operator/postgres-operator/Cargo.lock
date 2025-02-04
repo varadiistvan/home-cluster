@@ -1216,6 +1216,7 @@ dependencies = [
  "futures",
  "k8s-openapi",
  "kube",
+ "postgres-protocol",
  "postgres-types",
  "schemars",
  "serde",

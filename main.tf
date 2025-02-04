@@ -16,6 +16,10 @@ terraform {
       source  = "hashicorp/random"
       version = "3.6.3"
     }
+    time = {
+      source  = "hashicorp/time"
+      version = "0.12.1"
+    }
   }
 
   backend "s3" {
@@ -92,6 +96,7 @@ module "apps" {
     kubernetes = kubernetes
     helm       = helm
     kubectl    = kubectl
+    time       = time
   }
 
   depends_on = [module.networking, helm_release.nfs_provisioner]

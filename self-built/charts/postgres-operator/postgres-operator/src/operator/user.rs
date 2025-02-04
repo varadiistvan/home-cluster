@@ -1,3 +1,4 @@
+use postgres_protocol::escape::{self, escape_literal};
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -20,49 +21,67 @@ pub async fn create_user(
         .map_err(UserError::PostgresError)?;
 
     let user_in_db = tr
-        .query("SELECT 1 FROM pg_user WHERE usename = $1", &[&username])
+        .query_opt(
+            "SELECT usename FROM pg_user WHERE usename = $1",
+            &[&username],
+        )
         .await
         .map_err(UserError::PostgresError)?;
 
-    if user_in_db.is_empty() {
+    if user_in_db.is_none() {
         tr.execute(
-            &format!("CREATE USER pg_catalog.quote_indent('{username}') WITH PASSWORD $1"),
-            &[&password],
+            &format!(
+                "CREATE USER {} WITH PASSWORD {}",
+                escape::escape_identifier(&username),
+                escape_literal(&password)
+            ),
+            &[],
         )
         .await
         .map_err(UserError::PostgresError)?;
     } else {
         tr.execute(
-            &format!("ALTER USER pg_catalog.quote_indent('{username}') WITH PASSWORD $1"),
-            &[&password],
+            &format!(
+                "ALTER USER {} WITH PASSWORD {}",
+                escape::escape_identifier(&username),
+                escape::escape_literal(&password)
+            ),
+            &[],
         )
         .await
         .map_err(UserError::PostgresError)?;
     }
 
-    let privileges_futures = privileges.iter().map(|privilege| async {
-        let privilege = privilege.clone();
-        (
-            tr.execute(
-                &format!("GRANT pg_catalog.quote_indent('{privilege}') ON ALL TABLES IN SCHEMA public TO pg_catalog.quote_indent('{username}')"),
-                &[],
-            )
-            .await,
-            privilege,
-        )
-    });
+    const PRIVILEGES: [&str; 5] = [
+        "SUPERUSER",
+        "CREATEDB",
+        "CREATEROLE",
+        "REPLICATION",
+        "BYPASSRLS",
+    ];
 
-    futures::future::join_all(privileges_futures)
-        .await
-        .into_iter()
-        .for_each(|(res, privilege)| {
-            if let Err(e) = res {
+    for privilege in privileges {
+        if !PRIVILEGES.contains(&privilege.as_str()) {
+            tracing::error!("Invalid privilege: {privilege}");
+        } else {
+            let add_err = tr
+                .execute(
+                    &format!(
+                        "ALTER USER {} WITH {}",
+                        escape::escape_identifier(&username),
+                        privilege
+                    ),
+                    &[],
+                )
+                .await;
+            if add_err.is_err() {
                 tracing::error!(
                     "Failed to add privilege: {privilege} for user {username}: ${:?}",
-                    e
+                    add_err
                 )
             }
-        });
+        }
+    }
 
     let res = tr.commit().await.map_err(UserError::PostgresError);
     if res.is_ok() {

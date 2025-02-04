@@ -92,18 +92,27 @@ pub async fn database_crd_created(db: PostgresDatabase, secret_api: &Api<Secret>
         username,
         password
     );
+    let mut config = tokio_postgres::Config::new();
+    config.user(&username);
+    config.password(&password);
+    config.host(&host);
+    config.port(port.unwrap_or(5432));
 
-    if let Ok((mut client, connection)) =
-        tokio_postgres::connect(&connection_string, tokio_postgres::NoTls).await
-    {
+    if let Ok((mut client, connection)) = config.connect(tokio_postgres::NoTls).await {
         tokio::spawn(async move {
             if let Err(e) = connection.await {
                 tracing::error!("{e:?}");
             }
         });
 
-        let create_res =
-            super::create_db(&mut client, db_name, owner, &extensions.unwrap_or_default()).await;
+        let create_res = super::create_db(
+            &mut client,
+            db_name,
+            owner,
+            &extensions.unwrap_or_default(),
+            &mut config,
+        )
+        .await;
         if create_res.is_err() {
             tracing::error!("{create_res:?}");
         }
