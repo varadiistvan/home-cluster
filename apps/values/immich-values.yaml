@@ -11,7 +11,8 @@ env:
   DB_DATABASE_NAME: "{{ .Values.postgresql.global.postgresql.auth.database }}"
   # -- You should provide your own secret outside of this helm-chart and use `postgresql.global.postgresql.auth.existingSecret` to provide credentials to the postgresql instance
   # DB_PASSWORD: "{{ .Values.postgresql.global.postgresql.auth.password }}"
-  IMMICH_MACHINE_LEARNING_URL: "192.168.0.109"
+  IMMICH_MACHINE_LEARNING_URL: "http://192.168.0.109:3003"
+  REDIS_DBINDEX: "0"
 
 image:
   tag: v1.119.0

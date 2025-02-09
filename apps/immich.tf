@@ -31,6 +31,11 @@ resource "helm_release" "immich" {
   depends_on = [kubernetes_namespace.apps, helm_release.redis, time_sleep.immich_wait, kubernetes_persistent_volume_claim.immich_pvc]
 
   set {
+    name  = "image.tag"
+    value = "v1.125.7"
+  }
+
+  set {
     name  = "env.REDIS_HOSTNAME"
     value = "${helm_release.redis.name}-master.${kubernetes_namespace.apps.metadata[0].name}.svc.cluster.local"
   }
@@ -38,11 +43,6 @@ resource "helm_release" "immich" {
   set {
     name  = "env.REDIS_PASSWORD"
     value = "assword"
-  }
-
-  set {
-    name  = "env.REDIS_DBINDEX"
-    value = "\"0\""
   }
 
 
