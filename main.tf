@@ -106,7 +106,8 @@ module "monitoring" {
   source = "./monitoring/"
 
 
-  domain = var.domain
+  domain                 = var.domain
+  home_registry_password = var.home_registry_password
 
   providers = {
     kubernetes = kubernetes

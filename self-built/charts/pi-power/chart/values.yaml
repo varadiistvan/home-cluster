@@ -1,0 +1,27 @@
+image:
+  registry: "registry.stevevaradi.me"
+  repository: "pi-power"
+  tag: "latest"
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+service:
+  type: ClusterIP
+  port: 9101
+
+daemonset:
+  nodeSelector: {}
+  tolerations: []
+  affinity: {}
+
+prometheus:
+  enabled: true
+  scrapeInterval: "30s"
+
+resources:
+  limits:
+    cpu: "500m"
+    memory: "128Mi"
+  requests:
+    cpu: "100m"
+    memory: "64Mi"

@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "pi5-monitor.fullname" . }}
+  labels:
+    {{- include "pi5-monitor.labels" . | nindent 4 }}
+spec:
+  type: {{ .Values.service.type }}
+  ports:
+    - port: {{ .Values.service.port }}
+      targetPort: 9101
+      protocol: TCP
+      name: http
+  selector:
+    {{- include "pi5-monitor.selectorLabels" . | nindent 4 }}

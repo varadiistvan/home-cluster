@@ -1,20 +1,20 @@
-
 grafana:
   enabled: true
   ingress:
     enabled: true
-    annotations: 
+    annotations:
       cert-manager.io/cluster-issuer: letsencrypt
       nginx.ingress.kubernetes.io/whitelist-source-range: >-
         192.168.0.1/24,
         10.192.1.1/24
     hosts:
       - grafana.stevevaradi.me
-    tls: 
+    paths:
+      - /
+    tls:
       - secretName: grafana-tls
         hosts:
           - grafana.stevevaradi.me
-
 
 kubelet:
   serviceMonitor:
@@ -120,4 +120,3 @@ prometheus:
           resources:
             requests:
               storage: 10Gi
-

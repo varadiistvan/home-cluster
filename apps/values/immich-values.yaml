@@ -15,7 +15,7 @@ env:
   REDIS_DBINDEX: "0"
 
 image:
-  tag: v1.119.0
+  tag: v1.125.7
 
 immich:
   metrics:
@@ -67,10 +67,7 @@ server:
             - immich.stevevaradi.me
 
 machine-learning:
-  enabled: false
-  image:
-    repository: ghcr.io/immich-app/immich-machine-learning
-    pullPolicy: IfNotPresent
+  enabled: true
   env:
     TRANSFORMERS_CACHE: /cache
   persistence:
