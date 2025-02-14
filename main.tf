@@ -108,6 +108,7 @@ module "monitoring" {
 
   domain                 = var.domain
   home_registry_password = var.home_registry_password
+  grafana_password       = var.grafana_password
 
   providers = {
     kubernetes = kubernetes

@@ -40,6 +40,13 @@ resource "kubernetes_secret" "registry_pass" {
   depends_on = [kubernetes_namespace.monitoring]
 }
 
+# resource "kubernetes_secret" "grafana_password" {
+#   metadata {
+#     name      = "grafana-password"
+#     namespace = kubernetes_namespace.monitoring.metadata[0].name
+#   }
+# }
+
 resource "kubectl_manifest" "crds" {
   for_each          = fileset("${path.module}/crds", "*.yaml")
   yaml_body         = file("${path.module}/crds/${each.value}")
@@ -48,7 +55,7 @@ resource "kubectl_manifest" "crds" {
 
 resource "helm_release" "misty_show" {
   name       = "misty-show"
-  namespace  = "monitoring"
+  namespace  = kubernetes_namespace.monitoring.metadata[0].name
   chart      = "kube-prometheus-stack"
   version    = "66.3.1"
   repository = "https://prometheus-community.github.io/helm-charts"
@@ -65,12 +72,17 @@ resource "helm_release" "misty_show" {
   }
   skip_crds = true
 
+  set_sensitive {
+    name  = "grafana.adminPassword"
+    value = var.grafana_password
+  }
+
 }
 
 
 resource "helm_release" "pi5_monitor" {
   name       = "pi5-monitor"
-  namespace  = "monitoring"
+  namespace  = kubernetes_namespace.monitoring.metadata[0].name
   chart      = "pi5-monitor"
   version    = "0.1.5"
   repository = "oci://registry.stevevaradi.me"
