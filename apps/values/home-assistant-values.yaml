@@ -132,7 +132,7 @@ initContainers:
       [
         "bash",
         "-c",
-        "[ -d /config/custom_components/hacs ] || (cd /config && wget -O - https://get.hacs.xyz | bash -)",
+        "[ -d /config/custom_components/hacs ] || (cd /config && wget -O - https://get.hacs.xyz | bash -) || true",
       ]
     volumeMounts:
       - mountPath: /config
