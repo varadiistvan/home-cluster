@@ -251,7 +251,7 @@ persistence:
   # Size of the persistent volume claim
   size: 8Gi
   # Storage class for the persistent volume claim
-  storageClass: "nfs-csi-nolock"
+  storageClass: "nfs-csi"
 
 # if you need any additional volumes, you can define them here
 additionalVolumes:

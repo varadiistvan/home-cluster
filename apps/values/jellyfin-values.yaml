@@ -51,7 +51,7 @@ persistence:
     enabled: true
     accessMode: ReadWriteOnce
     size: 5Gi
-    storageClass: nfs-csi-nolock
+    storageClass: nfs-csi
   media:
     enabled: false
 # # -- Configuration for metrics collection and monitoring

@@ -9,36 +9,18 @@ resource "helm_release" "nfs_provisioner" {
 }
 
 
-resource "kubernetes_storage_class" "nfs_nolock" {
-  metadata {
-    name = "nfs-csi-nolock"
-  }
-  storage_provisioner = "nfs.csi.k8s.io"
-  mount_options       = ["nfsvers=3", "nolock"]
-  volume_binding_mode = "Immediate"
-  reclaim_policy      = "Delete"
-  parameters = {
-    mountPermissions = "777"
-    server           = "192.168.0.151"
-    share            = "/export/pvcs"
-    subDir           = "/$${pv.metadata.name}"
-  }
-
-  depends_on = [helm_release.nfs_provisioner]
-}
-
 resource "kubernetes_storage_class" "nfs_retain" {
   metadata {
     name = "nfs-csi-retain"
   }
   storage_provisioner = "nfs.csi.k8s.io"
-  mount_options       = ["nfsvers=3"]
+  mount_options       = ["nfsvers=4"]
   volume_binding_mode = "Immediate"
   reclaim_policy      = "Retain"
   parameters = {
     mountPermissions = "777"
     server           = "192.168.0.151"
-    share            = "/export/pvcs"
+    share            = "/pvcs"
     subDir           = "/$${pv.metadata.name}"
   }
 
