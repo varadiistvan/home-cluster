@@ -100,6 +100,27 @@ prometheus:
 
     serviceMonitorSelector:
       matchLabels: null
+    additionalScrapeConfigs:
+      - job_name: scaphandre
+        scrape_interval: 30s
+        metrics_path: /metrics
+        static_configs:
+          - targets:
+              - 192.168.0.151:8181
+        relabel_configs:
+          - source_labels:
+              - __address__
+            regex: 192.168.0.151:8181
+            action: replace
+            target_label: node
+            replacement: "nas"
+
+          - source_labels:
+              - __address__
+            regex: 192.168.0.109:8181
+            action: replace
+            target_label: node
+            replacement: "homepc"
 
   storageSpec:
     volumeClaimTemplate:

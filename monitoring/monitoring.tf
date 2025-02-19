@@ -100,4 +100,3 @@ resource "helm_release" "pi5_monitor" {
   depends_on = [kubernetes_secret.registry_pass, helm_release.misty_show]
 
 }
-
