@@ -15,7 +15,7 @@ resource "helm_release" "postgres" {
   namespace  = kubernetes_namespace.apps.metadata[0].name
   chart      = "postgresql"
   repository = "oci://registry-1.docker.io/bitnamicharts/"
-  version    = "16.4.5"
+  version    = "16.6.6"
   values     = [file("${path.module}/values/postgres-values.yaml")]
   depends_on = [kubernetes_namespace.apps, kubernetes_secret.postgres_auth, kubernetes_secret.registry_pass]
 

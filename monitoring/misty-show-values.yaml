@@ -141,3 +141,7 @@ prometheus:
           resources:
             requests:
               storage: 10Gi
+crds:
+  upgradeJob:
+    enabled: true
+    forceConflicts: true

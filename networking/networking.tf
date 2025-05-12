@@ -10,5 +10,4 @@ terraform {
       source = "alekc/kubectl"
     }
   }
-  required_version = "~> 1.10.2"
 }

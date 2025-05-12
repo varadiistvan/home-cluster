@@ -2,7 +2,7 @@ resource "helm_release" "nfs_provisioner" {
   name       = "nfs-provisioner"
   namespace  = "kube-system"
   chart      = "csi-driver-nfs"
-  version    = "v4.9.0"
+  version    = "v4.11.0"
   repository = "https://raw.githubusercontent.com/kubernetes-csi/csi-driver-nfs/master/charts"
   timeout    = 600
   values     = [file("${path.module}/nfs-provisioner-values.yaml")]

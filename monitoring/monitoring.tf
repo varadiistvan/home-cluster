@@ -47,30 +47,22 @@ resource "kubernetes_secret" "registry_pass" {
 #   }
 # }
 
-resource "kubectl_manifest" "crds" {
-  for_each          = fileset("${path.module}/crds", "*.yaml")
-  yaml_body         = file("${path.module}/crds/${each.value}")
-  server_side_apply = true
-}
-
 resource "helm_release" "misty_show" {
   name       = "misty-show"
   namespace  = kubernetes_namespace.monitoring.metadata[0].name
   chart      = "kube-prometheus-stack"
-  version    = "66.3.1"
+  version    = "72.0.1"
   repository = "https://prometheus-community.github.io/helm-charts"
   values     = [file("${path.module}/misty-show-values.yaml")]
   depends_on = [
     kubernetes_namespace.monitoring,
     # helm_release.melodic-sky,
-    kubectl_manifest.crds
   ]
 
   set {
     name  = "crds.enabled"
-    value = false
+    value = true
   }
-  skip_crds = true
 
   set_sensitive {
     name  = "grafana.adminPassword"

@@ -8,7 +8,7 @@ resource "helm_release" "ingress" {
   name       = "ingress"
   namespace  = kubernetes_namespace.ingress.metadata[0].name
   chart      = "ingress-nginx"
-  version    = "4.11.2"
+  version    = "4.12.2"
   repository = "https://kubernetes.github.io/ingress-nginx"
   values     = [file("${path.module}/ingress-nginx-values.yaml")]
   timeout    = 500
@@ -25,7 +25,7 @@ resource "helm_release" "metallb" {
   name       = "lb"
   namespace  = kubernetes_namespace.metallb.metadata[0].name
   chart      = "metallb"
-  version    = "0.14.8"
+  version    = "0.14.9"
   repository = "https://metallb.github.io/metallb"
   # values     = [file("${path.module}/metallb-values.yaml")]
   timeout    = 600
@@ -37,8 +37,6 @@ resource "kubectl_manifest" "ips" {
     apiVersion: metallb.io/v1beta1
     kind: IPAddressPool
     metadata:
-      # A name for the address pool. Services can request allocation
-      # from a specific address pool using this name.
       name: first-pool
       namespace: ${kubernetes_namespace.metallb.metadata[0].name}
     spec:

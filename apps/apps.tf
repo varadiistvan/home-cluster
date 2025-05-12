@@ -13,7 +13,6 @@ terraform {
       source = "hashicorp/time"
     }
   }
-  required_version = "~> 1.10.2"
 }
 
 resource "kubernetes_namespace" "apps" {
