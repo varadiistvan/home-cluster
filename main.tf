@@ -91,6 +91,7 @@ module "apps" {
 
   postgres_apps_password = var.postgres_apps_password
   home_registry_password = var.home_registry_password
+  penpot_api_key         = var.penpot_api_key
 
   providers = {
     kubernetes = kubernetes
