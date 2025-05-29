@@ -1,0 +1,15 @@
+[package]
+name = "zfs-iscsi-server"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+clap = { version = "4.5.24", features = ["derive"] }
+config = "0.15.8"
+prost = "0.13.5"
+serde = { version = "1.0.217", features = ["derive"] }
+tokio = { version = "1.43.0", features = ["full"] }
+tonic = "0.12.3"
+
+[build-dependencies]
+tonic-build = "0.12.3"

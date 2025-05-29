@@ -1,0 +1,38 @@
+syntax = "proto3";
+
+package zfs;
+
+service ZfsService {
+    rpc CreateZvol(CreateZvolRequest) returns (CreateZvolResponse);
+    rpc DeleteZvol(DeleteZvolRequest) returns (DeleteZvolResponse);
+    rpc ResizeZvol(ResizeZvolRequest) returns (ResizeZvolResponse);
+}
+
+message CreateZvolRequest {
+    string name = 1;
+    string size = 2;
+}
+
+message CreateZvolResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message DeleteZvolRequest {
+    string name = 1;
+}
+
+message DeleteZvolResponse {
+    bool success = 1;
+    string message = 2;
+}
+
+message ResizeZvolRequest {
+    string name = 1;
+    string new_size = 2;
+}
+
+message ResizeZvolResponse {
+    bool success = 1;
+    string message = 2;
+}
