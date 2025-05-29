@@ -104,7 +104,7 @@ resource "helm_release" "immich" {
 
   set {
     name  = "image.tag"
-    value = "v1.132.3"
+    value = "v1.134.0"
   }
 
   set {
