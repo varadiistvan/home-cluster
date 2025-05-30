@@ -38,7 +38,7 @@ RUN cargo zigbuild -r --target x86_64-unknown-linux-musl --target aarch64-unknow
   cp /app/target/x86_64-unknown-linux-musl/release/${APP_NAME} /app/linux/amd64
 
 
-FROM alpine:3.18 AS final
+FROM alpine:3.21 AS final
 
 ARG TARGETPLATFORM
 
