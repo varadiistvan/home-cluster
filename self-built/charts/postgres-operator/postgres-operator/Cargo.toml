@@ -5,7 +5,7 @@ edition = "2021"
 
 [dependencies]
 tokio = { version = "1.43.0", features = ["macros", "rt-multi-thread"] }
-kube = { version = "0.99", default-features = true, features = [
+kube = { version = "1.0", default-features = true, features = [
   "derive",
   "runtime",
 ] }
