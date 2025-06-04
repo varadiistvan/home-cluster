@@ -25,7 +25,7 @@ resource "helm_release" "metallb" {
   name       = "lb"
   namespace  = kubernetes_namespace.metallb.metadata[0].name
   chart      = "metallb"
-  version    = "0.14.9"
+  version    = "0.15.2"
   repository = "https://metallb.github.io/metallb"
   # values     = [file("${path.module}/metallb-values.yaml")]
   timeout    = 600
