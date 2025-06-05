@@ -8,7 +8,7 @@ resource "helm_release" "ingress" {
   name       = "ingress"
   namespace  = kubernetes_namespace.ingress.metadata[0].name
   chart      = "ingress-nginx"
-  version    = "4.12.2"
+  version    = "4.12.3"
   repository = "https://kubernetes.github.io/ingress-nginx"
   values     = [file("${path.module}/ingress-nginx-values.yaml")]
   timeout    = 500
