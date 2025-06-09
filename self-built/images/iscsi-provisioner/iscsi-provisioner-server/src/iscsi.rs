@@ -1,7 +1,7 @@
 use crate::models::Lun;
-use std::fs;
 use std::path::Path;
 use std::process::{Command, Output};
+use std::{env, fs};
 use xattr::{get, set};
 
 // Utility to run a command and get its output with error handling
@@ -23,6 +23,7 @@ pub fn create_and_expose_lun(
     target_name: &str,
     lun_path: &str,
     size_gb: u64,
+    initiator_cidr: &str,
 ) -> Result<usize, String> {
     // Create the LUN image file using existing function
     create_lun_image(lun_path, size_gb).map_err(|e| format!("Error creating LUN image: {}", e))?;
@@ -31,7 +32,7 @@ pub fn create_and_expose_lun(
     set_api_managed_xattr(lun_path).map_err(|e| format!("Error setting xattr: {}", e))?;
 
     // Create and expose the LUN via iSCSI using existing function
-    create_iscsi_lun(target_name, lun_path)
+    create_iscsi_lun(target_name, lun_path, initiator_cidr)
         .map_err(|e| format!("Failed to create and expose LUN: {}", e))
 }
 
@@ -190,6 +191,46 @@ fn get_next_available_tid() -> Result<usize, String> {
     Ok(max_tid + 1) // Next available TID
 }
 
+pub fn create_iscsi_portal() -> Result<u16, String> {
+    // 1) Determine desired portal address
+    let portal_port: u16 = env::var("ISCSI_PORTAL")
+        .map(|p| p.parse().expect("Invalid portal address"))
+        .unwrap_or(3260);
+    let portal = format!("0.0.0.0:{portal_port}");
+
+    // 2) List existing portals
+    let output = run_command(
+        "tgtadm",
+        &["--lld", "iscsi", "--mode", "portal", "--op", "show"],
+    )
+    .map_err(|e| format!("Failed to list portals: {}", e))?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    dbg!(&stdout);
+    // If it's already present, just return it
+    if stdout.lines().any(|line| line.contains(&portal)) {
+        return Ok(portal_port);
+    }
+
+    // 3) Otherwise, create it
+    run_command(
+        "tgtadm",
+        &[
+            "--lld",
+            "iscsi",
+            "--mode",
+            "portal",
+            "--op",
+            "new",
+            "--param",
+            &format!("portal={}", &portal),
+        ],
+    )
+    .map_err(|e| format!("Failed to create portal {}: {}", portal, e))?;
+
+    Ok(portal_port)
+}
+
 // Utility: Create and expose an iSCSI LUN with dynamic target
 fn create_iscsi_lun(
     target_name: &str,
@@ -261,11 +302,47 @@ fn create_iscsi_lun(
 }
 
 fn list_active_connections(target_name: &str) -> Result<bool, String> {
+    let tid = get_tid_for_target(target_name)?;
     let output = run_command(
         "tgtadm",
-        &["--lld", "iscsi", "--mode", "conn", "--op", "show"],
+        &[
+            "--lld",
+            "iscsi",
+            "--mode",
+            "conn",
+            "--op",
+            "show",
+            "--tid",
+            &tid.to_string(),
+        ],
     )?;
     Ok(String::from_utf8_lossy(&output.stdout).contains(target_name))
+}
+
+fn get_initiator_cidr(target_name: &str) -> Result<String, String> {
+    let output = run_command(
+        "tgtadm",
+        &[
+            "--lld",
+            "iscsi",
+            "--mode",
+            "target",
+            "--op",
+            "show",
+            "--targetname",
+            target_name,
+        ],
+    )?;
+
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    for line in stdout.lines() {
+        // assume the line looks like: "    Initiator CIDR: 192.168.1.0/24"
+        if let Some(rest) = line.trim().strip_prefix("Initiator CIDR:") {
+            return Ok(rest.trim().to_string());
+        }
+    }
+
+    Err("Failed to parse Initiator CIDR from existing target".to_string())
 }
 
 // Function: ACID Rename an iSCSI LUN target, handling active connections
@@ -286,7 +363,9 @@ pub fn rename_iscsi_target(
         return Err("New target name already exists".to_string());
     }
 
-    create_iscsi_lun(new_target_name, lun_path)?;
+    let initiator_cidr = get_initiator_cidr(old_target_name)?;
+
+    create_iscsi_lun(new_target_name, lun_path, &initiator_cidr)?;
 
     if let Err(e) = run_command(
         "tgtadm",
@@ -326,38 +405,37 @@ pub fn delete_iscsi_lun(
     lun_path: &str,
     delete_store: bool,
 ) -> Result<(), String> {
-    if list_active_connections(target_name)? {
-        return Err("Cannot delete: Active connections detected".to_string());
+    let active_connections = list_active_connections(target_name);
+
+    if active_connections.is_err() || !active_connections.unwrap() {
+        println!("No active connections found for target: {}", target_name);
+    } else {
+        return Err(format!(
+            "Cannot delete target '{}': Active connections detected",
+            target_name
+        ));
     }
 
-    run_command(
-        "tgtadm",
-        &[
-            "--lld",
-            "iscsi",
-            "--mode",
-            "logicalunit",
-            "--op",
-            "delete",
-            "--targetname",
-            target_name,
-            "--lun",
-            "0",
-        ],
-    )?;
-    run_command(
-        "tgtadm",
-        &[
-            "--lld",
-            "iscsi",
-            "--mode",
-            "target",
-            "--op",
-            "delete",
-            "--targetname",
-            target_name,
-        ],
-    )?;
+    let tid = get_tid_for_target(target_name)
+        .map_err(|e| format!("Failed to get TID for target '{}': {}", target_name, e));
+
+    if tid.is_ok() {
+        if let Err(e) = run_command(
+            "tgtadm",
+            &[
+                "--lld",
+                "iscsi",
+                "--mode",
+                "target",
+                "--op",
+                "delete",
+                "--tid",
+                &tid.unwrap().to_string(),
+            ],
+        ) {
+            eprintln!("{e}");
+        };
+    }
 
     if delete_store {
         fs::remove_file(lun_path)
@@ -365,4 +443,34 @@ pub fn delete_iscsi_lun(
     }
 
     Ok(())
+}
+
+fn get_tid_for_target(target_name: &str) -> Result<usize, String> {
+    // 1) List all targets
+    let output = run_command(
+        "tgtadm",
+        &["--lld", "iscsi", "--mode", "target", "--op", "show"],
+    )
+    .map_err(|e| format!("Failed to list iSCSI targets: {}", e))?;
+
+    // 2) Parse stdout line by line
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    for line in stdout.lines() {
+        let line = line.trim();
+        // Look for lines like: "Target 3: iqn.2025-06.com.example:target1"
+        if let Some(rest) = line.strip_prefix("Target ") {
+            if let Some((tid_str, name)) = rest.split_once(':') {
+                let name = name.trim();
+                if name == target_name {
+                    let tid = tid_str
+                        .trim()
+                        .parse::<usize>()
+                        .map_err(|e| format!("Failed to parse TID '{}': {}", tid_str, e))?;
+                    return Ok(tid);
+                }
+            }
+        }
+    }
+
+    Err(format!("TID for target '{}' not found", target_name))
 }

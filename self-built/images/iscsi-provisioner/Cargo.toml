@@ -1,0 +1,3 @@
+[workspace]
+
+members = [ "iscsi-provisioner-client","iscsi-provisioner-server"]

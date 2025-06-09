@@ -5,12 +5,9 @@ use axum::{
     routing::{get, post},
 };
 use chrono::Datelike;
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use std::env;
-use tower_http::{
-    auth::AddAuthorizationLayer,
-    validate_request::{ValidateRequestHeader, ValidateRequestHeaderLayer},
-};
+use tower_http::validate_request::ValidateRequestHeaderLayer;
 
 use crate::{get_lun_base_path, iscsi, models::Lun};
 
@@ -44,26 +41,29 @@ async fn create_lun(
 ) -> Result<Json<Lun>, (StatusCode, String)> {
     let lun_path = format!("{}/{}.img", get_lun_base_path(), payload.target_name);
     let current_date = chrono::Local::now();
-    let year = current_date.year();
-    let month = current_date.month();
+    let _year = current_date.year();
+    let _month = current_date.month();
 
-    let target_name = format!("iqn.{year}-{month:02}.{}", &payload.target_name);
-    match iscsi::create_and_expose_lun(&target_name, &lun_path, payload.size_gb) {
-        Ok(_) => Ok(Json(Lun {
-            id: 0,
+    let target_name = format!("iqn.{}", &payload.target_name);
+    let portal =
+        iscsi::create_iscsi_portal().map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e))?;
+    match iscsi::create_and_expose_lun(&target_name, &lun_path, payload.size_gb, &payload.initiator)
+    {
+        Ok(tid) => Ok(Json(Lun {
+            id: tid,
             size_gb: payload.size_gb,
-            initiator: "idk".into(),
+            initiator: payload.initiator,
             target_name,
-            target_portal: "huh".into(),
+            target_portal: portal.to_string(),
         })),
         Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, e)),
     }
 }
 
-async fn list_luns() -> Json<Vec<Lun>> {
+async fn list_luns() -> Result<Json<Vec<Lun>>, String> {
     match iscsi::list_luns() {
-        Ok(luns) => Json(&luns)
-        Err(e) => Json(format!("Error: {}", e)),
+        Ok(luns) => Ok(Json(luns)),
+        Err(e) => Err(format!("Error: {}", e)),
     }
 }
 
@@ -75,7 +75,9 @@ async fn resize_lun(Json(payload): Json<ResizeLunRequest>) -> Json<String> {
     }
 }
 
-async fn rename_lun(Json(payload): Json<RenameLunRequest>) -> Json<String> {
+async fn rename_lun(
+    Json(payload): Json<RenameLunRequest>,
+) -> Result<Json<String>, (StatusCode, String)> {
     let old_lun_path = format!("{}/{}.img", get_lun_base_path(), payload.old_target_name);
     let new_lun_path = format!("{}/{}.img", get_lun_base_path(), payload.new_target_name);
     match iscsi::rename_iscsi_target(
@@ -83,21 +85,30 @@ async fn rename_lun(Json(payload): Json<RenameLunRequest>) -> Json<String> {
         &payload.new_target_name,
         &new_lun_path,
     ) {
-        Ok(_) => Json("LUN renamed successfully".to_string()),
-        Err(e) => Json(format!("Error: {}", e)),
+        Ok(_) => {
+            std::fs::rename(&old_lun_path, &new_lun_path).map_err(|e| {
+                (
+                    StatusCode::INTERNAL_SERVER_ERROR,
+                    format!("Error renaming LUN file: {}", e),
+                )
+            })?;
+            Ok(Json("LUN renamed successfully".to_string()))
+        }
+        Err(e) => Err((StatusCode::INTERNAL_SERVER_ERROR, format!("Error: {}", e))),
     }
 }
 
 async fn delete_lun(Json(payload): Json<DeleteLunRequest>) -> Json<String> {
     let lun_path = format!("{}/{}.img", get_lun_base_path(), payload.target_name);
-    match iscsi::delete_iscsi_lun(&payload.target_name, &lun_path, payload.delete_store) {
+    let target_name = format!("iqn.{}", &payload.target_name);
+    match iscsi::delete_iscsi_lun(&target_name, &lun_path, payload.delete_store) {
         Ok(_) => Json("LUN deleted successfully".to_string()),
         Err(e) => Json(format!("Error: {}", e)),
     }
 }
 
 async fn get_lun_info(Path(target_name): Path<String>) -> Json<String> {
-    let lun_path = format!("{}/{}.img", get_lun_base_path(), target_name);
+    let _lun_path = format!("{}/{}.img", get_lun_base_path(), target_name);
     Json(format!(
         "Info for target {} not yet implemented",
         target_name
