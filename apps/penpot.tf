@@ -101,7 +101,7 @@ resource "helm_release" "penpot" {
   namespace  = kubernetes_namespace.apps.metadata[0].name
   chart      = "penpot"
   repository = "https://helm.penpot.app"
-  version    = "0.21.0"
+  version    = "0.22.0"
   values     = [file("${path.module}/values/penpot-values.yaml")]
   depends_on = [kubernetes_namespace.apps, kubernetes_secret.penpot_api_key, time_sleep.penpot_wait, kubernetes_secret.penpot_redis_uri]
   timeout    = 600
