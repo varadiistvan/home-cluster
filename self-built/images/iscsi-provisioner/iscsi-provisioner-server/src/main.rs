@@ -28,10 +28,9 @@ async fn main() {
         .nest("/api/v1/", v1::get_routes())
         .layer(ServiceBuilder::new().layer(CompressionLayer::new()));
 
-    let port: u16 = env::var("ISCSI_PORT")
-        .map(|p| p.parse())
-        .unwrap_or(Ok(3000))
-        .expect("ISCSI_PORT should be a valid port");
+    let port: u16 = env::var("ISCSI_SERVER_PORT")
+        .map(|p| p.parse().expect("ISCSI_PORT should be a valid port"))
+        .unwrap_or(3000);
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     println!("Listening on {}", addr);
