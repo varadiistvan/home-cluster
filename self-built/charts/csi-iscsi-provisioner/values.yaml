@@ -1,0 +1,72 @@
+# -- Configuration for the RBAC resources.
+rbac:
+  controllerServiceAccount:
+    name: csi-iscsi-custom-controller-sa
+  nodeServiceAccount:
+    name: csi-iscsi-custom-node-sa
+
+# -- Configuration for your custom provisioner (Controller Plugin).
+controllerPlugin:
+  # -- A list of image pull secrets to use for pulling the controller image.
+  imagePullSecrets:
+    - name: registry-pass
+
+  image:
+    repository: registry.stevevaradi.me/csi-iscsi-provisioner
+    pullPolicy: IfNotPresent
+    tag: "0.6.0"
+  sidecar:
+    provisioner:
+      image:
+        repository: registry.k8s.io/sig-storage/csi-provisioner
+        tag: "v4.0.0"
+
+# -- Configuration for the iSCSI Node Plugin (DaemonSet).
+nodePlugin:
+  # -- A list of image pull secrets to use for pulling the node plugin images.
+  imagePullSecrets:
+    - name: registry-pass
+  image:
+    # This is the official iSCSI node plugin from Kubernetes CSI.
+    repository: registry.stevevaradi.me/csi-driver-iscsi-arm
+    pullPolicy: Always
+    # Using a known stable tag
+    tag: "v2.8.4"
+  sidecar:
+    registrar:
+      image:
+        repository: registry.k8s.io/sig-storage/csi-node-driver-registrar
+        tag: "v2.10.0"
+    livenessProbe:
+      image:
+        repository: registry.k8s.io/sig-storage/livenessprobe
+        tag: "v2.11.0"
+
+# -- Configuration for your Rust iSCSI API server.
+apiServer:
+  # -- The full URL of your Rust iSCSI API server.
+  url: "http://your-rust-server-url"
+
+  # -- The secret token for authenticating with your API server.
+  token: ""
+
+  # -- The name of a pre-existing secret that contains the API token.
+  existingSecret: ""
+
+# -- Configuration for the StorageClass and CSIDriver objects.
+storageClass:
+  # -- Set to true to create a StorageClass.
+  create: true
+  # -- The globally unique name for your CSI driver.
+  # This name MUST be consistent across all components.
+  provisioner: iscsi.my-company.com
+  # -- The name of the StorageClass resource.
+  name: my-dynamic-iscsi
+  # -- Make this the default StorageClass for the cluster.
+  isDefaultClass: false
+  allowVolumeExpansion: true
+  reclaimPolicy: Delete
+  parameters:
+    iscsiServerAddress: "192.168.1.100"
+    allowedCIDR: "192.168.1.0/24"
+    fsType: "ext4"

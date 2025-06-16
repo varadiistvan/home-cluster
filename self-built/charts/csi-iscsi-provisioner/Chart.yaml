@@ -1,0 +1,6 @@
+apiVersion: v2
+name: csi-iscsi-provisioner-chart
+description: A Helm chart for deploying the custom iSCSI CSI provisioner
+type: application
+version: 0.8.0
+appVersion: "0.4.0"

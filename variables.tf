@@ -49,3 +49,8 @@ variable "penpot_api_key" {
   type      = string
   sensitive = true
 }
+
+variable "iscsi_provisioner_token" {
+  type      = string
+  sensitive = true
+}
