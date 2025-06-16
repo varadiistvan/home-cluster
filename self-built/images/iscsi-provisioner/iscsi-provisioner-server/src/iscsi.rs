@@ -355,46 +355,119 @@ pub fn delete_iscsi_lun(
     lun_path: &str,
     delete_store: bool,
 ) -> Result<(), String> {
-    let active_connections = list_active_connections(target_name);
-
-    if active_connections.is_err() || !active_connections.unwrap() {
-        println!("No active connections found for target: {}", target_name);
-    } else {
+    // 1. Check for active network sessions. This is a good safety measure.
+    if list_active_connections(target_name)? {
         return Err(format!(
-            "Cannot delete target '{}': Active connections detected",
+            "Cannot delete target '{}': Active connections detected.",
             target_name
         ));
+    } else {
+        println!("No active connections found for target: {}", target_name);
     }
 
-    let tid = get_tid_for_target(target_name)
-        .map_err(|e| format!("Failed to get TID for target '{}': {}", target_name, e));
+    // 2. Get the Target ID (TID) for the given target name.
+    let tid = match get_tid_for_target(target_name) {
+        Ok(id) => id,
+        Err(e) => {
+            // If the target doesn't exist, we can consider the deletion successful.
+            println!(
+                "Could not find TID for target '{}', assuming it's already deleted: {}",
+                target_name, e
+            );
+            // If we're meant to delete the store, do so.
+            if delete_store && Path::new(lun_path).exists() {
+                fs::remove_file(lun_path).map_err(|e| {
+                    format!("Failed to delete orphaned LUN image '{}': {}", lun_path, e)
+                })?;
+            }
+            return Ok(());
+        }
+    };
+    let tid_str = tid.to_string();
 
-    if tid.is_ok() {
-        if let Err(e) = run_command(
-            "tgtadm",
-            &[
-                "--lld",
-                "iscsi",
-                "--mode",
-                "target",
-                "--op",
-                "delete",
-                "--tid",
-                &tid.unwrap().to_string(),
-            ],
-        ) {
-            eprintln!("{e}");
-        };
+    // 3. (NEW) Delete the Logical Unit (LUN 1) from the target.
+    // This must be done before unbinding or deleting the target.
+    if let Err(e) = run_command(
+        "tgtadm",
+        &[
+            "--lld",
+            "iscsi",
+            "--mode",
+            "logicalunit",
+            "--op",
+            "delete",
+            "--tid",
+            &tid_str,
+            "--lun",
+            "1", // Assuming LUN is always 1, as in the creation logic
+        ],
+    ) {
+        // Log the error but continue, as the target might be in a partially deleted state.
+        eprintln!(
+            "Warning: Failed to delete logical unit for TID {}: {}. Continuing deletion.",
+            tid, e
+        );
     }
 
+    // 4. (NEW) Unbind the initiator address from the target.
+    // This removes the ACL rule.
+    match get_initiator_cidr(target_name) {
+        Ok(initiator_cidr) => {
+            if let Err(e) = run_command(
+                "tgtadm",
+                &[
+                    "--lld",
+                    "iscsi",
+                    "--mode",
+                    "target",
+                    "--op",
+                    "unbind",
+                    "--tid",
+                    &tid_str,
+                    "--initiator-address",
+                    &initiator_cidr,
+                ],
+            ) {
+                eprintln!(
+                    "Warning: Failed to unbind initiator for TID {}: {}. Continuing deletion.",
+                    tid, e
+                );
+            }
+        }
+        Err(e) => {
+            eprintln!(
+                "Warning: Could not get initiator CIDR for target '{}' to unbind: {}",
+                target_name, e
+            );
+        }
+    }
+
+    // 5. Delete the target itself. This should now succeed.
+    if let Err(e) = run_command(
+        "tgtadm",
+        &[
+            "--lld", "iscsi", "--mode", "target", "--op", "delete", "--tid", &tid_str,
+        ],
+    ) {
+        // This is the command that was originally failing.
+        // If it still fails, there's a more serious issue, so we return the error.
+        return Err(format!(
+            "Failed to delete target '{}' (TID {}): {}",
+            target_name, tid, e
+        ));
+    };
+
+    println!("Successfully deleted iSCSI target: {}", target_name);
+
+    // 6. Optionally, delete the backing storage file.
     if delete_store {
         fs::remove_file(lun_path)
             .map_err(|e| format!("Failed to delete LUN image '{}': {}", lun_path, e))?;
+        println!("Successfully deleted LUN image: {}", lun_path);
     }
 
     Ok(())
 }
-
 fn get_tid_for_path(path: &Path) -> Result<usize, String> {
     get(path, "user.iscsi-id")
         .map_err(|e| format!("Failed to get xattr for path '{}': {}", path.display(), e))
