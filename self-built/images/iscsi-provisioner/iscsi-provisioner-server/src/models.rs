@@ -4,7 +4,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Debug, Serialize, Deserialize, Clone)]
 pub struct Lun {
     pub id: usize,
-    pub size_gb: u64,
+    pub size_bytes: i64,
     pub initiator: String,
     pub target_name: String,
     pub target_portal: String,

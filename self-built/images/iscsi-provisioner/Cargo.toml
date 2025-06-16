@@ -1,3 +1,9 @@
 [workspace]
 
-members = [ "iscsi-provisioner-client","iscsi-provisioner-server"]
+members = ["iscsi-provisioner-server"]
+resolver = "2"
+
+[workspace.package]
+edition = "2024"
+
+[workspace.dependencies]

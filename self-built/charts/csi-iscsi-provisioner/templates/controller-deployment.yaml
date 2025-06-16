@@ -1,0 +1,100 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: {{ include "csi-provisioner.fullname" . }}-controller
+  namespace: {{ .Release.Namespace }}
+  labels:
+    app.kubernetes.io/component: controller
+    {{- include "csi-provisioner.labels" . | nindent 4 }}
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/component: controller
+      {{- include "csi-provisioner.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/component: controller
+        {{- include "csi-provisioner.selectorLabels" . | nindent 8 }}
+    spec:
+      serviceAccountName: {{ include "csi-provisioner.controllerServiceAccountName" . }}
+      {{- with .Values.controllerPlugin.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml . | nindent 8 }}
+      {{- end }}
+      containers:
+        # YOUR CUSTOM CONTROLLER PLUGIN
+        - name: iscsi-custom-provisioner
+          image: "{{ .Values.controllerPlugin.image.repository }}:{{ .Values.controllerPlugin.image.tag | default .Chart.AppVersion }}"
+          imagePullPolicy: {{ .Values.controllerPlugin.image.pullPolicy }}
+          args:
+            - "--endpoint=$(CSI_ENDPOINT)"
+          env:
+            - name: CSI_ENDPOINT
+              value: unix:///var/lib/csi/csi.sock
+            - name: API_SERVER_URL
+              value: {{ .Values.apiServer.url | quote }}
+            - name: API_TOKEN_PATH
+              value: "/etc/csi-secret/token"
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi
+            {{- if or .Values.apiServer.token .Values.apiServer.existingSecret }}
+            - name: secret-storage
+              mountPath: "/etc/csi-secret"
+              readOnly: true
+            {{- end }}
+        # EXTERNAL-PROVISIONER SIDECAR
+        - name: csi-provisioner
+          image: "registry.k8s.io/sig-storage/csi-provisioner:v4.0.0"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--csi-address=$(ADDRESS)"
+            - "--v=5"
+            - "--feature-gates=Topology=true"
+            - "--extra-create-metadata=true"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi
+        # EXTERNAL-ATTACHER SIDECAR (CRITICAL FIX)
+        - name: csi-attacher
+          image: "registry.k8s.io/sig-storage/csi-attacher:v4.5.0"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--v=5"
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi
+        # EXTERNAL-RESIZER SIDECAR
+        - name: csi-resizer
+          image: "registry.k8s.io/sig-storage/csi-resizer:v1.10.0"
+          imagePullPolicy: IfNotPresent
+          args:
+            - "--v=5"
+            - "--csi-address=$(ADDRESS)"
+          env:
+            - name: ADDRESS
+              value: /var/lib/csi/csi.sock
+          volumeMounts:
+            - name: socket-dir
+              mountPath: /var/lib/csi
+      volumes:
+        - name: socket-dir
+          emptyDir: {}
+        {{- if or .Values.apiServer.token .Values.apiServer.existingSecret }}
+        - name: secret-storage
+          secret:
+            {{- if .Values.apiServer.existingSecret }}
+            secretName: {{ .Values.apiServer.existingSecret }}
+            {{- else }}
+            secretName: {{ include "csi-provisioner.fullname" . }}-api-secret
+            {{- end }}
+        {{- end }}

@@ -22,14 +22,17 @@ fn run_command(command: &str, args: &[&str]) -> Result<Output, String> {
 pub fn create_and_expose_lun(
     target_name: &str,
     lun_path: &str,
-    size_gb: u64,
+    size_bytes: i64,
     initiator_cidr: &str,
 ) -> Result<usize, String> {
     // Create the LUN image file using existing function
-    create_lun_image(lun_path, size_gb).map_err(|e| format!("Error creating LUN image: {}", e))?;
+    create_lun_image(lun_path, size_bytes)
+        .map_err(|e| format!("Error creating LUN image: {}", e))?;
 
     // Mark the LUN as managed by this service using xattr
-    set_api_managed_xattr(lun_path).map_err(|e| format!("Error setting xattr: {}", e))?;
+
+    set(lun_path, "user.iscsi-api", b"managed")
+        .map_err(|e| format!("Error setting xattr: {}", e))?;
 
     // Create and expose the LUN via iSCSI using existing function
     create_iscsi_lun(target_name, lun_path, initiator_cidr)
@@ -37,7 +40,7 @@ pub fn create_and_expose_lun(
 }
 
 // Utility: Create a LUN image file
-fn create_lun_image(path: &str, size_gb: u64) -> Result<Output, String> {
+fn create_lun_image(path: &str, size_bytes: i64) -> Result<Output, String> {
     let exists = Path::new(path).try_exists();
 
     if exists.is_err() || exists.is_ok_and(|e| e) {
@@ -46,24 +49,19 @@ fn create_lun_image(path: &str, size_gb: u64) -> Result<Output, String> {
 
     run_command(
         "qemu-img",
-        &["create", "-f", "raw", path, &format!("{}G", size_gb)],
+        &["create", "-f", "raw", path, &format!("{}", size_bytes)],
     )
     .map_err(|e| format!("Error creating LUN image: {}", e))
 }
 
-// Utility: Set xattr to mark a LUN as API-managed
-fn set_api_managed_xattr(path: &str) -> Result<(), String> {
-    set(path, "user.iscsi-api", b"managed").map_err(|e| format!("Error setting xattr: {}", e))
-}
-
 // Utility: Get LUN image size using qemu-img info
-fn get_lun_size(path: &str) -> Result<u64, String> {
+fn get_lun_size(path: &str) -> Result<i64, String> {
     let output = run_command("qemu-img", &["info", "--output", "json", path])?;
     let info: serde_json::Value = serde_json::from_slice(&output.stdout)
         .map_err(|e| format!("Failed to parse qemu-img info JSON: {}", e))?;
 
-    if let Some(virtual_size) = info["virtual-size"].as_u64() {
-        Ok(virtual_size / (1024 * 1024 * 1024)) // Convert bytes to GB
+    if let Some(virtual_size) = info["virtual-size"].as_i64() {
+        Ok(virtual_size)
     } else {
         Err("Failed to retrieve LUN size from qemu-img info".to_string())
     }
@@ -108,10 +106,10 @@ pub fn list_luns() -> Result<Vec<Lun>, String> {
             let parts: Vec<&str> = line.split_whitespace().collect();
             if parts.len() >= 4 {
                 let lun_path = parts[3];
-                if let Ok(size_gb) = get_lun_size(lun_path) {
+                if let Ok(size_bytes) = get_lun_size(lun_path) {
                     luns.push(Lun {
                         id: 1,
-                        size_gb,
+                        size_bytes,
                         initiator: "".to_string(),
                         target_name: current_target.clone(),
                         target_portal: target_portal.clone(),
@@ -125,23 +123,26 @@ pub fn list_luns() -> Result<Vec<Lun>, String> {
 }
 
 // Resize a LUN and dynamically update the iSCSI target
-pub fn resize_lun(target_name: &str, path: &str, new_size_gb: u64) -> Result<(), String> {
+pub fn resize_lun(target_name: &str, path: &str, new_size_bytes: i64) -> Result<(), String> {
     if !is_api_managed(path)? {
         return Err("LUN is not managed by API".to_string());
     }
 
-    let current_size_gb = get_lun_size(path)?;
+    let current_size_bytes = get_lun_size(path)?;
 
-    if new_size_gb == current_size_gb {
+    if new_size_bytes == current_size_bytes {
         return Ok(()); // No action needed if the size is unchanged
     }
 
-    if new_size_gb < current_size_gb {
+    if new_size_bytes < current_size_bytes {
         return Err("Cannot resize to a smaller size".to_string());
     }
 
     // Resize the LUN image
-    run_command("qemu-img", &["resize", path, &format!("{}G", new_size_gb)])?;
+    run_command(
+        "qemu-img",
+        &["resize", path, &format!("{}", new_size_bytes)],
+    )?;
 
     // Directly update the LUN in the iSCSI target without deleting
     run_command(
@@ -298,6 +299,9 @@ fn create_iscsi_lun(
     )
     .map_err(|e| format!("Failed to attach LUN to target '{}': {}", target_name, e))?;
 
+    set(lun_path, "user.iscsi-id", &next_tid.to_ne_bytes())
+        .map_err(|e| format!("Error setting xattr on LUN '{}': {}", lun_path, e))?;
+
     Ok(next_tid)
 }
 
@@ -345,60 +349,6 @@ fn get_initiator_cidr(target_name: &str) -> Result<String, String> {
     Err("Failed to parse Initiator CIDR from existing target".to_string())
 }
 
-// Function: ACID Rename an iSCSI LUN target, handling active connections
-pub fn rename_iscsi_target(
-    old_target_name: &str,
-    new_target_name: &str,
-    lun_path: &str,
-) -> Result<(), String> {
-    if list_active_connections(old_target_name)? {
-        return Err("Cannot rename: Active connections detected".to_string());
-    }
-
-    let output = run_command(
-        "tgtadm",
-        &["--lld", "iscsi", "--mode", "target", "--op", "show"],
-    )?;
-    if String::from_utf8_lossy(&output.stdout).contains(new_target_name) {
-        return Err("New target name already exists".to_string());
-    }
-
-    let initiator_cidr = get_initiator_cidr(old_target_name)?;
-
-    create_iscsi_lun(new_target_name, lun_path, &initiator_cidr)?;
-
-    if let Err(e) = run_command(
-        "tgtadm",
-        &[
-            "--lld",
-            "iscsi",
-            "--mode",
-            "target",
-            "--op",
-            "delete",
-            "--targetname",
-            old_target_name,
-        ],
-    ) {
-        run_command(
-            "tgtadm",
-            &[
-                "--lld",
-                "iscsi",
-                "--mode",
-                "target",
-                "--op",
-                "delete",
-                "--targetname",
-                new_target_name,
-            ],
-        )?;
-        return Err(format!("Failed to delete old target: {}. Rolled back.", e));
-    }
-
-    Ok(())
-}
-
 // Function: Delete an iSCSI LUN with optional store deletion, handling active connections
 pub fn delete_iscsi_lun(
     target_name: &str,
@@ -443,6 +393,23 @@ pub fn delete_iscsi_lun(
     }
 
     Ok(())
+}
+
+fn get_tid_for_path(path: &Path) -> Result<usize, String> {
+    get(path, "user.iscsi-id")
+        .map_err(|e| format!("Failed to get xattr for path '{}': {}", path.display(), e))
+        .and_then(|opt| {
+            opt.ok_or_else(|| format!("No xattr found for path '{}'", path.display()))
+                .and_then(|value| {
+                    value.try_into().map(usize::from_ne_bytes).map_err(|e| {
+                        format!(
+                            "Failed to convert xattr value to TID for path '{}': {:?}",
+                            path.display(),
+                            e
+                        )
+                    })
+                })
+        })
 }
 
 fn get_tid_for_target(target_name: &str) -> Result<usize, String> {

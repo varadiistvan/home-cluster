@@ -1,0 +1,18 @@
+---
+apiVersion: v1
+kind: Pod
+metadata:
+  name: nginx
+spec:
+  nodeSelector:
+    "kubernetes.io/os": linux
+  containers:
+    - image: nginx
+      name: nginx
+      volumeMounts:
+        - mountPath: /var/www
+          name: iscsi-volume
+  volumes:
+    - name: iscsi-volume
+      persistentVolumeClaim:
+        claimName: iscsiplugin-pvc
