@@ -100,7 +100,7 @@ module "apps" {
     time       = time
   }
 
-  depends_on = [module.networking, helm_release.nfs_provisioner]
+  depends_on = [module.networking, helm_release.nfs_provisioner, helm_release.iscsi_provisioner]
 }
 
 module "monitoring" {
