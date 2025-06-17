@@ -51,7 +51,7 @@ resource "helm_release" "misty_show" {
   name       = "misty-show"
   namespace  = kubernetes_namespace.monitoring.metadata[0].name
   chart      = "kube-prometheus-stack"
-  version    = "74.0.0"
+  version    = "75.1.0"
   repository = "https://prometheus-community.github.io/helm-charts"
   values     = [file("${path.module}/misty-show-values.yaml")]
   depends_on = [
