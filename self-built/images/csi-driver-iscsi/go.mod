@@ -77,7 +77,7 @@ require (
 	sigs.k8s.io/yaml v1.4.0 // indirect
 )
 
-require k8s.io/utils v0.0.0-20241104100929-3ea5e8cea738
+require k8s.io/utils v0.0.0-20250604170112-4c0f3b243397
 
 replace k8s.io/api => k8s.io/api v0.33.1
 
