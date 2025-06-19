@@ -10,7 +10,7 @@ require (
 	golang.org/x/net v0.41.0
 	google.golang.org/grpc v1.73.0
 	k8s.io/klog/v2 v2.130.1
-	k8s.io/kubernetes v1.29.14
+	k8s.io/kubernetes v1.33.2
 	k8s.io/mount-utils v0.29.14 // indirect
 )
 
@@ -41,7 +41,7 @@ require (
 	github.com/modern-go/concurrent v0.0.0-20180306012644-bacd9c7ef1dd // indirect
 	github.com/modern-go/reflect2 v1.0.2 // indirect
 	github.com/munnerz/goautoneg v0.0.0-20191010083416-a7dc8b61c822 // indirect
-	github.com/opencontainers/selinux v1.11.0 // indirect
+	github.com/opencontainers/selinux v1.11.1 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/prometheus/client_golang v1.22.0 // indirect
 	github.com/prometheus/client_model v0.6.1 // indirect
@@ -70,6 +70,7 @@ require (
 	k8s.io/cloud-provider v0.29.14 // indirect
 	k8s.io/component-base v0.33.1 // indirect
 	k8s.io/component-helpers v0.33.1 // indirect
+	k8s.io/controller-manager v0.33.1 // indirect
 	k8s.io/kube-openapi v0.0.0-20250318190949-c8a335a9a2ff // indirect
 	sigs.k8s.io/json v0.0.0-20241010143419-9aa6b5e7a4b3 // indirect
 	sigs.k8s.io/randfill v1.0.0 // indirect
