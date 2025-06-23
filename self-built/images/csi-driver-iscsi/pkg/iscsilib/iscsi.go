@@ -380,14 +380,13 @@ func (c *Connector) connectTarget(targetIqn string, target string, iFace string,
 }
 
 func (c *Connector) discoverTarget(targetIqn string, iFace string, portal string) error {
-	if c.DoDiscovery {
-		// build discoverydb and discover iscsi target
-		if err := Discoverydb(portal, iFace, c.DiscoverySecrets, c.DoCHAPDiscovery); err != nil {
-			klog.V(2).Infof("Error in discovery of the target: %s\n", err.Error())
-			return err
-		}
+	// build discoverydb and discover iscsi target
+	if err := Discoverydb(portal, iFace, c.DiscoverySecrets, c.DoCHAPDiscovery); err != nil {
+		klog.V(2).Infof("Error in discovery of the target: %s\n", err.Error())
+		return err
 	}
 
+	// build discoverydb and discover iscsi target
 	if c.DoCHAPDiscovery {
 		// Make sure we don't log the secrets
 		err := CreateDBEntry(targetIqn, portal, iFace, c.DiscoverySecrets, c.SessionSecrets)
@@ -395,6 +394,10 @@ func (c *Connector) discoverTarget(targetIqn string, iFace string, portal string
 			klog.V(2).Infof("Error creating db entry: %s\n", err.Error())
 			return err
 		}
+	}
+	if err := Discoverydb(portal, iFace, c.DiscoverySecrets, c.DoCHAPDiscovery); err != nil {
+		klog.V(2).Infof("Error in discovery of the target: %s\n", err.Error())
+		return err
 	}
 
 	return nil
