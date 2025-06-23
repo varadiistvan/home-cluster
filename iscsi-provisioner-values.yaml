@@ -14,7 +14,7 @@ controllerPlugin:
   image:
     repository: registry.stevevaradi.me/csi-iscsi-provisioner
     pullPolicy: IfNotPresent
-    tag: "0.5.3"
+    tag: "0.5.5"
   sidecar:
     provisioner:
       image:
@@ -31,7 +31,7 @@ nodePlugin:
     repository: registry.stevevaradi.me/csi-driver-iscsi-arm
     pullPolicy: Always
     # Using a known stable tag
-    tag: "v2.8.6"
+    tag: "v2.8.7"
   sidecar:
     registrar:
       image:
