@@ -15,7 +15,7 @@ resource "helm_release" "redis" {
   namespace  = kubernetes_namespace.apps.metadata[0].name
   chart      = "redis"
   repository = "oci://registry-1.docker.io/bitnamicharts/"
-  version    = "21.2.5"
+  version    = "21.2.6"
   values     = [file("${path.module}/values/redis-values.yaml")]
   depends_on = [kubernetes_namespace.apps, kubernetes_secret.redis_auth]
 }
