@@ -1,0 +1,52 @@
+replicaCount: 1
+image:
+  registry: registry.stevevaradi.me
+  repository: overleaf-kubernetes
+  tag: "5.5"
+  pullPolicy: IfNotPresent
+  pullSecrets: []
+
+mongo:
+  url: "mongodb://root:<password>@mongodb/sharelatex?authSource=admin"
+  existingSecret: ""
+  existingSecretKey: ""
+
+redis:
+  host: redis-headless
+  port: 6379
+  existingSecret: ""
+  existingSecretKey: ""
+
+overleaf:
+  appName: Overleaf
+  gitBridge:
+    enabled: false
+    host: git-bridge
+    port: 8000
+  v1HistoryUrl: "http://sharelatex:3100/api"
+
+persistence:
+  data:
+    enabled: true
+    name: overleaf-data
+    storageClassName: nfs-csi
+    size: 10Gi
+
+texlive:
+  packages:
+    - collection-latexrecommended
+    - collection-fontsrecommended
+    - collection-latexextra
+    - algorithms
+    - algorithmicx
+    - apacite
+
+ingress:
+  enabled: true
+  host: overleaf.stevevaradi.me
+  annotations:
+    nginx.ingress.kubernetes.io/proxy-body-size: "50m"
+    cert-manager.io/cluster-issuer: "letsencrypt"
+    nginx.ingress.kubernetes.io/whitelist-source-range: |
+      192.168.0.1/24,
+      10.192.1.1/24

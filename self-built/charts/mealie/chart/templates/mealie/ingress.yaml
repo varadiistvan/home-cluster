@@ -1,0 +1,37 @@
+{{- if .Values.mealie.ingress.enabled -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    katenary.v3/compose-hash: ebbb80442f0148efb82e8da118381d3ef9716d96
+    katenary.v3/version: release-3.0.0-rc2
+    {{- if .Values.mealie.ingress.annotations -}}
+        {{- toYaml .Values.mealie.ingress.annotations | nindent 4 }}
+    {{- end }}
+  labels:
+    {{- include "mealie.labels" . | nindent 4 }}
+    katenary.v3/component: mealie
+  name: '{{ include "mealie.fullname" . }}-mealie'
+spec:
+  {{- if ne .Values.mealie.ingress.class "-" }}
+  ingressClassName: '{{ tpl .Values.mealie.ingress.class $ }}'
+  {{- end }}
+  rules:
+  - host: '{{ tpl .Values.mealie.ingress.host $ }}'
+    http:
+      paths:
+      - backend:
+          service:
+            name: '{{ include "mealie.fullname" . }}-mealie'
+            port:
+              number: 9000
+        path: '{{ tpl .Values.mealie.ingress.path $ }}'
+        pathType: ImplementationSpecific
+  {{- if .Values.mealie.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - '{{ tpl .Values.mealie.ingress.host . }}'
+    secretName: '{{ include "mealie.fullname" . }}-mealie-tls'
+  {{ end -}}
+
+{{- end -}}

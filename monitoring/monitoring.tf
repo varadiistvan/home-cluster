@@ -78,6 +78,7 @@ resource "helm_release" "pi5_monitor" {
   chart      = "pi5-monitor"
   version    = "0.1.5"
   repository = "oci://registry.stevevaradi.me"
+  values     = [file("${path.module}/pi5-monitor-values.yaml")]
 
   set_list {
     name  = "image.pullSecrets"

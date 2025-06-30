@@ -1,0 +1,72 @@
+mealie:
+  repository:
+    image: ghcr.io/mealie-recipes/mealie
+    tag: v2.8.0
+
+  db:
+    existingSecret:
+      enabled: true
+      name: "mealie-postgres"
+
+  env:
+    ALLOW_SIGNUP: "false"
+    BASE_URL: https://mealie.stevevaradi.me
+    DB_ENGINE: postgres
+    PGID: "1000"
+    POSTGRES_DB: mealie
+    POSTGRES_PORT: "5432"
+    POSTGRES_SERVER: postgres-postgresql
+    POSTGRES_USER: mealie
+    PUID: "1000"
+    TZ: Europe/Amsterdam
+
+  persistence:
+    mealie_data:
+      storageClass: "nfs-csi"
+      size: 5Gi
+      accessMode:
+        - ReadWriteOnce
+      enabled: true
+  ingress:
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+      nginx.ingress.kubernetes.io/whitelist-source-range: >-
+        192.168.0.1/24,
+        10.192.1.1/24
+    host: mealie.stevevaradi.me
+    path: /
+    enabled: true
+    tls:
+      enabled: true
+  replicas: 1
+  nodeSelector: {}
+  # Resources allows you to specify the resource requests and limits for a service.
+  # Resources are used to specify the amount of CPU and memory that
+  # a container needs.
+  #
+  # e.g.
+  # resources:
+  #   requests:
+  #     memory: "64Mi"
+  #     cpu: "250m"
+  #   limits:
+  #     memory: "128Mi"
+  #     cpu: "500m"
+  resources: {}
+  # imagePullPolicy allows you to specify a policy to cache or always pull an image.
+  # You must provide a string value with one of the following values:
+  # - Always       -> will always pull the image
+  # - Never        -> will never pull the image, the image should be present on the node
+  # - IfNotPresent -> will pull the image only if it is not present on the node
+  # key: mealie.imagePullPolicy
+  imagePullPolicy: IfNotPresent
+  # key: mealie.serviceAccount
+  serviceAccount: ""
+
+# imagePullSecrets allows you to specify a name of an image pull secret.
+# You must provide a list of object with the name field set to the name of the
+# e.g.
+# pullSecrets:
+# - name: regcred
+# You are, for now, responsible for creating the secret.
+pullSecrets: []

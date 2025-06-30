@@ -1,65 +1,30 @@
-# Number of replicas for the deployment
 replicaCount: 1
 
-# Service account settings
 serviceAccount:
-  # Specifies whether a service account should be created
   create: true
 
-# Annotations to add to the pod
 podAnnotations: {}
 
-# Environment variables
 env:
   - name: TZ
     value: Europe/Amsterdam
-# - name: TZ
-#   value: Europe/Prague
-# - name: SOME_VAR_FROM_CONFIG_MAP
-#   valueFrom:
-#     configMapRef:
-#       name: configmap-name
-#       key: config-key
-# - name: SOME_SECRET
-#   valueFrom:
-#     secretKeyRef:
-#       name: secret-name
-#       key: secret-key
 
-# Use environment variables from ConfigMaps or Secrets
 envFrom: []
-# - configMapRef:
-#     name: config-map-name
-# - secretRef:
-#     name: secret-name
 
 hostPort:
   enabled: false
 
-# Specifies if the containers should be started in hostNetwork mode.
-#
 # Required for use auto-discovery feature of Home Assistant
 hostNetwork: true
 
-# Set the dnsPolicy (you'll want ClusterFirstWithHostNet if running on hostNetwork to reac
-# other k8s services via DNS
 dnsPolicy: ClusterFirstWithHostNet
 
-# Service settings
 service:
-  # Service type (ClusterIP, NodePort, LoadBalancer, or ExternalName)
   type: ClusterIP
-  # Service port
   port: 8080
-  # Annotations to add to the service
-  annotations: {}
 
-# Ingress settings
 ingress:
-  # Enable ingress for home assistant
   enabled: true
-  className: ""
-  labels: {}
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
     nginx.ingress.kubernetes.io/whitelist-source-range: >-
@@ -75,27 +40,12 @@ ingress:
       hosts:
         - ha.stevevaradi.me
 
-# Resource settings for the container
-resources:
-  {}
-  # We usually recommend not to specify default resources and to leave this as a conscious
-  # choice for the user. This also increases chances charts run on environments with little
-  # resources, such as Minikube. If you do want to specify resources, uncomment the following
-  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
-  # limits:
-  #   cpu: 100m
-  #   memory: 128Mi
-  # requests:
-  #   cpu: 100m
-  #   memory: 128Mi
+resources: {}
 
-# Node selector settings for scheduling the pod on specific nodes
 nodeSelector: {}
 
-# Tolerations settings for scheduling the pod based on node taints
 tolerations: []
 
-# Affinity settings for controlling pod scheduling
 affinity: {}
 
 initContainers:
@@ -138,20 +88,12 @@ initContainers:
       - mountPath: /config
         name: home-assistant
 
-# Configuration for Home Assistant
 configuration:
-  # Enable or disable the configuration setup for Home Assistant
   enabled: true
-  # Force init will merge the current configuration file with the default configuration on every start
-  # This is useful when you want to ensure that the configuration file is always up to date
   forceInit: false
-  # List of trusted proxies in the format of CIDR notation in a case of using a reverse proxy
-  # Here is the list of the most common private IP ranges, use your list of possible trusted proxies, usually, it's the IP of the reverse proxy
   trusted_proxies:
     - 0.0.0.0/0
 
-  # Template for the configuration.yaml file
-  # Used the `tpl` function to render the template, so you can use Go template functions
   templateConfig: |-
     default_config:
 
@@ -170,9 +112,7 @@ configuration:
     automation: !include automations.yaml
     script: !include scripts.yaml
     scene: !include scenes.yaml
-  # Init script for the Home Assistant initialization, you can use Go template functions
-  # Script is executed before the Home Assistant container starts and is used to prepare the configuration
-  # Will be executed only if the configuration.enabled is set to true
+
   initScript: |-
     #!/bin/bash
     set -e
@@ -228,13 +168,6 @@ configuration:
     command: ["/bin/sh", "-c"]
     args:
       - /bin/sh /mnt/init/init.sh
-    # env:
-    # - name: FORCE_INIT
-    #   valueFrom:
-    #     configMapKeyRef:
-    #       name: init-script
-    #       key: forceInit
-    # Home Assistant configuration volume will be mounted to /config automatically
     volumeMounts:
       - name: init-volume
         mountPath: /mnt/init/init.sh
@@ -242,18 +175,12 @@ configuration:
       - name: config-volume
         mountPath: /config-templates
 
-# Persistence values for the Home Assistant instance
 persistence:
-  # Enable or disable persistence
   enabled: true
-  # Access mode for the persistent volume claim
   accessMode: ReadWriteOnce
-  # Size of the persistent volume claim
   size: 8Gi
-  # Storage class for the persistent volume claim
   storageClass: "nfs-csi"
 
-# if you need any additional volumes, you can define them here
 additionalVolumes:
   - name: dbus
     hostPath:
@@ -263,59 +190,31 @@ additionalVolumes:
     hostPath:
       path: /dev
       type: Directory
-  # - hostPath:
-  #     path: >-
-  #       /dev/serial/by-id/usb-Silicon_Labs_Sonoff_Zigbee_3.0_USB_Dongle_Plus_0001-if00-port0
-  #     type: CharDevice
-  #   name: usb
-# if you need any additional volume mounts, you can define them here
+
 additionalMounts:
   - mountPath: /var/run/dbus
     name: dbus
   - mountPath: /dev
     name: bluetooth-dev
-  # - mountPath: /dev/ttyACM0
-  #   name: usb
 
-# if you need to expose additional ports
 additionalPorts: []
-#  - name: sia
-#    containerPort: 8124
-#    protocol: TCP
 
-# if you need to expose additional services
 additionalServices: []
-#  - name: sia
-#    port: 8124
-#    targetPort: sia
-#    type: NodePort
-#    protocol: TCP
-#    nodePort: 30124
 
 serviceMonitor:
-  # requires HA integration:  https://www.home-assistant.io/integrations/prometheus/
   enabled: true
   scrapeInterval: 30s
   labels: {}
 
-# Addons configuration for additional services
 addons:
   codeserver:
     enabled: false
     resources: {}
     image:
-      # Repository for the code-server image
       repository: ghcr.io/coder/code-server
-      # Image pull policy for the code-server image
       pullPolicy: IfNotPresent
-      # Tag for the code-server image
-      tag: "4.96.2"
-    service:
-      type: ClusterIP
-      port: 12321
     ingress:
       enabled: true
-      className: ""
       annotations:
         cert-manager.io/cluster-issuer: letsencrypt
         nginx.ingress.kubernetes.io/whitelist-source-range: >-
@@ -331,10 +230,6 @@ addons:
           hosts:
             - code.ha.stevevaradi.me
 
-    additionalMounts:
-      []
-      # - mountPath: /home/coder/.ssh/id_rsa
-      #   name: id-rsa
+    additionalMounts: []
 
-# Annotations to add to the stateful set
 statefulSetAnnotations: {}

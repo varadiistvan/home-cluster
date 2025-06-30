@@ -1,5 +1,5 @@
 controller:
-  replicaCount: 3
+  replicaCount: 4
 
   affinity:
     podAntiAffinity:
@@ -28,11 +28,13 @@ controller:
       memory: 128Mi
 
   service:
+    type: NodePort
     externalTrafficPolicy: Local
-    externalIps:
-      - 192.168.0.143
-    annotations:
-      external-dns.alpha.kubernetes.io/hostname: stevevaradi.me
+    nodePorts:
+      http: "30080"
+      https: "30443"
+      tcp:
+        5432: 30432
 
   watchIngressWithoutClass: true
 

@@ -1,0 +1,97 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: sharelatex
+spec:
+  replicas: {{ .Values.replicaCount }}
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app: sharelatex
+  template:
+    metadata:
+      labels:
+        app: sharelatex
+    spec:
+      securityContext:
+        fsGroup: 65534
+        runAsUser: 0
+        runAsGroup: 0
+      imagePullSecrets:
+        {{- range .Values.image.pullSecrets }}
+        - name: {{ . }}
+        {{- end }}
+      initContainers:
+        - name: install-textlive
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command: ["/bin/sh", "-c", "tlmgr update --self && xargs -a /etc/texlive-packages/packages tlmgr install"]
+          volumeMounts:
+            - name: texlive-packages
+              mountPath: /etc/texlive-packages/packages
+              readOnly: true
+      containers:
+        - name: overleaf
+          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          ports:
+            - containerPort: 80
+          env:
+            - name: GIT_BRIDGE_ENABLED
+              value: {{ .Values.overleaf.gitBridge.enabled | quote }}
+            - name: GIT_BRIDGE_HOST
+              value: {{ .Values.overleaf.gitBridge.host }}
+            - name: GIT_BRIDGE_PORT
+              value: {{ .Values.overleaf.gitBridge.port | quote }}
+            - name: V1_HISTORY_URL
+              value: {{ .Values.overleaf.v1HistoryUrl }}
+            - name: OVERLEAF_APP_NAME
+              value: {{ .Values.overleaf.appName }}
+            - name: OVERLEAF_MONGO_URL
+              {{ if .Values.mongo.existingSecret }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.mongo.existingSecret }}
+                  key: {{ .Values.mongo.existingSecretKey }}
+              {{ else }}
+              value: {{ .Values.mongo.url | quote }}
+              {{ end }}
+            - name: OVERLEAF_REDIS_HOST
+              {{ if .Values.redis.existingSecret }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.redis.existingSecret }}
+                  key: {{ .Values.redis.existingSecretKey | default "host" }}
+              {{ else }}
+              value: {{ .Values.redis.url | quote }}
+              {{ end }}
+            - name: REDIS_HOST
+              {{ if .Values.redis.existingSecret }}
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.redis.existingSecret }}
+                  key: {{ .Values.redis.existingSecretKey | default "host" }}
+              {{ else }}
+              value: {{ .Values.redis.url | quote }}
+              {{ end }}
+            - name: REDIS_PORT
+              value: {{ .Values.redis.port | quote }}
+            - name: EXTERNAL_AUTH
+              value: "none"
+            - name: ENABLE_LINKED_FILE_TYPES
+              value: "project_file,project_output_file"
+            - name: ENABLE_CONVERSIONS
+              value: "true"
+            - name: EMAIL_CONFIRMATION_DISABLED
+              value: "false"
+          volumeMounts:
+            - name: overleaf-data
+              mountPath: /var/lib/overleaf
+      volumes:
+        - name: overleaf-data
+          persistentVolumeClaim:
+            claimName: {{ .Values.pvc.name }}
+        - name: texlive-packages
+          configMap:
+            name: texlive-packages
+      restartPolicy: Always
+      terminationGracePeriodSeconds: 60

@@ -1,4 +1,3 @@
-# -- Ingress configuration. See: https://kubernetes.io/docs/concepts/services-networking/ingress/
 ingress:
   enabled: true
   annotations:
@@ -16,44 +15,42 @@ ingress:
       hosts:
         - jellyfin.stevevaradi.me
 
-# -- Additional volumes to mount in the Jellyfin pod.
 volumes:
   - name: nfs-media
     nfs:
       server: 192.168.0.151
       path: /export/media
-# - name: foo
-#   secret:
-#     secretName: mysecret
-#     optional: false
+  - name: dri
+    hostPath:
+      path: /dev/dri
 
-# -- Additional volume mounts for the Jellyfin container.
 volumeMounts:
   - name: nfs-media
     mountPath: "/nfs_media"
-# - name: foo
-#   mountPath: "/etc/foo"
-#   readOnly: true
-
-jellyfin:
-  # -- Enable DLNA. Requires host network. See: https://jellyfin.org/docs/general/networking/dlna.html
-  enableDLNA: false
-  # -- Custom command to use as container entrypoint.
-  command: []
-  # -- Additional arguments for the entrypoint command.
-  args: []
-  # -- Additional environment variables for the container.
-  env: []
+  - name: dri
+    mountPath: "/dev/dri"
 
 persistence:
   config:
-    # -- set to false to use emptyDir
     enabled: true
     accessMode: ReadWriteOnce
     size: 5Gi
     storageClass: iscsi-csi
   media:
     enabled: false
+
+affinity:
+  nodeAffinity:
+    requiredDuringSchedulingIgnoredDuringExecution:
+      nodeSelectorTerms:
+        - matchExpressions:
+            - key: kubernetes.io/arch
+              operator: In
+              values:
+                - amd64
+
+securityContext:
+  privileged: true
 # # -- Configuration for metrics collection and monitoring
 # metrics:
 #   # -- Enable or disable metrics collection

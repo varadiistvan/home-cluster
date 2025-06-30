@@ -1,0 +1,22 @@
+{{- if .Values.mealie.persistence.mealie_data.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    katenary.v3/compose-hash: ebbb80442f0148efb82e8da118381d3ef9716d96
+    katenary.v3/version: release-3.0.0-rc2
+  labels:
+    {{- include "mealie.labels" . | nindent 4 }}
+    katenary.v3/component: mealie
+  name: '{{ include "mealie.fullname" . }}-mealie-mealie-data'
+spec:
+  accessModes:
+  {{- .Values.mealie.persistence.mealie_data.accessMode | toYaml | nindent 2 }}
+  resources:
+    requests:
+      storage: {{ tpl .Values.mealie.persistence.mealie_data.size $ }}
+  {{- if ne .Values.mealie.persistence.mealie_data.storageClass "-" }}
+  storageClassName: '{{ .Values.mealie.persistence.mealie_data.storageClass }}'
+  {{- end }}
+
+{{- end }}

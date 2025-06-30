@@ -1,3 +1,8 @@
+resource "random_password" "penpot_passwords" {
+  length  = 16
+  special = true
+}
+
 resource "kubernetes_secret" "penpot_password" {
   metadata {
     name      = "postgres-penpot"
@@ -5,7 +10,7 @@ resource "kubernetes_secret" "penpot_password" {
   }
 
   data = {
-    password = "testies"
+    password = random_password.penpot_passwords.result
   }
 
 }
@@ -24,7 +29,7 @@ resource "kubectl_manifest" "penpot_user" {
         adminCredentials:
           username: postgres
           secretRef:
-            name: postgres_auth
+            name: postgres-auth
             passwordKey: adminpass
       user:
         username: penpot
@@ -57,7 +62,7 @@ resource "kubectl_manifest" "penpot_database" {
         adminCredentials:
           username: postgres
           secretRef:
-            name: postgres_auth
+            name: postgres-auth
             passwordKey: adminpass
       database:
         dbName: penpot
@@ -91,7 +96,7 @@ resource "kubernetes_secret" "penpot_redis_uri" {
   }
 
   data = {
-    uri : "redis://:${"assword"}@redis-master:6379/1"
+    uri : "redis://:${random_password.redis_passwords["penpot"].result}@${helm_release.redis["penpot"].name}-master:6379/0"
   }
 
 }
@@ -108,9 +113,8 @@ resource "helm_release" "penpot" {
 
   set_sensitive {
     name  = "config.postgresql.password"
-    value = "testies"
+    value = random_password.penpot_passwords.result
   }
-
 }
 
 
