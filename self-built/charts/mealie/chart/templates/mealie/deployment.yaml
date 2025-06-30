@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.v3/compose-hash: ebbb80442f0148efb82e8da118381d3ef9716d96
+    katenary.v3/version: release-3.0.0-rc2
+  labels:
+    {{- include "mealie.labels" . | nindent 4 }}
+    katenary.v3/component: mealie
+  name: '{{ include "mealie.fullname" . }}-mealie'
+spec:
+  replicas: {{ .Values.mealie.replicas }}
+  selector:
+    matchLabels:
+      {{- include "mealie.selectorLabels" . | nindent 6 }}
+      katenary.v3/component: mealie
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        {{- include "mealie.selectorLabels" . | nindent 8 }}
+        katenary.v3/component: mealie
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: '{{ include "mealie.fullname" . }}-mealie'
+        {{- if .Values.mealie.db.existingSecret.enabled }}
+        - secretRef:
+            name: "{{ .Values.mealie.db.existingSecret.name }}"
+        {{- end }}
+        image: '{{ tpl .Values.mealie.repository.image $ }}:{{ tpl .Values.mealie.repository.tag $ | default "latest" }}'
+        imagePullPolicy: {{ .Values.mealie.imagePullPolicy }}
+        name: mealie
+        ports:
+        - containerPort: 9000
+          name: port-9000
+        {{- if .Values.mealie.resources }}
+        resources:
+          {{ .Values.mealie.resources | toYaml | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        {{- if .Values.mealie.persistence.mealie_data.enabled }}
+        - mountPath: /app/data
+          name: mealie-data
+        {{- end }}
+      {{- if .Values.pullSecrets }}
+      imagePullSecrets:
+      {{- .Values.pullSecrets | toYaml | nindent 6 }}
+      {{- end }}
+      {{- if .Values.mealie.nodeSelector }}
+      nodeSelector:
+        {{- .Values.mealie.nodeSelector | toYaml | nindent 8 }}
+      {{- end }}
+      {{- if ne .Values.mealie.serviceAccount "" }}
+      serviceAccountName: {{ .Values.mealie.serviceAccount | quote }}
+      {{- end }}
+      volumes:
+      {{- if .Values.mealie.persistence.mealie_data.enabled }}
+      - name: mealie-data
+        persistentVolumeClaim:
+          claimName: '{{ include "mealie.fullname" . }}-mealie-mealie-data'
+      {{- end }}

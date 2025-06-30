@@ -1,0 +1,10 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: texlive-packages
+data:
+  packages: |
+    {{- range .Values.texlive.packages }}
+    {{ . }}
+    {{- end }}
+

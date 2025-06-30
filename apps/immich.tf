@@ -25,7 +25,7 @@ resource "kubectl_manifest" "immich_user" {
         adminCredentials:
           username: postgres
           secretRef:
-            name: postgres_auth
+            name: postgres-auth
             passwordKey: adminpass
       user:
         username: immich
@@ -58,7 +58,7 @@ resource "kubectl_manifest" "immich_database" {
         adminCredentials:
           username: postgres
           secretRef:
-            name: postgres_auth
+            name: postgres-auth
             passwordKey: adminpass
       database:
         dbName: immich
@@ -67,6 +67,7 @@ resource "kubectl_manifest" "immich_database" {
           - earthdistance
           - vectors
           - cube
+          - vchord
   YAML
   depends_on = [time_sleep.wait_for_immich_user]
 }
@@ -104,20 +105,18 @@ resource "helm_release" "immich" {
 
   set {
     name  = "image.tag"
-    value = "v1.134.0"
+    value = "v1.135.3"
   }
 
   set {
     name  = "env.REDIS_HOSTNAME"
-    value = "${helm_release.redis.name}-master"
+    value = "${helm_release.redis["immich"].name}-master"
   }
 
   set {
     name  = "env.REDIS_PASSWORD"
-    value = "assword"
+    value = random_password.redis_passwords["immich"].result
   }
-
-
 
   set {
     name  = "env.DB_HOSTNAME"

@@ -1,22 +1,42 @@
+locals {
+  redis_services = ["immich", "overleaf", "penpot"]
+}
+
+resource "random_password" "redis_passwords" {
+  for_each = toset(local.redis_services)
+
+  length  = 16
+  special = true
+}
+
 resource "kubernetes_secret" "redis_auth" {
+  for_each = toset(local.redis_services)
+
   metadata {
-    name      = "redis-auth"
+    name      = "${each.key}-redis-auth"
     namespace = kubernetes_namespace.apps.metadata[0].name
   }
 
   data = {
-    password = "assword"
+    password = random_password.redis_passwords[each.key].result
   }
 }
 
-
 resource "helm_release" "redis" {
-  name       = "redis"
+  for_each = toset(local.redis_services)
+
+  name       = "${each.key}-redis"
   namespace  = kubernetes_namespace.apps.metadata[0].name
   chart      = "redis"
   repository = "oci://registry-1.docker.io/bitnamicharts/"
   version    = "21.2.5"
   values     = [file("${path.module}/values/redis-values.yaml")]
+
+  set {
+    name  = "auth.existingSecret"
+    value = kubernetes_secret.redis_auth[each.key].metadata[0].name
+  }
+
   depends_on = [kubernetes_namespace.apps, kubernetes_secret.redis_auth]
 }
 

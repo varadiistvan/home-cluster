@@ -1,0 +1,14 @@
+apiVersion: v1
+data:
+  {{- range $key, $value := .Values.mealie.env }}
+  {{ $key }}: "{{ $value }}"
+  {{- end }}
+kind: ConfigMap
+metadata:
+  annotations:
+    katenary.v3/compose-hash: ebbb80442f0148efb82e8da118381d3ef9716d96
+    katenary.v3/version: release-3.0.0-rc2
+  labels:
+    {{- include "mealie.labels" . | nindent 4 }}
+    katenary.v3/component: mealie
+  name: '{{ include "mealie.fullname" . }}-mealie'

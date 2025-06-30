@@ -1,35 +1,15 @@
-## This chart relies on the common library chart from bjw-s
-## You can find it at https://github.com/bjw-s/helm-charts/tree/main/charts/library/common
-## Refer there for more detail about the supported values
-
-# These entries are shared between all the Immich components
-
 env:
-  REDIS_HOSTNAME: '{{ printf "%s-redis-master" .Release.Name }}'
   DB_HOSTNAME: "{{ .Release.Name }}-postgresql"
   DB_USERNAME: "{{ .Values.postgresql.global.postgresql.auth.username }}"
   DB_DATABASE_NAME: "{{ .Values.postgresql.global.postgresql.auth.database }}"
-  # -- You should provide your own secret outside of this helm-chart and use `postgresql.global.postgresql.auth.existingSecret` to provide credentials to the postgresql instance
-  # DB_PASSWORD: "{{ .Values.postgresql.global.postgresql.auth.password }}"
   IMMICH_MACHINE_LEARNING_URL: "http://192.168.0.109:3003"
-  REDIS_DBINDEX: "0"
-
-image:
-  tag: v1.125.7
 
 immich:
   metrics:
-    # Enabling this will create the service monitors needed to monitor immich with the prometheus operator
     enabled: false
   persistence:
-    # Main data store for all photos shared between different components.
     library:
-      # Automatically creating the library volume is not supported by this chart
-      # You have to specify an existing PVC to use
       existingClaim: "immich-pvc"
-  # configuration is immich-config.json converted to yaml
-  # ref: https://immich.app/docs/install/config-file/
-  #
   configuration:
     {}
     # trash:
@@ -38,14 +18,6 @@ immich:
     # storageTemplate:
     #   enabled: true
     #   template: "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}"
-
-# Dependencies
-
-# DEPRECATED
-# The postgres subchart is deprecated and will be removed in chart version 0.10.0
-# See https://github.com/immich-app/immich-charts/issues/149 for more detail.
-
-# Immich components
 
 server:
   ingress:
@@ -74,7 +46,6 @@ machine-learning:
     cache:
       enabled: true
       size: 10Gi
-      # Optional: Set this to pvc to avoid downloading the ML models every start.
       type: pvc
       accessMode: ReadWriteMany
       storageClass: nfs-csi

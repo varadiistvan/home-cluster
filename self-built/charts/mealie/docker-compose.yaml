@@ -1,0 +1,33 @@
+services:
+  mealie:
+    image: ghcr.io/mealie-recipes/mealie:v2.8.0 #
+    container_name: mealie
+    restart: always
+    ports:
+      - "9925:9000" #
+    deploy:
+      resources:
+        limits:
+          memory: 1000M #
+    volumes:
+      - mealie-data:/app/data/
+    environment:
+      # Set Backend ENV Variables Here
+      ALLOW_SIGNUP: "false"
+      PUID: 1000
+      PGID: 1000
+      TZ: America/Anchorage
+      BASE_URL: https://mealie.yourdomain.com
+      # Database Settings
+      DB_ENGINE: postgres
+      POSTGRES_USER: mealie
+      POSTGRES_PASSWORD: mealie
+      POSTGRES_SERVER: postgres
+      POSTGRES_PORT: 5432
+      POSTGRES_DB: mealie
+    labels:
+      katenary.v3/ingress: |-
+        port: 9000
+        hostname: mealie.example.com
+volumes:
+  mealie-data:
