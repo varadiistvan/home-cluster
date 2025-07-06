@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    katenary.v3/compose-hash: a6157a7e91ccbdf9991407b3c4f024324194af3e
+    katenary.v3/version: release-3.0.0-rc2
+  labels:
+    {{- include "convertx.labels" . | nindent 4 }}
+    katenary.v3/component: convertx
+  name: '{{ include "convertx.fullname" . }}-convertx'
+spec:
+  ports:
+  - name: convertx
+    port: 3000
+    protocol: TCP
+    targetPort: 3000
+  selector:
+    {{- include "convertx.selectorLabels" . | nindent 4 }}
+    katenary.v3/component: convertx

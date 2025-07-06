@@ -1,0 +1,18 @@
+# This is the main values.yaml file for the convertx chart.
+# More information can be found in the chart's README.md file.
+#
+# generated at: 2025-06-30T11:49:41+02:00
+# compose files: docker-compose.yaml
+# compose hash (sha1): a6157a7e91ccbdf9991407b3c4f024324194af3e
+
+# Name of the chart (required), basically the name of the project.
+name: convertx
+apiVersion: v2
+
+# Version of the chart (required)
+version: 0.1.0
+
+# Version of the application (required).
+# This should be the main application version.
+appVersion: pr-317
+description: A Helm chart for convertx

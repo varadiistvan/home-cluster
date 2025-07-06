@@ -1,5 +1,13 @@
 controller:
-  replicaCount: 4
+  kind: DaemonSet
+
+  config:
+    enable-real-ip: "true"
+    use-proxy-protocol: "true"
+    # If HAProxy is on a single server at 192.168.0.200: "192.168.0.200/32"
+    # If HAProxy instances are in the 192.168.0.0/24 subnet: "192.168.0.0/24"
+    # If multiple specific IPs: "192.168.0.200/32,192.168.0.201/32"
+    proxy-real-ip-cidr: "192.168.0.151/32" # <--- THIS IS CRITICAL!
 
   affinity:
     podAntiAffinity:

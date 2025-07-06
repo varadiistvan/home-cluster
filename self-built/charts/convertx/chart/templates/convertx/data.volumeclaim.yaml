@@ -1,0 +1,22 @@
+{{- if .Values.convertx.persistence.data.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  annotations:
+    katenary.v3/compose-hash: a6157a7e91ccbdf9991407b3c4f024324194af3e
+    katenary.v3/version: release-3.0.0-rc2
+  labels:
+    {{- include "convertx.labels" . | nindent 4 }}
+    katenary.v3/component: convertx
+  name: '{{ include "convertx.fullname" . }}-convertx-data'
+spec:
+  accessModes:
+  {{- .Values.convertx.persistence.data.accessMode | toYaml | nindent 2 }}
+  resources:
+    requests:
+      storage: {{ tpl .Values.convertx.persistence.data.size $ }}
+  {{- if ne .Values.convertx.persistence.data.storageClass "-" }}
+  storageClassName: '{{ .Values.convertx.persistence.data.storageClass }}'
+  {{- end }}
+
+{{- end }}

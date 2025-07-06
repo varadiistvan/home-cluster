@@ -1,0 +1,40 @@
+image:
+  repository: obeoneorg/cyberchef
+  tag:
+  pullPolicy: Always
+
+env:
+  TZ: Europe/Amsterdam
+
+service:
+  main:
+    ports:
+      http:
+        port: 8000
+
+ingress:
+  main:
+    enabled: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+      nginx.ingress.kubernetes.io/whitelist-source-range: >-
+        192.168.0.1/24,
+        10.192.1.1/24
+
+    hosts:
+      - host: cyberchef.stevevaradi.me
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - hosts:
+          - cyberchef.stevevaradi.me
+        secretName: cyberchef-tls
+
+persistence:
+  data:
+    enabled: true
+    mountPath: /data
+    storageClass: "nfs-csi"
+    size: 5G
+    accessMode: ReadWriteOnce

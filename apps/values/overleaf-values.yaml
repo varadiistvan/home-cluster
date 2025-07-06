@@ -1,10 +1,9 @@
 replicaCount: 1
 image:
-  registry: registry.stevevaradi.me
-  repository: overleaf-kubernetes
   tag: "5.5"
   pullPolicy: IfNotPresent
-  pullSecrets: []
+  pullSecrets:
+    - registry-pass
 
 mongo:
   url: "mongodb://root:<password>@mongodb/sharelatex?authSource=admin"
@@ -14,8 +13,9 @@ mongo:
 redis:
   host: redis-headless
   port: 6379
-  existingSecret: ""
-  existingSecretKey: ""
+  password:
+    existingSecret: ""
+    existingSecretKey: ""
 
 overleaf:
   appName: Overleaf
@@ -31,6 +31,9 @@ persistence:
     name: overleaf-data
     storageClassName: nfs-csi
     size: 10Gi
+  texlive:
+    enabled: true
+    storageClassName: nfs-csi
 
 texlive:
   packages:
@@ -40,10 +43,15 @@ texlive:
     - algorithms
     - algorithmicx
     - apacite
+    - footmisc
+    - babel-dutch
 
 ingress:
   enabled: true
   host: overleaf.stevevaradi.me
+  tls:
+    enabled: true
+    secretName: overleaf-tls
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "50m"
     cert-manager.io/cluster-issuer: "letsencrypt"

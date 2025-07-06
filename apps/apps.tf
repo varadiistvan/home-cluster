@@ -44,3 +44,4 @@ resource "kubernetes_secret" "registry_pass" {
 
   depends_on = [kubernetes_namespace.apps]
 }
+

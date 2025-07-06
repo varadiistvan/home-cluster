@@ -23,16 +23,33 @@ spec:
         - name: {{ . }}
         {{- end }}
       initContainers:
+        - name: init-texlive-copy
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command:
+            - /bin/sh
+            - -c
+            - |
+              echo "Starting rsync copy of TeX Live..." >&2
+              rsync --whole-file -a --info=progress2 /usr/local/texlive/ /mnt/texlive/ 2>&1
+          volumeMounts:
+            - name: texlive-root
+              mountPath: /mnt/texlive
         - name: install-textlive
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
-          command: ["/bin/sh", "-c", "tlmgr update --self && xargs -a /etc/texlive-packages/packages tlmgr install"]
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          command: ["/bin/sh", "-c", "ls /etc/texlive-packages/ ; cat /etc/texlive-packages/packages.txt ; tlmgr update --self && xargs -a /etc/texlive-packages/packages.txt tlmgr install"]
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
           volumeMounts:
             - name: texlive-packages
-              mountPath: /etc/texlive-packages/packages
+              mountPath: /etc/texlive-packages/packages.txt
+              subPath: packages
               readOnly: true
+            # - name: texlive-root
+            #   mountPath: /usr/local/texlive
       containers:
         - name: overleaf
-          image: "{{ .Values.image.repository }}:{{ .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          image: "{{ .Values.image.registry }}/{{ .Values.image.repository }}:{{ .Values.image.tag }}"          
           ports:
             - containerPort: 80
           env:
@@ -47,34 +64,34 @@ spec:
             - name: OVERLEAF_APP_NAME
               value: {{ .Values.overleaf.appName }}
             - name: OVERLEAF_MONGO_URL
-              {{ if .Values.mongo.existingSecret }}
+              {{- if .Values.mongo.existingSecret }}
               valueFrom:
                 secretKeyRef:
                   name: {{ .Values.mongo.existingSecret }}
                   key: {{ .Values.mongo.existingSecretKey }}
-              {{ else }}
+              {{- else }}
               value: {{ .Values.mongo.url | quote }}
-              {{ end }}
+              {{- end }}
             - name: OVERLEAF_REDIS_HOST
-              {{ if .Values.redis.existingSecret }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.redis.existingSecret }}
-                  key: {{ .Values.redis.existingSecretKey | default "host" }}
-              {{ else }}
-              value: {{ .Values.redis.url | quote }}
-              {{ end }}
+              value: {{ .Values.redis.host | quote }}
             - name: REDIS_HOST
-              {{ if .Values.redis.existingSecret }}
-              valueFrom:
-                secretKeyRef:
-                  name: {{ .Values.redis.existingSecret }}
-                  key: {{ .Values.redis.existingSecretKey | default "host" }}
-              {{ else }}
-              value: {{ .Values.redis.url | quote }}
-              {{ end }}
+              value: {{ .Values.redis.host | quote }}
             - name: REDIS_PORT
               value: {{ .Values.redis.port | quote }}
+            {{- if and .Values.redis.password.existingSecret .Values.redis.password.existingSecretKey }}
+            - name: REDIS_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.redis.password.existingSecret }}
+                  key: {{ .Values.redis.password.existingSecretKey | default "host" }}
+            {{- end }}
+            {{- if and .Values.redis.password.existingSecret .Values.redis.password.existingSecretKey }}
+            - name: OVERLEAF_REDIS_PASS
+              valueFrom:
+                secretKeyRef:
+                  name: {{ .Values.redis.password.existingSecret }}
+                  key: {{ .Values.redis.password.existingSecretKey | default "host" }}
+            {{- end }}
             - name: EXTERNAL_AUTH
               value: "none"
             - name: ENABLE_LINKED_FILE_TYPES
@@ -86,12 +103,21 @@ spec:
           volumeMounts:
             - name: overleaf-data
               mountPath: /var/lib/overleaf
+            - name: texlive-root
+              mountPath: /usr/local/texlive
       volumes:
         - name: overleaf-data
           persistentVolumeClaim:
-            claimName: {{ .Values.pvc.name }}
+            claimName: {{ .Values.persistence.data.name }}
         - name: texlive-packages
           configMap:
             name: texlive-packages
+        - name: texlive-root
+          {{- if .Values.persistence.texlive.enabled }}
+          persistentVolumeClaim:
+            claimName: {{ .Values.persistence.texlive.name }}
+          {{- else }}
+          emptyDir: {}
+          {{- end }}
       restartPolicy: Always
       terminationGracePeriodSeconds: 60
