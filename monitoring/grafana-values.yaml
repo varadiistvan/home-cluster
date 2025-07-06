@@ -1,0 +1,79 @@
+ingress:
+  enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/whitelist-source-range: >-
+      cert-manager.io/cluster-issuer: letsencrypt
+      nginx.ingress.kubernetes.io/whitelist-source-range: >-
+        192.168.0.1/24,
+        10.192.1.1/24
+  path: /
+  hosts:
+    - grafana.stevevaradi.me
+  tls:
+    - secretName: grafana-tls
+      hosts:
+        - grafana.stevevaradi.me
+
+resources:
+  limits:
+    cpu: 200m
+    memory: 1Gi
+  requests:
+    cpu: 50m
+    memory: 128Mi
+
+persistence:
+  type: pvc
+  enabled: true
+  storageClassName: nfs-csi
+  accessModes:
+    - ReadWriteOnce
+  size: 8Gi
+
+service:
+  port: 3000
+
+admin:
+  existingSecret: "grafana"
+  userKey: admin-user
+  passwordKey: admin-password
+
+grafana.ini:
+  server:
+    domain: grafana.stevevaradi.me
+    root_url: "https://grafana.stevevaradi.me/"
+  paths:
+    data: /var/lib/grafana/data
+    logs: /var/log/grafana
+    plugins: /var/lib/grafana/plugins
+    provisioning: /etc/grafana/provisioning
+  analytics:
+    check_for_updates: true
+  feature_toggles:
+    enable: ngalert
+  log:
+    mode: console
+  grafana_net:
+    url: https://grafana.net
+  smtp:
+    enabled: false
+    host: smtp.postmarkapp.com:587
+    from_address: grafana@stevevaradi.me
+
+# smtp:
+#   existingSecret: "grafana-postmark"
+#   userKey: "username"
+#   passwordKey: "password"
+
+namespaceOverride: "monitoring"
+
+imageRenderer:
+  enabled: false
+  resources:
+    limits:
+      cpu: 100m
+      memory: 1Gi
+    requests:
+      cpu: 10m
+      memory: 64Mi

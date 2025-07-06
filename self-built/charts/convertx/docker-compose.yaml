@@ -1,0 +1,26 @@
+services:
+  convertx:
+    image: ghcr.io/c4illin/convertx
+    container_name: convertx
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - JWT_SECRET=aLongAndSecretStringUsedToSignTheJSONWebToken1234 # will use randomUUID() if unset
+      - ACCOUNT_REGISTRATION=false
+      - HTTP_ALLOWED=false
+      - ALLOW_UNAUTHENTICATED=false
+      - AUTO_DELETE_EVERY_N_HOURS=24
+      - WEBROOT=/
+      - FFMPEG_ARGS='-preset veryfast'
+      - HIDE_HISTORY=false
+      - LANGUAGE=en
+    volumes:
+      - data:/app/data
+    labels:
+      katenary.v3/ingress: |-
+        port: 3000
+        hostname: convertx.example.com
+
+volumes:
+  data:

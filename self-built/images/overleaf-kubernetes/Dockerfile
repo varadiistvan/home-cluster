@@ -15,9 +15,10 @@ COPY ./runit/history-v1-overleaf/run /etc/service/history-v1-overleaf/run
 COPY ./runit/notifications-overleaf/run /etc/service/notifications-overleaf/run
 COPY ./runit/project-history-overleaf/run /etc/service/project-history-overleaf/run
 COPY ./runit/real-time-overleaf/run /etc/service/real-time-overleaf/run
-COPY ./runit/spelling-overleaf/run /etc/service/spelling-overleaf/run
 COPY ./runit/web-api-overleaf/run /etc/service/web-api-overleaf/run
 COPY ./runit/web-overleaf/run /etc/service/web-overleaf/run
+
+RUN apt-get update && apt-get install -y rsync
 
 RUN chmod +x /etc/my_init.d/100_make_overleaf_data_dirs.sh \
   /etc/service/chat-overleaf/run \
@@ -30,7 +31,6 @@ RUN chmod +x /etc/my_init.d/100_make_overleaf_data_dirs.sh \
   /etc/service/notifications-overleaf/run \
   /etc/service/project-history-overleaf/run \
   /etc/service/real-time-overleaf/run \
-  /etc/service/spelling-overleaf/run \
   /etc/service/web-api-overleaf/run \
   /etc/service/web-overleaf/run
 

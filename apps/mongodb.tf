@@ -4,12 +4,12 @@ resource "random_password" "mongodb_password" {
 }
 
 resource "random_password" "mongodb_replicaset_key" {
-  length  = 16
-  special = true
+  length  = 64
+  special = false
 }
 
 
-resource "kubernetes_secret" "mongodb_password" {
+resource "kubernetes_secret" "mongodb_auth" {
   metadata {
     name      = "mongodb-auth"
     namespace = kubernetes_namespace.apps.metadata[0].name
@@ -27,10 +27,10 @@ resource "helm_release" "mongodb" {
   repository = "oci://registry-1.docker.io/bitnamicharts/"
   version    = "16.5.27"
   values     = [file("${path.module}/values/mongodb-values.yaml")]
-  depends_on = [kubernetes_namespace.apps, kubernetes_secret.mongodb_password]
+  depends_on = [kubernetes_namespace.apps, kubernetes_secret.mongodb_auth]
 
   set_sensitive {
     name  = "auth.existingSecret"
-    value = kubernetes_secret.mongodb_password.metadata[0].name
+    value = kubernetes_secret.mongodb_auth.metadata[0].name
   }
 }

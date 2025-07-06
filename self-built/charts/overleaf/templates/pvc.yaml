@@ -1,11 +1,27 @@
 apiVersion: v1
 kind: PersistentVolumeClaim
 metadata:
-  name: {{ .Values.pvc.name }}
+  name: {{ .Values.persistence.data.name }}
 spec:
   accessModes:
     - ReadWriteOnce
-  storageClassName: {{ .Values.pvc.storageClassName }}
+  storageClassName: {{ .Values.persistence.data.storageClassName }}
   resources:
     requests:
-      storage: {{ .Values.pvc.size }}
+      storage: {{ .Values.persistence.data.size }}
+---
+{{- if .Values.persistence.texlive.enabled }}
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: {{ .Values.persistence.texlive.name }}
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: {{ .Values.persistence.texlive.size | default "5Gi" }}
+  {{- if .Values.persistence.texlive.storageClassName }}
+  storageClassName: {{ .Values.persistence.texlive.storageClassName }}
+  {{- end }}
+{{- end }}

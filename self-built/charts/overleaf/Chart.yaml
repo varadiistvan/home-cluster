@@ -1,0 +1,10 @@
+name: overleaf
+apiVersion: v2
+
+# Version of the chart (required)
+version: 0.1.5
+
+# Version of the application (required).
+# This should be the main application version.
+appVersion: v5.5
+description: A Helm chart for overleaf

@@ -1,0 +1,63 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  annotations:
+    katenary.v3/compose-hash: a6157a7e91ccbdf9991407b3c4f024324194af3e
+    katenary.v3/version: release-3.0.0-rc2
+  labels:
+    {{- include "convertx.labels" . | nindent 4 }}
+    katenary.v3/component: convertx
+  name: '{{ include "convertx.fullname" . }}-convertx'
+spec:
+  replicas: {{ .Values.convertx.replicas }}
+  selector:
+    matchLabels:
+      {{- include "convertx.selectorLabels" . | nindent 6 }}
+      katenary.v3/component: convertx
+  strategy: {}
+  template:
+    metadata:
+      labels:
+        {{- include "convertx.selectorLabels" . | nindent 8 }}
+        katenary.v3/component: convertx
+    spec:
+      containers:
+      - envFrom:
+        - configMapRef:
+            name: '{{ include "convertx.fullname" . }}-convertx'
+        {{- if .Values.convertx.jwt.existingSecret.enabled }}
+        - secretRef:
+            name: "{{ .Values.convertx.jwt.existingSecret.name }}"
+        {{- end }}
+        image: '{{ tpl .Values.convertx.repository.image $ }}:{{ tpl .Values.convertx.repository.tag $ | default "latest" }}'
+        imagePullPolicy: {{ .Values.convertx.imagePullPolicy }}
+        name: convertx
+        ports:
+        - containerPort: 3000
+          name: port-3000
+        {{- if .Values.convertx.resources }}
+        resources:
+          {{ .Values.convertx.resources | toYaml | nindent 10 }}
+        {{- end }}
+        volumeMounts:
+        {{- if .Values.convertx.persistence.data.enabled }}
+        - mountPath: /app/data
+          name: data
+        {{- end }}
+      {{- if .Values.pullSecrets }}
+      imagePullSecrets:
+      {{- .Values.pullSecrets | toYaml | nindent 6 }}
+      {{- end }}
+      {{- if .Values.convertx.nodeSelector }}
+      nodeSelector:
+        {{- .Values.convertx.nodeSelector | toYaml | nindent 8 }}
+      {{- end }}
+      {{- if ne .Values.convertx.serviceAccount "" }}
+      serviceAccountName: {{ .Values.convertx.serviceAccount | quote }}
+      {{- end }}
+      volumes:
+      {{- if .Values.convertx.persistence.data.enabled }}
+      - name: data
+        persistentVolumeClaim:
+          claimName: '{{ include "convertx.fullname" . }}-convertx-data'
+      {{- end }}

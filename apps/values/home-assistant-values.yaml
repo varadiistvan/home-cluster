@@ -42,7 +42,8 @@ ingress:
 
 resources: {}
 
-nodeSelector: {}
+nodeSelector:
+  kubernetes.io/arch: arm64
 
 tolerations: []
 

@@ -1,13 +1,11 @@
 diagnosticMode:
-  enabled: true
+  enabled: false
 
 global:
   security:
     allowInsecureImages: true
 
 image:
-  repository: dlavrenuek/bitnami-mongodb-arm
-  tag: "6.0"
   debug: true
 
 architecture: replicaset
@@ -89,6 +87,11 @@ volumePermissions:
 
 arbiter:
   enabled: true
+  nodeAffinityPreset:
+    type: hard
+    key: "kubernetes.io/arch"
+    values:
+      - "amd64"
 
 readinessProbe:
   initialDelaySeconds: 40
@@ -120,3 +123,9 @@ metrics:
     ##     summary: High request latency
     ##
     rules: []
+
+nodeAffinityPreset:
+  type: hard
+  key: "kubernetes.io/arch"
+  values:
+    - "amd64"

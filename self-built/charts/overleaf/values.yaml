@@ -16,8 +16,9 @@ mongo:
 redis:
   host: redis-headless
   port: 6379
-  existingSecret: ""
-  existingSecretKey: ""
+  password:
+    existingSecret: ""
+    existingSecretKey: ""
 
 overleaf:
   appName: Overleaf
@@ -29,10 +30,15 @@ overleaf:
 
 persistence:
   data:
-    enabled: true
+    enabled: false
     name: overleaf-data
-    storageClassName: nfs-csi
+    storageClassName: default
     size: 10Gi
+  texlive:
+    enabled: false
+    name: texlive
+    storageClassName: default
+    size: 5Gi
 
 texlive:
   packages:
@@ -46,6 +52,9 @@ texlive:
 ingress:
   enabled: true
   host: overleaf.stevevaradi.me
+  tls:
+    enabled: false
+    secretName: ""
   annotations:
     nginx.ingress.kubernetes.io/proxy-body-size: "50m"
     cert-manager.io/cluster-issuer: "letsencrypt"
