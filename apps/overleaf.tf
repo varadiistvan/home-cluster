@@ -17,7 +17,7 @@ resource "helm_release" "overleaf" {
   repository          = "oci://registry.stevevaradi.me"
   chart               = "overleaf"
   values              = [file("${path.module}/values/overleaf-values.yaml")]
-  version             = "0.1.5"
+  version             = "0.1.8"
   repository_username = "stevev"
   repository_password = var.home_registry_password
 

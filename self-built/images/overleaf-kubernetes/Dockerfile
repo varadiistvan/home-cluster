@@ -20,6 +20,15 @@ COPY ./runit/web-overleaf/run /etc/service/web-overleaf/run
 
 RUN apt-get update && apt-get install -y rsync
 
+RUN tlmgr update --self
+
+RUN tlmgr install collection-latexrecommended collection-fontsrecommended collection-latexextra \
+  algorithms algorithmicx apacite footmisc babel-dutch float mnsymbol enumitem xcolor caption \
+  lipsum todonotes dirtytalk tcolorbox framed wrapfig moresize soul pdfpages tocloft ragged2e \
+  fontspec titlesec pdflscape scheme-full
+
+RUN tlmgr list --only-installed | sha256sum | awk '{print $1}' > /usr/local/texlive/2025/.tlmgr-image-checksum
+
 RUN chmod +x /etc/my_init.d/100_make_overleaf_data_dirs.sh \
   /etc/service/chat-overleaf/run \
   /etc/service/clsi-overleaf/run \

@@ -12,7 +12,7 @@ image:
   repository: manyvector-pg
   tag: 16
   digest: ""
-  pullPolicy: Always
+  pullPolicy: IfNotPresent
   pullSecrets:
     - registry-pass
   debug: false

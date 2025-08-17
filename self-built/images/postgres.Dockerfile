@@ -13,6 +13,7 @@ COPY --from=pgvecto_rs_builder /usr/lib/postgresql/*/lib/vectors.so /opt/bitnami
 COPY --from=pgvecto_rs_builder /usr/share/postgresql/*/extension/vectors* /opt/bitnami/postgresql/share/extension/
 
 COPY --from=vchord /usr/lib/postgresql/*/lib/vchord.so /opt/bitnami/postgresql/lib/
+COPY --from=vchord /usr/lib/postgresql/*/lib/vector.so /opt/bitnami/postgresql/lib/
 COPY --from=vchord /usr/share/postgresql/*/extension/vchord* /opt/bitnami/postgresql/share/extension/
 COPY --from=vchord /usr/share/postgresql/*/extension/vector* /opt/bitnami/postgresql/share/extension/
 COPY --from=vchord /usr/share/postgresql/*/extension/vector* /opt/bitnami/postgresql/share/extension/
