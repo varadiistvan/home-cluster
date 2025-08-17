@@ -33,7 +33,7 @@ persistence:
     size: 10Gi
   texlive:
     enabled: true
-    storageClassName: nfs-csi
+    storageClassName: iscsi-csi
 
 texlive:
   packages:
@@ -45,6 +45,26 @@ texlive:
     - apacite
     - footmisc
     - babel-dutch
+    - float
+    - mnsymbol
+    - enumitem
+    - xcolor
+    - caption
+    - lipsum
+    - todonotes
+    - dirtytalk
+    - tcolorbox
+    - framed
+    - wrapfig
+    - moresize
+    - soul
+    - pdfpages
+    - tocloft
+    - ragged2e
+    - fontspec
+    - titlesec
+    - pdflscape
+    - scheme-full
 
 ingress:
   enabled: true

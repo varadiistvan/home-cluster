@@ -42,12 +42,13 @@ persistence:
 
 texlive:
   packages:
-    - collection-latexrecommended
-    - collection-fontsrecommended
-    - collection-latexextra
-    - algorithms
-    - algorithmicx
-    - apacite
+    []
+    # - collection-latexrecommended
+    # - collection-fontsrecommended
+    # - collection-latexextra
+    # - algorithms
+    # - algorithmicx
+    # - apacite
 
 ingress:
   enabled: true

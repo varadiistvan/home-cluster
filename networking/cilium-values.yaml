@@ -1,7 +1,4 @@
-cluster:
-  name: k3s
 hubble:
-  # This section should already exist
   relay:
     enabled: true
     pprof:
@@ -9,11 +6,13 @@ hubble:
     prometheus:
       enabled: true
       serviceMonitor:
-        enabled: true # Creates a ServiceMonitor for Hubble Relay
+        enabled: true
   ui:
     enabled: true
-  # 2. Enhance Hubble Metrics to include L4, L7, and policy data
   metrics:
+    dashboards:
+      enabled: true
+      namespace: monitoring
     enabled:
       - "dns:query;ignoreAAAA"
       - "drop"
@@ -21,58 +20,38 @@ hubble:
       - "flow"
       - "icmp"
       - "http"
-      - "policy" # Crucial for seeing policy verdict metrics
-    serviceMonitor:
-      enabled: true # Creates a ServiceMonitor for Hubble metrics
+      - "policy"
+serviceMonitor:
+  enabled: true
 ipam:
   operator:
     clusterPoolIPv4PodCIDRList: 10.42.0.0/16
+
 routingMode: tunnel
 tunnelProtocol: vxlan
-# Add these sections to your existing values.yaml file
 
-# 1. Enable Prometheus Metrics for Agent, Operator, and Hubble
-# This is the most critical step for observability.
-# It exposes endpoints that a Prometheus server can scrape.
 prometheus:
   enabled: true
   serviceMonitor:
-    enabled: true # Creates a ServiceMonitor CR for Prometheus Operator
-  dashboards:
-    enabled: true # Creates ConfigMaps for Grafana to discover dashboards
-    namespace: default # Or your monitoring namespace
+    enabled: true
 
 operator:
-  # This section should already exist, add the prometheus part
   replicas: 1
   pprof:
-    enabled: true # For cilium-operator
+    enabled: true
   prometheus:
     enabled: true
     serviceMonitor:
-      enabled: true # Creates a ServiceMonitor for the operator
+      enabled: true
   dashboards:
-    enabled: true # Creates ConfigMaps for Grafana to discover dashboards
-    namespace: default # Or your monitoring namespace
+    enabled: true
+    namespace: monitoring
 
-# 3. Enable Structured Logging
-# JSON logs are much easier to parse, filter, and query in log aggregation
-# systems like Loki, Elasticsearch, or Splunk.
 logOptions:
   format: json
 
-# 5. Log System Load
-# Helps correlate high CPU/load events with Cilium's behavior.
 logSystemLoad: true
 
-# 6. BPF Map Dynamic Sizing (Good Practice)
-# Automatically adjusts BPF map sizes based on available system memory,
-# preventing potential map-full errors on larger or busier nodes.
-#
-# 7. Enable Policy Verdict Notifications in Hubble
-# This ensures that Hubble flows are annotated with which network policy
-# allowed or denied the traffic. This is on by default but is essential
-# for security observability, so it's good to be explicit.
 bpf:
   mapDynamicSizeRatio: 0.0025
   events:

@@ -15,7 +15,7 @@ convertx:
 
   repository:
     image: ghcr.io/c4illin/convertx
-    tag: "pr-317"
+    tag: "pr-389"
   persistence:
     data:
       storageClass: "nfs-csi"

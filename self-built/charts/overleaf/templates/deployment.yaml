@@ -30,8 +30,15 @@ spec:
             - /bin/sh
             - -c
             - |
-              echo "Starting rsync copy of TeX Live..." >&2
-              rsync --whole-file -a --info=progress2 /usr/local/texlive/ /mnt/texlive/ 2>&1
+              IMG_VER_FILE="/usr/local/texlive/2025/.tlmgr-image-checksum"
+              PERSIST_VER_FILE="/mnt/texlive/2025/.tlmgr-image-checksum"
+
+              if ! cmp -s "$IMG_VER_FILE" "$PERSIST_VER_FILE"; then
+                echo "Image TeX Live version changed — syncing to persistent volume..."
+                rsync -a --delete /usr/local/texlive/ /mnt/texlive/
+              else
+                echo "TeX Live up to date in volume — skipping copy"
+              fi
           volumeMounts:
             - name: texlive-root
               mountPath: /mnt/texlive
@@ -44,8 +51,8 @@ spec:
               mountPath: /etc/texlive-packages/packages.txt
               subPath: packages
               readOnly: true
-            # - name: texlive-root
-            #   mountPath: /usr/local/texlive
+            - name: texlive-root
+              mountPath: /usr/local/texlive
       containers:
         - name: overleaf
           imagePullPolicy: {{ .Values.image.pullPolicy }}

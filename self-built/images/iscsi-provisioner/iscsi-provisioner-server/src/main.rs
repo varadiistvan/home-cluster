@@ -12,6 +12,10 @@ fn get_lun_base_path() -> String {
     env::var("LUN_BASE_PATH").unwrap_or_else(|_| "/var/lib/iscsi/luns".to_string())
 }
 
+fn get_tgt_conf_path() -> String {
+    env::var("TGT_CONF_PATH").unwrap_or_else(|_| "/etc/tgt/conf.d/provisioner/".to_string())
+}
+
 #[tokio::main]
 async fn main() {
     env::var("ISCSI_PWD").expect("ISCSI_PWD env variable is required");
@@ -34,6 +38,8 @@ async fn main() {
     let addr = SocketAddr::from(([0, 0, 0, 0], port));
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     println!("Listening on {}", addr);
+
+    assert!(std::fs::metadata(get_tgt_conf_path()).unwrap().is_dir());
 
     axum::serve(listener, app.into_make_service())
         .await

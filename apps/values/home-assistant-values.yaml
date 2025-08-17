@@ -180,7 +180,7 @@ persistence:
   enabled: true
   accessMode: ReadWriteOnce
   size: 8Gi
-  storageClass: "nfs-csi"
+  storageClass: "iscsi-csi"
 
 additionalVolumes:
   - name: dbus

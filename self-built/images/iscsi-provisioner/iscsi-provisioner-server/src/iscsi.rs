@@ -1,4 +1,6 @@
+use crate::get_tgt_conf_path;
 use crate::models::Lun;
+use std::io::Write;
 use std::path::Path;
 use std::process::{Command, Output};
 use std::{env, fs};
@@ -35,8 +37,30 @@ pub fn create_and_expose_lun(
         .map_err(|e| format!("Error setting xattr: {}", e))?;
 
     // Create and expose the LUN via iSCSI using existing function
-    create_iscsi_lun(target_name, lun_path, initiator_cidr)
-        .map_err(|e| format!("Failed to create and expose LUN: {}", e))
+    let res = create_iscsi_lun(target_name, lun_path, initiator_cidr)
+        .map_err(|e| format!("Failed to create and expose LUN: {}", e));
+
+    let file = fs::File::create(format!("{}/{}.conf", get_tgt_conf_path(), target_name));
+
+    if file.is_err() {
+        println!("Failed to create configuration, target will disappear after reboot")
+    } else {
+        let mut file = file.unwrap();
+        let text = format!(
+            "<target {target_name}>
+    backing-store {lun_path}
+    initiator-address {initiator_cidr}
+</target>"
+        );
+
+        let res = file.write_all(text.as_bytes());
+
+        if res.is_err() {
+            println!("Failed to write configuration: {:?}", res.unwrap_err())
+        }
+    }
+
+    res
 }
 
 // Utility: Create a LUN image file
