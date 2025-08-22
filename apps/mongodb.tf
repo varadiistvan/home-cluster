@@ -25,7 +25,7 @@ resource "helm_release" "mongodb" {
   namespace  = kubernetes_namespace.apps.metadata[0].name
   chart      = "mongodb"
   repository = "oci://registry-1.docker.io/bitnamicharts/"
-  version    = "16.5.33"
+  version    = "16.5.45"
   values     = [file("${path.module}/values/mongodb-values.yaml")]
   depends_on = [kubernetes_namespace.apps, kubernetes_secret.mongodb_auth]
 
