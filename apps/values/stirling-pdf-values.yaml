@@ -6,6 +6,7 @@ strategy:
 image:
   registry: registry.hub.docker.com
   repository: stirlingtools/stirling-pdf
+  tag: 1.2.0
 
 rootPath:
 
@@ -61,3 +62,18 @@ ingress:
       path: /
       tls: true
       tlsSecret: stirling-pdf.stevevaradi.me-tls
+
+deployment:
+  extraVolumes:
+    - name: stirling-pdf-config
+      configMap:
+        name: stirling-pdf-config
+        items:
+          - key: custom_settings.yml
+            path: custom_settings.yml
+
+  extraVolumeMounts:
+    - name: stirling-pdf-config
+      mountPath: /configs/custom_settings.yml
+      subPath: custom_settings.yml
+      readOnly: true

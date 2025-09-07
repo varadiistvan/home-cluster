@@ -19,10 +19,10 @@ resource "helm_release" "postgres" {
   values     = [file("${path.module}/values/postgres-values.yaml")]
   depends_on = [kubernetes_namespace.apps, kubernetes_secret.postgres_auth, kubernetes_secret.registry_pass]
 
-  set {
+  set = [{
     name  = "primary.initdb.password"
     value = "bruh4"
-  }
+  }]
 }
 
 resource "helm_release" "postgres-operator" {
@@ -36,15 +36,15 @@ resource "helm_release" "postgres-operator" {
 
   depends_on = [helm_release.postgres]
 
-  set_list {
+  set_list = [{
     name  = "image.pullSecrets"
     value = [kubernetes_secret.registry_pass.metadata[0].name]
-  }
+  }]
 
-  set {
+  set = [{
     name  = "image.tag"
     value = "0.1.38"
-  }
+  }]
 
 }
 

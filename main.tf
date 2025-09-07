@@ -36,7 +36,7 @@ terraform {
     }
   }
 
-  required_version = "~> 1.12.0"
+  required_version = "~> 1.13.0"
 }
 
 
@@ -51,7 +51,7 @@ provider "kubectl" {
 
 provider "helm" {
 
-  kubernetes {
+  kubernetes = {
     host                   = var.kubernetes_host
     client_certificate     = base64decode(var.client_certificate)
     client_key             = base64decode(var.client_key)

@@ -111,10 +111,10 @@ resource "helm_release" "penpot" {
   depends_on = [kubernetes_namespace.apps, kubernetes_secret.penpot_api_key, time_sleep.penpot_wait, kubernetes_secret.penpot_redis_uri]
   timeout    = 600
 
-  set_sensitive {
+  set_sensitive = [{
     name  = "config.postgresql.password"
     value = random_password.penpot_passwords.result
-  }
+  }]
 }
 
 

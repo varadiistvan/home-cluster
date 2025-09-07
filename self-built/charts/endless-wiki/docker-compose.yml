@@ -1,0 +1,43 @@
+services:
+  ollama:
+    image: ollama/ollama:latest
+    container_name: ollama
+    ports:
+      - "11434:11434"
+    volumes:
+      - ollama_data:/root/.ollama
+    environment:
+      - OLLAMA_ORIGINS=*
+    restart: unless-stopped
+
+    # Uncomment the following lines if you have a GPU
+    # deploy:
+    #   resources:
+    #     reservations:
+    #       devices:
+    #         - driver: nvidia
+    #           count: 1
+    #           capabilities: [gpu]
+
+  endless_wiki:
+    image: xanderstrike/endless-wiki:latest
+    container_name: endless_wiki
+    ports:
+      - "8080:8080"
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: gemma3:1b
+      PORT: 8080
+    depends_on:
+      ollama:
+        condition: service_started
+    restart: unless-stopped
+    labels:
+      katenary.v3/ingress: |
+        hostname: wiki.stevevaradi.me
+        port: 8080
+      katenary.v3/map-env: |
+        OLLAMA_HOST: 'http://{{ include "endless-wiki.fullname" . }}-ollama:11434'
+
+volumes:
+  ollama_data:

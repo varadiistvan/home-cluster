@@ -59,15 +59,15 @@ resource "helm_release" "misty_show" {
     # helm_release.melodic-sky,
   ]
 
-  set {
+  set = [{
     name  = "crds.enabled"
     value = true
-  }
+  }]
 
-  set_sensitive {
+  set_sensitive = [{
     name  = "grafana.adminPassword"
     value = var.grafana_password
-  }
+  }]
 
 }
 
@@ -91,10 +91,10 @@ resource "helm_release" "grafana" {
   repository = "https://grafana.github.io/helm-charts"
   values     = [file("${path.module}/grafana-values.yaml")]
 
-  set {
+  set = [{
     name  = "admin.existingSecret"
     value = kubernetes_secret.grafana_admin.metadata[0].name
-  }
+  }]
 }
 
 
@@ -106,15 +106,15 @@ resource "helm_release" "pi5_monitor" {
   repository = "oci://registry.stevevaradi.me"
   values     = [file("${path.module}/pi5-monitor-values.yaml")]
 
-  set_list {
+  set_list = [{
     name  = "image.pullSecrets"
     value = ["registry-pass"]
-  }
+  }]
 
-  set {
+  set = [{
     name  = "image.tag"
     value = "0.1.1"
-  }
+  }]
 
   depends_on = [kubernetes_secret.registry_pass, helm_release.misty_show]
 

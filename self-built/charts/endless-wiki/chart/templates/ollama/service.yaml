@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: Service
+metadata:
+  annotations:
+    katenary.v3/compose-hash: 5268736eca559f0e7bad5d1cb44e2137087f4ffb
+    katenary.v3/version: 3.0.0-rc6
+  labels:
+    {{- include "endless-wiki.labels" . | nindent 4 }}
+    katenary.v3/component: ollama
+  name: '{{ include "endless-wiki.fullname" . }}-ollama'
+spec:
+  ports:
+  - name: port-11434
+    port: 11434
+    protocol: TCP
+    targetPort: 11434
+  selector:
+    {{- include "endless-wiki.selectorLabels" . | nindent 4 }}
+    katenary.v3/component: ollama
