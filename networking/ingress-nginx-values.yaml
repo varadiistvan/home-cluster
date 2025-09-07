@@ -18,7 +18,7 @@ controller:
             labelSelector:
               matchLabels:
                 app.kubernetes.io/name: ingress-nginx
-                app.kubernetem.io/instance: waxen-chinchilla
+                app.kubernetes.io/instance: waxen-chinchilla
 
   ingressClassResource:
     default: true
@@ -36,15 +36,11 @@ controller:
       memory: 128Mi
 
   service:
-    type: NodePort
+    type: LoadBalancer
     externalTrafficPolicy: Local
-    nodePorts:
-      http: "30080"
-      https: "30443"
-      tcp:
-        5432: 30432
 
   watchIngressWithoutClass: true
 
 tcp:
-  "5432": "apps/postgres-postgresql"
+  "5432": "apps/postgres-postgresql:5432"
+  "8883": "apps/vernemq:8883"

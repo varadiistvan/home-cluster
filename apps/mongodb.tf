@@ -29,8 +29,8 @@ resource "helm_release" "mongodb" {
   values     = [file("${path.module}/values/mongodb-values.yaml")]
   depends_on = [kubernetes_namespace.apps, kubernetes_secret.mongodb_auth]
 
-  set_sensitive {
+  set_sensitive = [{
     name  = "auth.existingSecret"
     value = kubernetes_secret.mongodb_auth.metadata[0].name
-  }
+  }]
 }

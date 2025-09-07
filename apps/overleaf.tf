@@ -23,34 +23,27 @@ resource "helm_release" "overleaf" {
 
   timeout = 600
 
-  set {
-    name  = "forcereload"
-    value = "g"
-  }
-
-  set {
-    name  = "mongo.existingSecret"
-    value = kubernetes_secret.overleaf_auth.metadata[0].name
-  }
-
-  set {
-    name  = "mongo.existingSecretKey"
-    value = "mongo-url"
-  }
-
-  set {
-    name  = "redis.password.existingSecret"
-    value = kubernetes_secret.overleaf_auth.metadata[0].name
-  }
-
-  set {
-    name  = "redis.password.existingSecretKey"
-    value = "redis-password"
-  }
-
-  set {
-    name  = "redis.host"
-    value = "${helm_release.redis["overleaf"].name}-master"
-  }
+  set = [
+    {
+      name  = "mongo.existingSecret"
+      value = kubernetes_secret.overleaf_auth.metadata[0].name
+    },
+    {
+      name  = "mongo.existingSecretKey"
+      value = "mongo-url"
+    },
+    {
+      name  = "redis.password.existingSecret"
+      value = kubernetes_secret.overleaf_auth.metadata[0].name
+    },
+    {
+      name  = "redis.password.existingSecretKey"
+      value = "redis-password"
+    },
+    {
+      name  = "redis.host"
+      value = "${helm_release.redis["overleaf"].name}-master"
+    }
+  ]
 
 }

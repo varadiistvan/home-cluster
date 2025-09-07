@@ -1,4 +1,14 @@
 hubble:
+  tls:
+    enabled: true
+    auto:
+      enabled: true
+      method: certmanager
+      certValidityDuration: 365
+      certManagerIssuerRef:
+        group: cert-manager.io
+        kind: ClusterIssuer
+        name: ca-issuer
   relay:
     enabled: true
     pprof:
@@ -57,3 +67,15 @@ bpf:
   events:
     policyVerdict:
       enabled: true
+
+l2announcements:
+  enabled: true
+  leaseDuration: 3s
+  renewDeadline: 1s
+  retryPeriod: 200ms
+
+k8sClientRateLimit:
+  qps: 30
+  burst: 60
+
+kubeProxyReplacement: true

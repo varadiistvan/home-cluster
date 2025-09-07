@@ -31,7 +31,7 @@ resource "kubernetes_secret" "cloudflare-api-key" {
 
 
 resource "kubectl_manifest" "clusterissuer_letsencrypt" {
-  yaml_body = <<YAML
+  yaml_body = <<-YAML
     apiVersion: cert-manager.io/v1
     kind: ClusterIssuer
     metadata:
@@ -54,3 +54,48 @@ resource "kubectl_manifest" "clusterissuer_letsencrypt" {
   depends_on = [helm_release.cert_manager, kubernetes_secret.cloudflare-api-key]
 }
 
+resource "kubectl_manifest" "clusterissuer_selfsigned" {
+  yaml_body = <<-YAML
+    apiVersion: cert-manager.io/v1
+    kind: ClusterIssuer
+    metadata:
+      name: selfsigned
+    spec:
+      selfSigned: {}
+  YAML
+
+  depends_on = [helm_release.cert_manager]
+}
+
+resource "kubectl_manifest" "ca_cert" {
+  yaml_body = <<-YAML
+    apiVersion: cert-manager.io/v1
+    kind: Certificate
+    metadata:
+      name: selfsigned-ca
+      namespace: cert-manager
+    spec:
+      isCA: true
+      commonName: selfsigned-ca
+      secretName: root-secret
+      privateKey:
+        algorithm: ECDSA
+        size: 256
+      issuerRef:
+        name: selfsigned
+        kind: ClusterIssuer
+        group: cert-manager.io
+  YAML
+}
+
+resource "kubectl_manifest" "ca_issuer" {
+  yaml_body = <<-YAML
+    apiVersion: cert-manager.io/v1
+    kind: ClusterIssuer
+    metadata:
+      name: ca-issuer
+    spec:
+      ca:
+        secretName: root-secret
+  YAML
+}

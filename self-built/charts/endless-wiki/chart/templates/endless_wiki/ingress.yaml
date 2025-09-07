@@ -1,0 +1,39 @@
+{{- if .Values.endless_wiki.ingress.enabled -}}
+{{- $fullname := include "endless-wiki.fullname" . -}}
+{{- $tlsname := printf "%s-%s-tls" $fullname "endless_wiki" -}}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  annotations:
+    katenary.v3/compose-hash: 5268736eca559f0e7bad5d1cb44e2137087f4ffb
+    katenary.v3/version: 3.0.0-rc6
+    {{- if .Values.endless_wiki.ingress.annotations -}}
+        {{- toYaml .Values.endless_wiki.ingress.annotations | nindent 4 }}
+    {{- end }}
+  labels:
+    {{- include "endless-wiki.labels" . | nindent 4 }}
+    katenary.v3/component: endless-wiki
+  name: '{{ $fullname }}-endless-wiki'
+spec:
+  {{- if ne .Values.endless_wiki.ingress.class "-" }}
+  ingressClassName: '{{ tpl .Values.endless_wiki.ingress.class $ }}'
+  {{- end }}
+  rules:
+  - host: '{{ tpl .Values.endless_wiki.ingress.host $ }}'
+    http:
+      paths:
+      - backend:
+          service:
+            name: '{{ $fullname }}-endless-wiki'
+            port:
+              name: http-alt
+        path: '{{ tpl .Values.endless_wiki.ingress.path $ }}'
+        pathType: ImplementationSpecific
+  {{- if .Values.endless_wiki.ingress.tls.enabled }}
+  tls:
+  - hosts:
+    - '{{ tpl .Values.endless_wiki.ingress.host . }}'
+    secretName: '{{ .Values.endless_wiki.ingress.tls.secretName | default $tlsname }}'
+  {{ end -}}
+
+{{- end -}}

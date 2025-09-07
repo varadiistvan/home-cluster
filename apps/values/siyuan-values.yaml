@@ -3,7 +3,7 @@ replicaCount: 1
 image:
   repository: apkdv/siyuan-unlock
   pullPolicy: IfNotPresent
-  tag: "v3.1.29"
+  tag: "v3.3.1"
 
 timezone: "Europe/Amsterdam"
 
@@ -49,7 +49,7 @@ autoscaling:
 
 persistence:
   enabled: true
-  storageClass: "nfs-csi-retain"
+  storageClass: "nfs-csi"
   accessModes: ["ReadWriteOnce"]
   size: 5Gi
 

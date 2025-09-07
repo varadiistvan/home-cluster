@@ -1,0 +1,153 @@
+nodeSelector:
+  kubernetes.io/arch: amd64
+
+replicaCount: 3
+
+image:
+  repository: vernemq/vernemq
+
+serviceMonitor:
+  create: true
+  interval: 30s
+  labels: {}
+
+service:
+  enabled: true
+  type: ClusterIP
+  mqtt:
+    enabled: true
+    port: 1883
+    nodePort: 1883
+  mqtts:
+    enabled: true
+    port: 8883
+    nodePort: 8883
+  ws:
+    enabled: false
+    port: 8080
+    nodePort: 8080
+  wss:
+    enabled: false
+    port: 8443
+    nodePort: 8443
+  api:
+    enabled: false
+    type: ClusterIP
+    port: 8888
+    nodePort: 38888
+    annotations: {}
+  annotations: {}
+  labels: {}
+
+headlessService:
+  customPorts: []
+
+ingress:
+  className: "nginx"
+  enabled: false
+
+  labels: {}
+
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/whitelist-source-range: >-
+      192.168.0.1/24,
+      10.192.1.1/24
+
+  hosts:
+    - vernemq.stevevaradi.me
+
+  paths:
+    - path: /
+      pathType: ImplementationSpecific
+
+  tls:
+    - secretName: vernemq-tls
+      hosts:
+        - vernemq.stevevaradi.me
+
+resources:
+  limits:
+    cpu: 1
+    memory: 768Mi
+  requests:
+    cpu: 500m
+    memory: 256Mi
+
+persistentVolume:
+  ## If true, VerneMQ will create/use a Persistent Volume Claim
+  ## If false, use local directory
+  enabled: true
+
+  accessModes:
+    - ReadWriteOnce
+
+  size: 5Gi
+
+  storageClass: "iscsi-csi"
+
+  annotations: {}
+
+extraVolumeMounts: []
+
+extraVolumes: []
+
+secretMounts:
+  - name: vernemq-certificates
+    secretName: placeholder
+    path: /etc/ssl/vernemq
+
+statefulset:
+  podManagementPolicy: OrderedReady
+  updateStrategy: RollingUpdate
+  rollingUpdate: {}
+  terminationGracePeriodSeconds: 60
+  podAnnotations: {}
+  #    prometheus.io/scrape: "true"
+  #    prometheus.io/port: "8888"
+
+pdb:
+  enabled: false
+  minAvailable: 1
+
+certificates: {}
+
+additionalEnv:
+  - name: DOCKER_VERNEMQ_ALLOW_REGISTER_DURING_NETSPLIT
+    value: "on"
+  - name: DOCKER_VERNEMQ_ALLOW_PUBLISH_DURING_NETSPLIT
+    value: "on"
+  - name: DOCKER_VERNEMQ_ALLOW_SUBSCRIBE_DURING_NETSPLIT
+    value: "on"
+  - name: DOCKER_VERNEMQ_ALLOW_UNSUBSCRIBE_DURING_NETSPLIT
+    value: "on"
+  - name: DOCKER_VERNEMQ_ACCEPT_EULA
+    value: "yes"
+  #  - name: DOCKER_VERNEMQ_ALLOW_ANONYMOUS
+  #    value: "on"
+  #  - name: DOCKER_VERNEMQ_MAX_CLIENT_ID_SIZE
+  #    value: "100"
+  #  - name: DOCKER_VERNEMQ_MAX_ONLINE_MESSAGES
+  #    value: "10000"
+  #  - name: DOCKER_VERNEMQ_MAX_OFFLINE_MESSAGES
+  #    value: "-1"
+  #  Please note that the following environment variables will conflict
+  #  with configuration under the `certificates` config key
+  - name: DOCKER_VERNEMQ_LISTENER__SSL__CAFILE
+    value: "/etc/ssl/vernemq/tls.crt"
+  - name: DOCKER_VERNEMQ_LISTENER__SSL__CERTFILE
+    value: "/etc/ssl/vernemq/tls.crt"
+  - name: DOCKER_VERNEMQ_LISTENER__SSL__KEYFILE
+    value: "/etc/ssl/vernemq/tls.key"
+envFrom:
+  # add additional environment variables e.g. from a configmap or secret
+  # can be usefull if you wanna use authentication via files
+  - secretRef:
+      name: mqtt-users
+
+acl:
+  enabled: false
+  labels: {}
+  annotations: {}
+  content: |-
+    topic #

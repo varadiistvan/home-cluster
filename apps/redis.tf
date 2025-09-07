@@ -32,10 +32,10 @@ resource "helm_release" "redis" {
   version    = "22.0.7"
   values     = [file("${path.module}/values/redis-values.yaml")]
 
-  set {
+  set = [{
     name  = "auth.existingSecret"
     value = kubernetes_secret.redis_auth[each.key].metadata[0].name
-  }
+  }]
 
   depends_on = [kubernetes_namespace.apps, kubernetes_secret.redis_auth]
 }

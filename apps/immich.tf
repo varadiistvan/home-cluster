@@ -103,45 +103,41 @@ resource "helm_release" "immich" {
   values     = [file("${path.module}/values/immich-values.yaml")]
   depends_on = [kubernetes_namespace.apps, helm_release.redis, time_sleep.immich_wait, kubernetes_persistent_volume_claim.immich_pvc]
 
-  set {
-    name  = "image.tag"
-    value = "v1.135.3"
-  }
-
-  set {
+  set = [{
     name  = "env.REDIS_HOSTNAME"
     value = "${helm_release.redis["immich"].name}-master"
-  }
+    },
 
-  set {
-    name  = "env.REDIS_PASSWORD"
-    value = random_password.redis_passwords["immich"].result
-  }
+    {
+      name  = "env.REDIS_PASSWORD"
+      value = random_password.redis_passwords["immich"].result
+    },
 
-  set {
-    name  = "env.DB_HOSTNAME"
-    value = "${helm_release.postgres.name}-postgresql"
-  }
+    {
+      name  = "env.DB_HOSTNAME"
+      value = "${helm_release.postgres.name}-postgresql"
+    },
 
-  set {
-    name  = "env.DB_USERNAME"
-    value = "immich"
-  }
+    {
+      name  = "env.DB_USERNAME"
+      value = "immich"
+    },
 
-  set {
-    name  = "env.DB_DATABASE_NAME"
-    value = "immich"
-  }
+    {
+      name  = "env.DB_DATABASE_NAME"
+      value = "immich"
+    },
 
-  set {
-    name  = "env.DB_PASSWORD"
-    value = kubernetes_secret.immich_password.data.password
-  }
+    {
+      name  = "env.DB_PASSWORD"
+      value = kubernetes_secret.immich_password.data.password
+    },
 
-  set {
-    name  = "immich.persistence.library.existingClaim"
-    value = kubernetes_persistent_volume_claim.immich_pvc.metadata[0].name
-  }
+    {
+      name  = "immich.persistence.library.existingClaim"
+      value = kubernetes_persistent_volume_claim.immich_pvc.metadata[0].name
+    },
+  ]
 
 }
 
