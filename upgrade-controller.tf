@@ -788,7 +788,7 @@ resource "kubernetes_deployment" "upgrade_controller" {
         }
 
         container {
-          image             = "rancher/system-upgrade-controller:v0.16.0"
+          image             = "rancher/system-upgrade-controller:v0.16.3"
           image_pull_policy = "Always"
           name              = "system-upgrade-controller"
 
