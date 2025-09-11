@@ -6,25 +6,27 @@ convertx:
 
   env:
     ACCOUNT_REGISTRATION: "false"
-    ALLOW_UNAUTHENTICATED: "false"
+    ALLOW_UNAUTHENTICATED: "true"
     AUTO_DELETE_EVERY_N_HOURS: "24"
     FFMPEG_ARGS: ""
     HIDE_HISTORY: "false"
     HTTP_ALLOWED: "false"
     LANGUAGE: en
+    WEBROOT:
 
   repository:
     image: ghcr.io/c4illin/convertx
-    tag: "pr-389"
+    tag: "pr-317"
   persistence:
     data:
-      storageClass: "nfs-csi"
-      size: 5Gi
+      storageClass: "iscsi-csi"
+      size: 15Gi
       accessMode:
         - ReadWriteOnce
       enabled: true
   ingress:
     annotations:
+      nginx.ingress.kubernetes.io/proxy-body-size: 5g
       cert-manager.io/cluster-issuer: letsencrypt
       nginx.ingress.kubernetes.io/whitelist-source-range: >-
         192.168.0.1/24,
