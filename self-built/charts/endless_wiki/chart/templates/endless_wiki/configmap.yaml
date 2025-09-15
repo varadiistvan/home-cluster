@@ -1,0 +1,14 @@
+apiVersion: v1
+data:
+  OLLAMA_HOST: '{{ tpl .Values.endless_wiki.environment.OLLAMA_HOST $ }}'
+  OLLAMA_MODEL: '{{ tpl .Values.endless_wiki.environment.OLLAMA_MODEL $ }}'
+  PORT: "8080"
+kind: ConfigMap
+metadata:
+  annotations:
+    katenary.v3/compose-hash: 74036e1c07804368f81690e30a727f975ae7ceb3
+    katenary.v3/version: 3.0.0-rc6
+  labels:
+    {{- include "endless_wiki.labels" . | nindent 4 }}
+    katenary.v3/component: endless_wiki
+  name: '{{ include "endless_wiki.fullname" . }}-endless-wiki'

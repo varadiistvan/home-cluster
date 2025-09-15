@@ -1,0 +1,18 @@
+services:
+  endless_wiki:
+    image: xanderstrike/endless-wiki:latest
+    container_name: endless_wiki
+    ports:
+      - "8080:8080"
+    environment:
+      OLLAMA_HOST: http://ollama:11434
+      OLLAMA_MODEL: gemma3:1b
+      PORT: 8080
+    restart: unless-stopped
+    labels:
+      katenary.v3/ingress: |
+        hostname: wiki.stevevaradi.me
+        port: 8080
+      katenary.v3/values: |
+        - OLLAMA_HOST
+        - OLLAMA_MODEL

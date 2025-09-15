@@ -1,18 +1,18 @@
-# This is the main values.yaml file for the endless-wiki chart.
+# This is the main values.yaml file for the endless_wiki chart.
 # More information can be found in the chart's README.md file.
 #
-# generated at: 2025-09-07T13:21:37+02:00
+# generated at: 2025-09-15T16:05:35+02:00
 # compose files: docker-compose.yml
-# compose hash (sha1): 5268736eca559f0e7bad5d1cb44e2137087f4ffb
+# compose hash (sha1): 74036e1c07804368f81690e30a727f975ae7ceb3
 
 # Name of the chart (required), basically the name of the project.
 name: endless-wiki
 apiVersion: v2
 
 # Version of the chart (required)
-version: 0.1.5
+version: 0.1.6
 
 # Version of the application (required).
 # This should be the main application version.
 appVersion: 0.1.0
-description: A Helm chart for endless-wiki
+description: A Helm chart for endless_wiki

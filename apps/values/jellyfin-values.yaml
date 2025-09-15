@@ -20,15 +20,15 @@ volumes:
     nfs:
       server: 192.168.0.151
       path: /export/media
-  - name: dri
-    hostPath:
-      path: /dev/dri
+  # - name: dri
+  #   hostPath:
+  #     path: /dev/dri
 
 volumeMounts:
   - name: nfs-media
     mountPath: "/nfs_media"
-  - name: dri
-    mountPath: "/dev/dri"
+  # - name: dri
+  #   mountPath: "/dev/dri"
 
 persistence:
   config:
@@ -39,15 +39,19 @@ persistence:
   media:
     enabled: false
 
-affinity:
-  nodeAffinity:
-    requiredDuringSchedulingIgnoredDuringExecution:
-      nodeSelectorTerms:
-        - matchExpressions:
-            - key: kubernetes.io/arch
-              operator: In
-              values:
-                - amd64
+resources:
+  limits:
+    gpu.intel.com/i915: 1
+
+# affinity:
+#   nodeAffinity:
+#     requiredDuringSchedulingIgnoredDuringExecution:
+#       nodeSelectorTerms:
+#         - matchExpressions:
+#             - key: kubernetes.io/arch
+#               operator: In
+#               values:
+#                 - amd64
 
 securityContext:
   privileged: true

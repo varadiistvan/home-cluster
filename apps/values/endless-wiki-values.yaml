@@ -24,7 +24,8 @@ endless_wiki:
   # key: endless_wiki.ingress
   ingress:
     # key: endless_wiki.ingress.annotations
-    annotations: {}
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
     # key: endless_wiki.ingress.host
     host: wiki.stevevaradi.me
     # key: endless_wiki.ingress.path
@@ -42,7 +43,13 @@ endless_wiki:
       # key: endless_wiki.ingress.tls.enabled
       enabled: true
       # key: endless_wiki.ingress.tls.secretName
-      secretName: "endless-tls"
+      secretName: "wiki-tls"
+  # key: endless_wiki.environment
+  environment:
+    # key: endless_wiki.environment.OLLAMA_HOST
+    OLLAMA_HOST: http://ollama.stevevaradi.me:11434
+    # key: endless_wiki.environment.OLLAMA_MODEL
+    OLLAMA_MODEL: gemma3:1b
   # key: endless_wiki.replicas
   replicas: 1
   # key: endless_wiki.nodeSelector
@@ -69,59 +76,6 @@ endless_wiki:
   # key: endless_wiki.imagePullPolicy
   imagePullPolicy: IfNotPresent
   # key: endless_wiki.serviceAccount
-  serviceAccount: ""
-
-# ollama configuration
-ollama:
-  # key: ollama.repository
-  repository:
-    # key: ollama.repository.image
-    image: ollama/ollama
-    # key: ollama.repository.tag
-    tag: latest
-  # key: ollama.persistence
-  persistence:
-    # key: ollama.persistence.ollama_data
-    ollama_data:
-      # Storage class to use for PVCs
-      # storageClass: "-" means use default
-      # storageClass: "" means do not specify
-      # storageClass: "foo" means use that storageClass
-      # key: ollama.persistence.ollama_data.storageClass
-      storageClass: "iscsi-csi"
-      # key: ollama.persistence.ollama_data.size
-      size: 50Gi
-      # key: ollama.persistence.ollama_data.accessMode
-      accessMode:
-        - ReadWriteOnce
-      # key: ollama.persistence.ollama_data.enabled
-      enabled: true
-  # key: ollama.replicas
-  replicas: 1
-  # key: ollama.nodeSelector
-  nodeSelector: {}
-  # Resources allows you to specify the resource requests and limits for a service.
-  # Resources are used to specify the amount of CPU and memory that
-  # a container needs.
-  #
-  # e.g.
-  # resources:
-  #   requests:
-  #     memory: "64Mi"
-  #     cpu: "250m"
-  #   limits:
-  #     memory: "128Mi"
-  #     cpu: "500m"
-  # key: ollama.resources
-  resources: {}
-  # imagePullPolicy allows you to specify a policy to cache or always pull an image.
-  # You must provide a string value with one of the following values:
-  # - Always       -> will always pull the image
-  # - Never        -> will never pull the image, the image should be present on the node
-  # - IfNotPresent -> will pull the image only if it is not present on the node
-  # key: ollama.imagePullPolicy
-  imagePullPolicy: IfNotPresent
-  # key: ollama.serviceAccount
   serviceAccount: ""
 
 # imagePullSecrets allows you to specify a name of an image pull secret.

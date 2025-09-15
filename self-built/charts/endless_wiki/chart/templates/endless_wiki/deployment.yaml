@@ -2,29 +2,29 @@ apiVersion: apps/v1
 kind: Deployment
 metadata:
   annotations:
-    katenary.v3/compose-hash: 5268736eca559f0e7bad5d1cb44e2137087f4ffb
+    katenary.v3/compose-hash: 74036e1c07804368f81690e30a727f975ae7ceb3
     katenary.v3/version: 3.0.0-rc6
   labels:
-    {{- include "endless-wiki.labels" . | nindent 4 }}
+    {{- include "endless_wiki.labels" . | nindent 4 }}
     katenary.v3/component: endless_wiki
-  name: '{{ include "endless-wiki.fullname" . }}-endless-wiki'
+  name: '{{ include "endless_wiki.fullname" . }}-endless-wiki'
 spec:
   replicas: {{ .Values.endless_wiki.replicas }}
   selector:
     matchLabels:
-      {{- include "endless-wiki.selectorLabels" . | nindent 6 }}
+      {{- include "endless_wiki.selectorLabels" . | nindent 6 }}
       katenary.v3/component: endless_wiki
   strategy: {}
   template:
     metadata:
       labels:
-        {{- include "endless-wiki.selectorLabels" . | nindent 8 }}
+        {{- include "endless_wiki.selectorLabels" . | nindent 8 }}
         katenary.v3/component: endless_wiki
     spec:
       containers:
       - envFrom:
         - configMapRef:
-            name: '{{ include "endless-wiki.fullname" . }}-endless-wiki'
+            name: '{{ include "endless_wiki.fullname" . }}-endless-wiki'
         image: '{{ tpl .Values.endless_wiki.repository.image $ }}:{{ tpl .Values.endless_wiki.repository.tag $ | default "latest" }}'
         imagePullPolicy: {{ .Values.endless_wiki.imagePullPolicy }}
         name: endless-wiki
@@ -39,20 +39,6 @@ spec:
       imagePullSecrets:
       {{- .Values.pullSecrets | toYaml | nindent 6 }}
       {{- end }}
-      initContainers:
-      - command:
-        - /bin/sh
-        - -c
-        - |-
-          until nc -z {{ include "endless-wiki.fullname" . }}-ollama 11434; do
-            sleep 1;
-          done
-        image: busybox:latest
-        name: wait-for-ollama
-        {{- if .Values.endless_wiki.resources }}
-        resources:
-          {{ .Values.endless_wiki.resources | toYaml | nindent 10 }}
-        {{- end }}
       {{- if .Values.endless_wiki.nodeSelector }}
       nodeSelector:
         {{- .Values.endless_wiki.nodeSelector | toYaml | nindent 8 }}

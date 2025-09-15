@@ -1,4 +1,4 @@
-{{- define "endless-wiki.fullname" -}}
+{{- define "endless_wiki.fullname" -}}
 {{- if .Values.fullnameOverride -}}
 {{- .Values.fullnameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
@@ -11,7 +11,7 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "endless-wiki.name" -}}
+{{- define "endless_wiki.name" -}}
 {{- if .Values.nameOverride -}}
 {{- .Values.nameOverride | trunc 63 | trimSuffix "-" -}}
 {{- else -}}
@@ -19,8 +19,8 @@
 {{- end -}}
 {{- end -}}
 
-{{- define "endless-wiki.labels" -}}
-{{ include "endless-wiki.selectorLabels" .}}
+{{- define "endless_wiki.labels" -}}
+{{ include "endless_wiki.selectorLabels" .}}
 {{ if .Chart.Version -}}
 {{ printf "katenary.v3/chart-version: '%s'" .Chart.Version }}
 {{- end }}
@@ -29,7 +29,7 @@
 {{- end }}
 {{- end -}}
 
-{{- define "endless-wiki.selectorLabels" -}}
+{{- define "endless_wiki.selectorLabels" -}}
 {{- $name := default .Chart.Name .Values.nameOverride -}}
 {{ printf "katenary.v3/name: %s" $name }}
 {{ printf "katenary.v3/instance: %s" .Release.Name }}
