@@ -1,17 +1,17 @@
 {{- if .Values.endless_wiki.ingress.enabled -}}
-{{- $fullname := include "endless-wiki.fullname" . -}}
+{{- $fullname := include "endless_wiki.fullname" . -}}
 {{- $tlsname := printf "%s-%s-tls" $fullname "endless_wiki" -}}
 apiVersion: networking.k8s.io/v1
 kind: Ingress
 metadata:
   annotations:
-    katenary.v3/compose-hash: 5268736eca559f0e7bad5d1cb44e2137087f4ffb
+    katenary.v3/compose-hash: 74036e1c07804368f81690e30a727f975ae7ceb3
     katenary.v3/version: 3.0.0-rc6
     {{- if .Values.endless_wiki.ingress.annotations -}}
         {{- toYaml .Values.endless_wiki.ingress.annotations | nindent 4 }}
     {{- end }}
   labels:
-    {{- include "endless-wiki.labels" . | nindent 4 }}
+    {{- include "endless_wiki.labels" . | nindent 4 }}
     katenary.v3/component: endless-wiki
   name: '{{ $fullname }}-endless-wiki'
 spec:

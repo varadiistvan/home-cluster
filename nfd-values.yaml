@@ -1,0 +1,6 @@
+featureGates:
+  NodeFeatureGroupAPI: true
+
+topologyUpdater:
+  enable: true
+  createCRDs: true
