@@ -29,7 +29,7 @@ resource "helm_release" "postgres-operator" {
   name       = "postgres-operator"
   namespace  = kubernetes_namespace.apps.metadata[0].name
   chart      = "postgres-operator-chart"
-  repository = "oci://registry.stevevaradi.me"
+  repository = "oci://harbor.stevevaradi.me/stevevaradi"
   version    = "0.3.2"
 
   count = 1

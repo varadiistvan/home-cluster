@@ -3,7 +3,7 @@ resource "helm_release" "iscsi_provisioner" {
   namespace  = "kube-system"
   chart      = "csi-iscsi-provisioner-chart"
   version    = "0.9.0"
-  repository = "oci://registry.stevevaradi.me"
+  repository = "oci://harbor.stevevaradi.me/stevevaradi"
   timeout    = 600
   values     = [file("${path.module}/iscsi-provisioner-values.yaml")]
 
@@ -32,6 +32,9 @@ resource "kubernetes_secret" "registry_pass" {
     ".dockerconfigjson" = jsonencode({
       auths = {
         "registry.stevevaradi.me" = {
+          auth = base64encode("stevev:${var.home_registry_password}")
+        },
+        "harbor.stevevaradi.me" = {
           auth = base64encode("stevev:${var.home_registry_password}")
         }
       }

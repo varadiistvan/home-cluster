@@ -8,7 +8,7 @@ diagnosticMode:
   enabled: false
 
 image:
-  registry: registry.stevevaradi.me
+  registry: harbor.stevevaradi.me/stevevaradi
   repository: manyvector-pg
   tag: 16
   digest: ""

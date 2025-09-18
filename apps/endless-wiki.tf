@@ -21,7 +21,7 @@ resource "helm_release" "endless-wiki" {
   name       = "wiki"
   namespace  = kubernetes_namespace.apps.id
   chart      = "endless-wiki"
-  repository = "oci://registry.stevevaradi.me"
+  repository = "oci://harbor.stevevaradi.me/stevevaradi"
   version    = "0.1.6"
   values     = [file("${path.module}/values/endless-wiki-values.yaml")]
 

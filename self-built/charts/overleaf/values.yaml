@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  registry: registry.stevevaradi.me
+  registry: harbor.stevevaradi.me/stevevaradi
   repository: overleaf-kubernetes
   tag: "5.5"
   pullPolicy: IfNotPresent
@@ -41,8 +41,7 @@ persistence:
     size: 5Gi
 
 texlive:
-  packages:
-    []
+  packages: []
     # - collection-latexrecommended
     # - collection-fontsrecommended
     # - collection-latexextra

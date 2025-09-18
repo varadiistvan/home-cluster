@@ -1,3 +1,7 @@
+global:
+  image:
+    registry: harbor.stevevaradi.me/hub
+
 ingress:
   enabled: true
   annotations:

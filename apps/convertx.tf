@@ -16,7 +16,7 @@ resource "kubernetes_secret" "convertx_jwt" {
 resource "helm_release" "convertx" {
   name                = "convertx"
   namespace           = kubernetes_namespace.apps.id
-  repository          = "oci://registry.stevevaradi.me"
+  repository          = "oci://harbor.stevevaradi.me/stevevaradi"
   chart               = "convertx"
   values              = [file("${path.module}/values/convertx-values.yaml")]
   version             = "0.1.0"

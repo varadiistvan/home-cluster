@@ -12,7 +12,7 @@ endless_wiki:
   # key: endless_wiki.repository
   repository:
     # key: endless_wiki.repository.image
-    image: xanderstrike/endless-wiki
+    image: harbor.stevevaradi.me/hub/xanderstrike/endless-wiki
     # key: endless_wiki.repository.tag
     tag: latest
   # Default value for ingress.class annotation

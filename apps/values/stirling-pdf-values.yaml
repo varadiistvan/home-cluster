@@ -4,9 +4,8 @@ strategy:
   type: RollingUpdate
 
 image:
-  registry: registry.hub.docker.com
+  registry: harbor.stevevaradi.me/hub
   repository: stirlingtools/stirling-pdf
-  tag: 1.2.0
 
 rootPath:
 
@@ -41,7 +40,7 @@ persistence:
 
 volumePermissions:
   image:
-    registry: docker.io
+    registry: harbor.stevevaradi.me/hub
     repository: bitnami/minideb
     tag: buster
     pullPolicy: Always

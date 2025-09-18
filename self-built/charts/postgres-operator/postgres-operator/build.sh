@@ -1,4 +1,4 @@
-REPO=registry.stevevaradi.me/postgres-operator-rust
+REPO=harbor.stevevaradi.me/stevevaradi/postgres-operator-rust
 
 if [ "$#" -lt 1 ] || [ "$#" -gt 1 ]; then
   echo "Give version number and only version number"

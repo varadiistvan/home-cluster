@@ -1,5 +1,6 @@
 replicaCount: 1
 image:
+  registry: harbor.stevevaradi.me/stevevaradi
   tag: "5.5"
   pullPolicy: IfNotPresent
   pullSecrets:

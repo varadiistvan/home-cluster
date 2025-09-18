@@ -1,5 +1,11 @@
 replicaCount: 1
 
+image:
+  repository: harbor.stevevaradi.me/ghcr/home-assistant/home-assistant
+
+imagePullSecrets:
+  - name: registry-pass
+
 serviceAccount:
   create: true
 
@@ -51,7 +57,7 @@ affinity: {}
 
 initContainers:
   - name: init-chmod-data
-    image: docker.io/bitnami/os-shell:12-debian-12-r35
+    image: harbor.stevevaradi.me/hub/bitnamilegacy/os-shell:12-debian-12-r35
     imagePullPolicy: "IfNotPresent"
     resources:
       limits:
@@ -163,7 +169,7 @@ configuration:
 
   initContainer:
     name: setup-config
-    image: mikefarah/yq:4
+    image: harbor.stevevaradi.me/hub/mikefarah/yq:4
     securityContext:
       runAsUser: 0
     command: ["/bin/sh", "-c"]
@@ -212,7 +218,7 @@ addons:
     enabled: false
     resources: {}
     image:
-      repository: ghcr.io/coder/code-server
+      repository: harbor.stevevaradi.me/ghcr/coder/code-server
       pullPolicy: IfNotPresent
     ingress:
       enabled: true

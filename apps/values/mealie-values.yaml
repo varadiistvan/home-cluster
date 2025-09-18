@@ -1,6 +1,6 @@
 mealie:
   repository:
-    image: ghcr.io/mealie-recipes/mealie
+    image: harbor.stevevaradi.me/ghcr/mealie-recipes/mealie
     tag: v2.8.0
 
   db:

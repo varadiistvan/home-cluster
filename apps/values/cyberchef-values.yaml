@@ -1,6 +1,5 @@
 image:
-  repository: obeoneorg/cyberchef
-  tag:
+  repository: harbor.stevevaradi.me/hub/obeoneorg/cyberchef
   pullPolicy: Always
 
 env:

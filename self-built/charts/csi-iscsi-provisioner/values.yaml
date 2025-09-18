@@ -12,7 +12,7 @@ controllerPlugin:
     - name: registry-pass
 
   image:
-    repository: registry.stevevaradi.me/csi-iscsi-provisioner
+    repository: harbor.stevevaradi.me/stevevaradi/csi-iscsi-provisioner
     pullPolicy: IfNotPresent
     tag: "0.6.0"
   sidecar:
@@ -28,7 +28,7 @@ nodePlugin:
     - name: registry-pass
   image:
     # This is the official iSCSI node plugin from Kubernetes CSI.
-    repository: registry.stevevaradi.me/csi-driver-iscsi-arm
+    repository: harbor.stevevaradi.me/stevevaradi/csi-driver-iscsi-arm
     pullPolicy: Always
     # Using a known stable tag
     tag: "v2.8.4"

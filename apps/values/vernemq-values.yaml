@@ -4,7 +4,7 @@ nodeSelector:
 replicaCount: 3
 
 image:
-  repository: vernemq/vernemq
+  repository: harbor.stevevaradi.me/hub/vernemq/vernemq
 
 serviceMonitor:
   create: true

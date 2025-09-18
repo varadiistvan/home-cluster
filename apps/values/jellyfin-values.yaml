@@ -1,3 +1,6 @@
+image:
+  repository: harbor.stevevaradi.me/hub/jellyfin/jellyfin
+
 ingress:
   enabled: true
   annotations:

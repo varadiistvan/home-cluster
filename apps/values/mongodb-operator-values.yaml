@@ -1,0 +1,107 @@
+imagePullSecrets:
+  - name: registry-pass
+
+operator:
+  name: mongodb-kubernetes-operator
+
+  operatorImageName: mongodb-kubernetes-operator
+
+  deploymentName: mongodb-kubernetes-operator
+
+  watchNamespace: "*"
+
+  # Resources allocated to Operator Pod
+  resources:
+    limits:
+      cpu: 1100m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 200Mi
+
+  # PriorityClass configuration for operator
+  # ref: https://kubernetes.io/docs/concepts/scheduling-eviction/pod-priority-preemption/#priorityclass
+  priorityClassName: ""
+
+  extraEnvs: []
+  # environment:
+  # - name: CLUSTER_DOMAIN
+  #   value: my-cluster.domain
+
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 2000
+
+  securityContext: {}
+
+  podLabels: {}
+
+## Operator's database
+database:
+  name: mongodb-database
+  # set this to the namespace where you would like
+  # to deploy the MongoDB database,
+  # Note if the database namespace is not same
+  # as the operator namespace,
+  # make sure to set "watchNamespace" to "*"
+  # to ensure that the operator has the
+  # permission to reconcile resources in other namespaces
+  # namespace: mongodb-database
+
+agent:
+  name: mongodb-agent-ubi
+versionUpgradeHook:
+  name: mongodb-kubernetes-operator-version-upgrade-post-start-hook
+readinessProbe:
+  name: mongodb-kubernetes-readinessprobe
+mongodb:
+  name: mongodb-community-server
+  repo: harbor.stevevaradi.me/hub/mongodb
+  imageType: ubi9
+
+registry:
+  agent: harbor.stevevaradi.me/quay/mongodb
+  versionUpgradeHook: harbor.stevevaradi.me/quay/mongodb
+  readinessProbe: harbor.stevevaradi.me/quay/mongodb
+  operator: harbor.stevevaradi.me/quay/mongodb
+  pullPolicy: IfNotPresent
+
+community-operator-crds:
+  enabled: true
+
+# Deploys MongoDB with `resource` attributes.
+createResource: false
+resource:
+  name: mongodb-replica-set
+  version: 4.4.0
+  members: 3
+  tls:
+    enabled: false
+
+    # Installs Cert-Manager in this cluster.
+    useX509: false
+    sampleX509User: false
+    useCertManager: true
+    certificateKeySecretRef: tls-certificate
+    caCertificateSecretRef: tls-ca-key-pair
+    certManager:
+      certDuration: 8760h # 365 days
+      renewCertBefore: 720h # 30 days
+
+  users: []
+  # if using the MongoDBCommunity Resource, list any users to be added to the resource
+  # users:
+  # - name: my-user
+  #   db: admin
+  #   passwordSecretRef: # a reference to the secret that will be used to generate the user's password
+  #     name: <secretName>
+  #   roles:
+  #     - name: clusterAdmin
+  #       db: admin
+  #     - name: userAdminAnyDatabase
+  #       db: admin
+  #     - name: readWriteAnyDatabase
+  #       db: admin
+  #     - name: dbAdminAnyDatabase
+  #       db: admin
+  #   scramCredentialsSecretName: my-scram

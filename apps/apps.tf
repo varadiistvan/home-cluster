@@ -35,6 +35,9 @@ resource "kubernetes_secret" "registry_pass" {
       auths = {
         "registry.stevevaradi.me" = {
           auth = base64encode("stevev:${var.home_registry_password}")
+        },
+        "harbor.stevevaradi.me" = {
+          auth = base64encode("stevev:${var.home_registry_password}")
         }
       }
     })
