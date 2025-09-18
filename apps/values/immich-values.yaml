@@ -10,8 +10,7 @@ immich:
   persistence:
     library:
       existingClaim: "immich-pvc"
-  configuration:
-    {}
+  configuration: {}
     # trash:
     #   enabled: true
     #   days: 30
@@ -20,6 +19,8 @@ immich:
     #   template: "{{y}}/{{y}}-{{MM}}-{{dd}}/{{filename}}"
 
 server:
+  image:
+    repository: harbor.stevevaradi.me/ghcr/immich-app/immich-server
   ingress:
     main:
       enabled: true
@@ -40,6 +41,8 @@ server:
 
 machine-learning:
   enabled: true
+  image:
+    repository: harbor.stevevaradi.me/ghcr/immich-app/immich-machine-learning
   env:
     TRANSFORMERS_CACHE: /cache
   persistence:

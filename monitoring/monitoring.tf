@@ -30,10 +30,14 @@ resource "kubernetes_secret" "registry_pass" {
       auths = {
         "registry.stevevaradi.me" = {
           auth = base64encode("stevev:${var.home_registry_password}")
+        },
+        "harbor.stevevaradi.me" = {
+          auth = base64encode("stevev:${var.home_registry_password}")
         }
       }
     })
   }
+
 
   type = "kubernetes.io/dockerconfigjson"
 
@@ -103,7 +107,7 @@ resource "helm_release" "pi5_monitor" {
   namespace  = kubernetes_namespace.monitoring.metadata[0].name
   chart      = "pi5-monitor"
   version    = "0.1.5"
-  repository = "oci://registry.stevevaradi.me"
+  repository = "oci://harbor.stevevaradi.me/stevevaradi"
   values     = [file("${path.module}/pi5-monitor-values.yaml")]
 
   set_list = [{

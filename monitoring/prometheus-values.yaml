@@ -145,3 +145,10 @@ crds:
   upgradeJob:
     enabled: true
     forceConflicts: true
+  image:
+    busybox:
+      registry: harbor.stevevaradi.me/hub
+    kubectl:
+      registry: harbor.stevevaradi.me/k8s-reg
+
+prometheusOperator.admissionWebhooks.patch.image.registry: harbor.stevevaradi.me/k8s-reg

@@ -15,8 +15,8 @@ convertx:
     WEBROOT:
 
   repository:
-    image: ghcr.io/c4illin/convertx
-    tag: "pr-317"
+    image: harbor.stevevaradi.me/ghcr/c4illin/convertx
+    tag: "main"
   persistence:
     data:
       storageClass: "iscsi-csi"

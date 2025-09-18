@@ -1,5 +1,5 @@
 image:
-  registry: "registry.stevevaradi.me"
+  registry: "harbor.stevevaradi.me/stevevaradi"
   repository: "pi-power"
   tag: "latest"
   pullPolicy: IfNotPresent

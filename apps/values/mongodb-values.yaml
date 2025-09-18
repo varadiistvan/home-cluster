@@ -2,6 +2,9 @@ diagnosticMode:
   enabled: false
 
 global:
+  imageRegistry: harbor.stevevaradi.me/hub
+  imagePullSecrets:
+    - registry-pass
   security:
     allowInsecureImages: true
 

@@ -1,4 +1,4 @@
-FROM registry.stevevaradi.me/overleaf:latest
+FROM harbor.stevevaradi.me/stevevaradi/overleaf:latest
 
 RUN rm /etc/my_init.d/000_check_for_old_env_vars_5.sh \
   && rm /etc/my_init.d/100_make_overleaf_data_dirs.sh

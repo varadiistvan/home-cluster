@@ -74,7 +74,7 @@ resource "kubectl_manifest" "mealie_database" {
 resource "helm_release" "mealie" {
   name                = "mealie"
   namespace           = kubernetes_namespace.apps.id
-  repository          = "oci://registry.stevevaradi.me"
+  repository          = "oci://harbor.stevevaradi.me/stevevaradi"
   chart               = "mealie"
   values              = [file("${path.module}/values/mealie-values.yaml")]
   version             = "0.1.1"

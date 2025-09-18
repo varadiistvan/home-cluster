@@ -1,13 +1,13 @@
 fullnameOverride: null
 customLabels: {}
 image:
-  repository: koenkk/zigbee2mqtt
+  repository: harbor.stevevaradi.me/hub/koenkk/zigbee2mqtt
   pullPolicy: IfNotPresent
   imagePullSecrets: {}
 
 secretesMigratorContainer:
-  repository: "mikefarah/yq"
-  tag: "4.45.1"
+  repository: harbor.stevevaradi.me/hub/mikefarah/yq
+  tag: 4.45.1
   pullPolicy: IfNotPresent
   imagePullSecrets: {}
   securityContext:
@@ -85,7 +85,7 @@ zigbee2mqtt:
   homeassistant:
     enabled: true
     discovery_topic: "homeassistant"
-    status_topic: "hass/status"
+    status_topic: "homeassistant/status"
     legacy_entity_attributes: true
     legacy_triggers: false
   # -- Optional: allow new devices to join.
@@ -249,8 +249,7 @@ ingress:
         - yourdomain.com
 
 # -- Extra Resources. Define some extra resources to be created, such as ExternalResource or Secrets, etc.
-extraResources:
-  []
+extraResources: []
   # - apiVersion: v1
   #   kind: Secret
   #   metadata:

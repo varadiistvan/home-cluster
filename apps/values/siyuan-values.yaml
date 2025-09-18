@@ -1,9 +1,9 @@
 replicaCount: 1
 
 image:
-  repository: apkdv/siyuan-unlock
+  repository: harbor.stevevaradi.me/hub/apkdv/siyuan-unlock
   pullPolicy: IfNotPresent
-  tag: "v3.3.1"
+  tag: "v3.3.2"
 
 timezone: "Europe/Amsterdam"
 
