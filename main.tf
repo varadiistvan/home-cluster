@@ -87,7 +87,7 @@ module "networking" {
     kubectl    = kubectl
   }
 
-  depends_on = [helm_release.nfs_provisioner]
+  depends_on = [module.storage]
 }
 
 module "apps" {
@@ -104,7 +104,7 @@ module "apps" {
     time       = time
   }
 
-  depends_on = [module.networking, helm_release.nfs_provisioner, helm_release.iscsi_provisioner]
+  depends_on = [module.networking, module.storage]
 }
 
 module "monitoring" {
@@ -120,6 +120,29 @@ module "monitoring" {
     helm       = helm
     kubectl    = kubectl
   }
-  depends_on = [helm_release.nfs_provisioner, module.networking]
+  depends_on = [module.storage, module.networking]
 }
 
+module "storage" {
+  source = "./storage"
+
+  providers = {
+    helm       = helm
+    kubernetes = kubernetes
+  }
+
+  iscsi_provisioner_token = var.iscsi_provisioner_token
+  home_registry_password  = var.home_registry_password
+
+}
+
+module "hardware" {
+  source = "./hardware"
+
+  providers = {
+    helm       = helm
+    kubernetes = kubernetes
+    kubectl    = kubectl
+  }
+
+}
