@@ -11,7 +11,7 @@ variable "client_key" {
 variable "kubernetes_host" {
   type        = string
   description = "The Kubernetes API server endpoint."
-  default     = "https://192.168.0.139:6443"
+  default     = "https://192.168.0.151:6443"
 }
 
 variable "cluster_ca_certificate" {

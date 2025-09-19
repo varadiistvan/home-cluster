@@ -7,6 +7,10 @@ resource "helm_release" "iscsi_provisioner" {
   timeout    = 600
   values     = [file("${path.module}/iscsi-provisioner-values.yaml")]
 
+  repository_username = "stevev"
+  repository_password = var.home_registry_password
+
+
   depends_on = [kubernetes_secret.registry_pass, kubernetes_secret.iscsi_provisioner_token]
 }
 
