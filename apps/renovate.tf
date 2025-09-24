@@ -27,6 +27,12 @@ resource "kubernetes_secret_v1" "renovate_secret" {
     RENOVATE_HOST_RULES_1_HOSTTYPE      = "docker"
     RENOVATE_HOST_RULES_1_USERNAME      = "stevev"
     RENOVATE_HOST_RULES_1_PASSWORD      = var.home_registry_password
+
+    RENOVATE_HOST_RULES_2_MATCHHOST = "harbor.stevevaradi.me"
+    RENOVATE_HOST_RULES_2_HOSTTYPE  = "helm"
+    RENOVATE_HOST_RULES_2_USERNAME  = "stevev"
+    RENOVATE_HOST_RULES_2_PASSWORD  = var.home_registry_password
+
   }
 
 }
