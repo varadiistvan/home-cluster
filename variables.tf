@@ -54,3 +54,24 @@ variable "iscsi_provisioner_token" {
   type      = string
   sensitive = true
 }
+
+variable "renovate_minio_secret" {
+  type      = string
+  sensitive = true
+}
+
+variable "renovate_minio_key" {
+  type      = string
+  sensitive = true
+}
+
+variable "renovate_token" {
+  type      = string
+  sensitive = true
+}
+
+variable "renovate_github_token" {
+  type      = string
+  sensitive = true
+}
+

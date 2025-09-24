@@ -96,6 +96,10 @@ module "apps" {
   postgres_apps_password = var.postgres_apps_password
   home_registry_password = var.home_registry_password
   penpot_api_key         = var.penpot_api_key
+  renovate_github_token  = var.renovate_github_token
+  renovate_minio_key     = var.renovate_minio_key
+  renovate_minio_secret  = var.renovate_minio_secret
+  renovate_token         = var.renovate_token
 
   providers = {
     kubernetes = kubernetes

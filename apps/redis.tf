@@ -1,5 +1,5 @@
 locals {
-  redis_services = ["immich", "overleaf", "penpot"]
+  redis_services = ["immich", "overleaf", "penpot", "renovate"]
 }
 
 resource "random_password" "redis_passwords" {
