@@ -1,0 +1,93 @@
+image:
+  registry: harbor.stevevaradi.me/ghcr
+  useFull: false
+
+imagePullSecrets:
+  - name: registry-pass
+
+cronjob:
+  schedule: "0 */3 * * *"
+  timeZone: Europe/Amsterdam
+  suspend: false
+  concurrencyPolicy: Forbid
+  parallelism: 1
+  failedJobsHistoryLimit: 5
+  successfulJobsHistoryLimit: 2
+  jobRestartPolicy: Never
+
+existingSecret: "renovate-env"
+
+envFrom: []
+env:
+  LOG_LEVEL: debug
+
+renovate:
+  persistence:
+    cache:
+      enabled: false
+
+  configIsSecret: false
+  configIsJson5: true
+
+  config: |
+    {
+      "platform": "github",
+
+      // "autodiscover": true,
+      // "autodiscoverFilter": ["varadiistvan/*"],
+
+      "autodiscover": false,
+      "repositories": [
+        "varadiistvan/home-cluster",
+        "varadiistvan/paytowin-kb",
+        "varadiistvan/voorraadhokmap",
+        "varadiistvan/rofi-alarm"
+      ],
+
+      "onboarding": true,
+
+      "prConcurrentLimit": 20,
+
+      "binarySource": "install",
+
+      "enabledManagers": ["dockerfile", "docker-compose", "kubernetes", "helmv3", "terraform", "gomod", "cargo", "github-actions", "npm", "gradle", "gradle-wrapper"],
+
+      "npm": {
+        "postUpdateOptions": ["npmDedupe"],
+        "ignoreScripts": true
+      },
+
+      "gradleWrapper": {
+        "enabled": true
+      },
+      
+      "packageRules": [
+     
+        {
+          "matchDatasources": ["docker"],
+          "matchPackagePatterns": ["^ghcr\\.io/"],
+          "registryUrls": ["https://harbor.stevevaradi.me/ghcr"]
+        },
+        {
+          "matchDatasources": ["docker"],
+          "matchPackagePatterns": ["^quay\\.io/"],
+          "registryUrls": ["https://harbor.stevevaradi.me/quay"]
+        },
+        {
+          "matchDatasources": ["docker"],
+          "matchPackagePatterns": ["^registry\\.k8s\\.io/"],
+          "registryUrls": ["https://harbor.stevevaradi.me/k8s-reg"]
+        },
+        {
+          "matchDatasources": ["docker"],
+          "matchPackageNames": [
+            "alpine", "golang", "rust", "docker/dockerfile",
+            "bitnami/postgresql", "rancher/system-upgrade-controller"
+          ],
+          "registryUrls": ["https://harbor.stevevaradi.me/hub"]
+        }
+      ],
+
+      "extends": ["config:recommended", ":dependencyDashboard"],
+      "timezone": "Europe/Amsterdam"
+    }

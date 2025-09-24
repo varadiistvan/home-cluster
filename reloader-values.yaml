@@ -1,0 +1,67 @@
+# Generated from deployments/kubernetes/templates/chart/values.yaml.tmpl
+global:
+  ## Reference to one or more secrets to be used when pulling images
+  ## ref: https://kubernetes.io/docs/tasks/configure-pod-container/pull-image-private-registry/
+  ##
+  imageRegistry: "harbor.stevevaradi.me/ghcr"
+  imagePullSecrets:
+    - name: registry-pass
+
+kubernetes:
+  host: https://kubernetes.default
+
+image:
+  name: stakater/reloader
+  pullPolicy: IfNotPresent
+
+reloader:
+  autoReloadAll: false
+  ignoreJobs: true
+  ignoreCronJobs: true
+  reloadOnCreate: false
+  reloadOnDelete: false
+  syncAfterRestart: false
+  reloadStrategy: default # Set to default, env-vars or annotations
+  enableHA: true
+  enablePProf: false
+  pprofAddr: ":6060"
+  enableMetricsByNamespace: true
+  deployment:
+    # If you wish to run multiple replicas set reloader.enableHA = true
+    replicas: 3
+
+    revisionHistoryLimit: 2
+    nodeSelector:
+
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      seccompProfile:
+        type: RuntimeDefault
+
+    resources:
+      limits:
+        cpu: "100m"
+        memory: "512Mi"
+      requests:
+        cpu: "10m"
+        memory: "128Mi"
+
+    imagePullSecrets:
+      - name: registry-pass
+
+    # Put "0" in either to have go runtime ignore the set value.
+    # Otherwise, see https://pkg.go.dev/runtime#hdr-Environment_Variables for GOMAXPROCS and GOMEMLIMIT
+    gomaxprocsOverride: ""
+    gomemlimitOverride: ""
+
+  podMonitor:
+    enabled: true
+    # Set the namespace the podMonitor should be deployed
+    namespace: monitoring
+
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 1
+
+  webhookUrl: ""

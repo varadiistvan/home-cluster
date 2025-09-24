@@ -9,3 +9,7 @@ daemonset:
                 values:
                   - arm64
                   - arm
+              - key: k3s.io/hostname
+                operator: NotIn
+                values:
+                  - macm1
