@@ -24,7 +24,7 @@ resource "helm_release" "nfd" {
   namespace  = kubernetes_namespace.hardware.id
   chart      = "node-feature-discovery"
   repository = "https://kubernetes-sigs.github.io/node-feature-discovery/charts"
-  version    = "0.17.3"
+  version    = "0.17.4"
   values     = [file("${path.module}/nfd-values.yaml")]
 }
 
