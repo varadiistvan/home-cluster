@@ -41,10 +41,16 @@ resource "helm_release" "postgres-operator" {
     value = [kubernetes_secret.registry_pass.metadata[0].name]
   }]
 
-  set = [{
-    name  = "image.tag"
-    value = "0.1.38"
-  }]
+  set = [
+    {
+      name  = "image.tag"
+      value = "0.1.38"
+    },
+    {
+      name  = "image.registry"
+      value = "harbor.stevevaradi.me/stevevaradi"
+    }
+  ]
 
 }
 
