@@ -1,6 +1,7 @@
 use crate::get_tgt_conf_path;
 use crate::models::Lun;
 use std::io::Write;
+use std::os::unix::process::ExitStatusExt;
 use std::path::Path;
 use std::process::{Command, Output};
 use std::{env, fs};
@@ -65,10 +66,26 @@ pub fn create_and_expose_lun(
 
 // Utility: Create a LUN image file
 fn create_lun_image(path: &str, size_bytes: i64) -> Result<Output, String> {
-    let exists = Path::new(path).try_exists();
-
-    if exists.is_err() || exists.is_ok_and(|e| e) {
-        return Err("Image file already exists".into());
+    let p = Path::new(path);
+    if let Ok(true) = p.try_exists() {
+        match is_api_managed(path) {
+            Ok(true) => {
+                let cur = get_lun_size(path)?;
+                if cur >= size_bytes {
+                    return Ok(Output {
+                        status: std::process::ExitStatus::from_raw(0),
+                        stdout: vec![],
+                        stderr: vec![],
+                    });
+                } else {
+                    return Err(format!(
+                        "Image exists but smaller than requested (have {}, want {})",
+                        cur, size_bytes
+                    ));
+                }
+            }
+            _ => return Err("Image file already exists".into()),
+        }
     }
 
     run_command(
@@ -181,7 +198,7 @@ pub fn resize_lun(target_name: &str, path: &str, new_size_bytes: i64) -> Result<
             "--targetname",
             target_name,
             "--lun",
-            "0",
+            "1",
             "--backing-store",
             path,
         ],
@@ -344,7 +361,47 @@ fn list_active_connections(target_name: &str) -> Result<bool, String> {
             &tid.to_string(),
         ],
     )?;
-    Ok(String::from_utf8_lossy(&output.stdout).contains(target_name))
+    let s = String::from_utf8_lossy(&output.stdout);
+    // Look for "I_T nexus" blocks or "Connection:" lines — if present, treat as active.
+    Ok(s.contains("I_T nexus:") || s.contains("Connection:"))
+}
+
+fn get_initiator_cidr_by_tid(tid: usize) -> Result<Vec<String>, String> {
+    let output = run_command(
+        "tgtadm",
+        &[
+            "--lld",
+            "iscsi",
+            "--mode",
+            "target",
+            "--op",
+            "show",
+            "--tid",
+            &tid.to_string(),
+        ],
+    )?;
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut cidrs = Vec::new();
+    let mut in_acl = false;
+    for line in stdout.lines() {
+        let t = line.trim();
+        if t.starts_with("ACL information:") {
+            in_acl = true;
+            continue;
+        }
+        if in_acl {
+            if t.starts_with("Target") {
+                break;
+            }
+            // common prints are "<cidr>" or "Initiator-address: <cidr>"
+            if let Some(rest) = t.strip_prefix("Initiator-address ") {
+                cidrs.push(rest.trim().to_string());
+            } else if t.contains('/') {
+                cidrs.push(t.to_string());
+            }
+        }
+    }
+    Ok(cidrs)
 }
 
 fn get_initiator_cidr(target_name: &str) -> Result<String, String> {
@@ -433,37 +490,35 @@ pub fn delete_iscsi_lun(
         );
     }
 
-    // 4. (NEW) Unbind the initiator address from the target.
-    // This removes the ACL rule.
-    match get_initiator_cidr(target_name) {
-        Ok(initiator_cidr) => {
-            if let Err(e) = run_command(
-                "tgtadm",
-                &[
-                    "--lld",
-                    "iscsi",
-                    "--mode",
-                    "target",
-                    "--op",
-                    "unbind",
-                    "--tid",
-                    &tid_str,
-                    "--initiator-address",
-                    &initiator_cidr,
-                ],
-            ) {
-                eprintln!(
-                    "Warning: Failed to unbind initiator for TID {}: {}. Continuing deletion.",
-                    tid, e
-                );
+    match get_initiator_cidr_by_tid(tid) {
+        Ok(cidrs) => {
+            for cidr in cidrs {
+                if let Err(e) = run_command(
+                    "tgtadm",
+                    &[
+                        "--lld",
+                        "iscsi",
+                        "--mode",
+                        "target",
+                        "--op",
+                        "unbind",
+                        "--tid",
+                        &tid_str,
+                        "--initiator-address",
+                        &cidr,
+                    ],
+                ) {
+                    eprintln!(
+                        "Warning: Failed to unbind {} for TID {}: {}. Continuing.",
+                        cidr, tid, e
+                    );
+                }
             }
         }
-        Err(e) => {
-            eprintln!(
-                "Warning: Could not get initiator CIDR for target '{}' to unbind: {}",
-                target_name, e
-            );
-        }
+        Err(e) => eprintln!(
+            "Warning: Could not read ACLs for TID {}: {}. Continuing deletion.",
+            tid, e
+        ),
     }
 
     // 5. Delete the target itself. This should now succeed.

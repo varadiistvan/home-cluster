@@ -14,12 +14,12 @@ controllerPlugin:
   image:
     repository: harbor.stevevaradi.me/stevevaradi/csi-iscsi-provisioner
     pullPolicy: IfNotPresent
-    tag: "0.5.5"
+    tag: "0.6.1"
   sidecar:
     provisioner:
       image:
         repository: harbor.stevevaradi.me/k8s-reg/sig-storage/csi-provisioner
-        tag: "v4.0.0"
+        tag: "v5.3.0"
 
 nodePlugin:
   imagePullSecrets:
@@ -27,16 +27,16 @@ nodePlugin:
   image:
     repository: harbor.stevevaradi.me/stevevaradi/csi-driver-iscsi-arm
     pullPolicy: Always
-    tag: "v2.8.7"
+    tag: "v2.9.0"
   sidecar:
     registrar:
       image:
         repository: registry.k8s.io/sig-storage/csi-node-driver-registrar
-        tag: "v2.10.0"
+        tag: "v2.15.0"
     livenessProbe:
       image:
         repository: registry.k8s.io/sig-storage/livenessprobe
-        tag: "v2.11.0"
+        tag: "v2.17.0"
 
 apiServer:
   url: "http://192.168.0.151:51084"

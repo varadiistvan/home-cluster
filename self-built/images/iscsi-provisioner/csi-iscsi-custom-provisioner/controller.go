@@ -110,7 +110,7 @@ func (s *ControllerServer) CreateVolume(ctx context.Context, req *csi.CreateVolu
 		"targetPortal": fullTargetPortal,
 		"iqn":          apiResp.TargetName, // Use the IQN returned by your server
 		"portals":      "[]",               // Can be left empty
-		"lun":          "1",                // ***IMPORTANT ASSUMPTION***: Assuming your server always creates on LUN 0.
+		"lun":          "1",
 		"fsType":       params["fsType"],
 	}
 

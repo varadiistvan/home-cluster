@@ -69,6 +69,10 @@ spec:
                   fieldPath: spec.nodeName
             - name: CSI_ENDPOINT
               value: unix:///csi/csi.sock
+            - name: ISCSI_STATE_DIR
+              value: /var/lib/iscsi-csi
+            - name: ISCSIADM_TIMEOUT_SEC
+              value: "60"
           ports:
             - containerPort: 29753
               name: healthz
@@ -100,10 +104,18 @@ spec:
             - name: chroot-iscsiadm
               mountPath: /sbin/iscsiadm
               subPath: iscsiadm
+            - name: iscsi-state
+              mountPath: /var/lib/iscsi-csi
+            - name: run-udev
+              mountPath: /run/udev
       volumes:
         - name: socket-dir
           hostPath:
             path: /var/lib/kubelet/plugins/{{ .Values.storageClass.provisioner }}
+            type: DirectoryOrCreate
+        - name: iscsi-state
+          hostPath:
+            path: /var/lib/iscsi-csi
             type: DirectoryOrCreate
         - name: mountpoint-dir
           hostPath:
@@ -119,6 +131,10 @@ spec:
         - name: host-root
           hostPath:
             path: /
+            type: Directory
+        - name: run-udev
+          hostPath:
+            path: /run/udev
             type: Directory
         - name: chroot-iscsiadm
           configMap:

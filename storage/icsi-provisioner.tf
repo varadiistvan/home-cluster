@@ -2,7 +2,7 @@ resource "helm_release" "iscsi_provisioner" {
   name       = "iscsi-provisioner"
   namespace  = "kube-system"
   chart      = "csi-iscsi-provisioner-chart"
-  version    = "0.9.0"
+  version    = "0.10.0"
   repository = "oci://harbor.stevevaradi.me/stevevaradi"
   timeout    = 600
   values     = [file("${path.module}/iscsi-provisioner-values.yaml")]

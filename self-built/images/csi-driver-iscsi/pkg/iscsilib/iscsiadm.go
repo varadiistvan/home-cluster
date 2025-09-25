@@ -18,6 +18,8 @@ package iscsilib
 
 import (
 	"fmt"
+	"os"
+	"strconv"
 	"strings"
 	"time"
 
@@ -39,7 +41,13 @@ type Secrets struct {
 }
 
 func iscsiCmd(args ...string) (string, error) {
-	stdout, err := execWithTimeout("iscsiadm", args, time.Second*3)
+	to := 60
+	if s := os.Getenv("ISCSIADM_TIMEOUT_SEC"); s != "" {
+		if v, err := strconv.Atoi(s); err == nil && v >= 3 && v <= 300 {
+			to = v
+		}
+	}
+	stdout, err := execWithTimeout("iscsiadm", args, time.Second*time.Duration(to))
 
 	klog.V(2).Infof("Run iscsiadm command: %s", strings.Join(append([]string{"iscsiadm"}, args...), " ")) // nolint
 	iscsiadmDebug(string(stdout), err)

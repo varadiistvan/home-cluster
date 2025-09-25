@@ -1,4 +1,4 @@
-FROM --platform=$BUILDPLATFORM rust:alpine AS chef
+FROM --platform=$BUILDPLATFORM harbor.stevevaradi.me/hub/rust:alpine AS chef
 WORKDIR /iscsi-provisioner-server
 ENV PKGCONFIG_SYSROOTDIR=/
 RUN apk add --no-cache musl-dev openssl-dev zig
