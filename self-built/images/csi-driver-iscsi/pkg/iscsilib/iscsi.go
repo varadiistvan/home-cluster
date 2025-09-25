@@ -256,10 +256,10 @@ func Connect(c Connector) (string, error) {
 // Connect attempts to connect a volume to this node using the provided Connector info
 func (c *Connector) Connect() (string, error) {
 	if c.RetryCount == 0 {
-		c.RetryCount = 10
+		c.RetryCount = 60
 	}
 	if c.CheckInterval == 0 {
-		c.CheckInterval = 1
+		c.CheckInterval = 2
 	}
 
 	iFace := "default"

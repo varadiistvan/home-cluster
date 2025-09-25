@@ -59,7 +59,7 @@ storageClass:
   create: true
   # -- The globally unique name for your CSI driver.
   # This name MUST be consistent across all components.
-  provisioner: iscsi.my-company.com
+  provisioner: iscsi.stevevaradi.me
   # -- The name of the StorageClass resource.
   name: my-dynamic-iscsi
   # -- Make this the default StorageClass for the cluster.

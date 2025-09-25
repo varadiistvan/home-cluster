@@ -39,6 +39,13 @@ const (
 
 var version = "0.2.0"
 
+func stateDir() string {
+	if v := os.Getenv("ISCSI_STATE_DIR"); v != "" {
+		return v
+	}
+	return "/var/lib/iscsi-csi"
+}
+
 func NewDriver(nodeID, endpoint string) *driver {
 	klog.V(1).Infof("driver: %s version: %s nodeID: %s endpoint: %s", driverName, version, nodeID, endpoint)
 

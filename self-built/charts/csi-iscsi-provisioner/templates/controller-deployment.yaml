@@ -47,7 +47,7 @@ spec:
             {{- end }}
         # EXTERNAL-PROVISIONER SIDECAR
         - name: csi-provisioner
-          image: "registry.k8s.io/sig-storage/csi-provisioner:v4.0.0"
+          image: "{{ .Values.controllerPlugin.sidecar.provisioner.image.repository }}:{{ .Values.controllerPlugin.sidecar.provisioner.image.tag }}"
           imagePullPolicy: IfNotPresent
           args:
             - "--csi-address=$(ADDRESS)"

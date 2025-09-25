@@ -17,8 +17,12 @@ limitations under the License.
 package iscsi
 
 import (
+	"errors"
 	"fmt"
 	"os"
+	"os/exec"
+	"strings"
+	"time"
 
 	iscsiLib "github.com/kubernetes-csi/csi-driver-iscsi/pkg/iscsilib"
 	"google.golang.org/grpc/codes"
@@ -99,8 +103,14 @@ func (util *ISCSIUtil) DetachDisk(c iscsiDiskUnmounter, targetPath string) error
 	klog.Infof("loading ISCSI connection info from %s", iscsiInfoPath)
 	connector, err := iscsiLib.GetConnectorFromFile(iscsiInfoPath)
 	if err != nil {
-		if os.IsNotExist(err) {
-			klog.Warningf("assuming that ISCSI connection is already closed")
+		if errors.Is(err, os.ErrNotExist) {
+			// Pod/plugin probably restarted and we lost the JSON.
+			// Best-effort: logout & delete DB entry by IQN across all nodes entries.
+			klog.Warningf("connector state missing, attempting best-effort logout for %s", c.VolName)
+			_ = bestEffortLogoutByIQN(c.VolName)
+			if err := os.RemoveAll(targetPath); err != nil && !os.IsNotExist(err) {
+				klog.Warningf("cleanup targetPath failed: %v", err)
+			}
 			return nil
 		}
 		return status.Error(codes.Internal, err.Error())
@@ -109,10 +119,17 @@ func (util *ISCSIUtil) DetachDisk(c iscsiDiskUnmounter, targetPath string) error
 		klog.Errorf("iscsi detach disk: failed to unmount: %s\nError: %v", targetPath, err)
 		return err
 	}
-	cnt--
-	if cnt != 0 {
-		klog.Errorf("the device is in use : %d", cnt)
-		return nil
+
+	retries := 5
+	for range retries {
+		cnt--
+		if cnt <= 0 {
+			break
+		}
+		klog.Infof("device is still in use (refs=%d), waiting...", cnt)
+		time.Sleep(1 * time.Second)
+		_, cnt2, _ := mount.GetDeviceNameFromMount(c.mounter, targetPath)
+		cnt = cnt2
 	}
 
 	klog.Info("detaching ISCSI device")
@@ -137,7 +154,28 @@ func (util *ISCSIUtil) DetachDisk(c iscsiDiskUnmounter, targetPath string) error
 }
 
 func getIscsiInfoPath(volumeID string) string {
-	runPath := fmt.Sprintf("/var/run/%s", driverName)
+	return fmt.Sprintf("%s/iscsi-%s.json", stateDir(), volumeID)
+}
 
-	return fmt.Sprintf("%s/iscsi-%s.json", runPath, volumeID)
+func bestEffortLogoutByIQN(iqn string) error {
+	// Enumerate all node records for this IQN and logout/delete.
+	// iscsiadm -m node -T <iqn> prints entries for each portal.
+	cmd := exec.Command("iscsiadm", "-m", "node", "-T", iqn)
+	out, err := cmd.CombinedOutput()
+	if err != nil && !strings.Contains(string(out), "No records found") {
+		return err
+	}
+	lines := strings.SplitSeq(string(out), "\n")
+	for ln := range lines {
+		// lines typically contain: <ip>:<port>,<tpgt> <iqn>
+		fields := strings.Fields(strings.TrimSpace(ln))
+		if len(fields) < 1 {
+			continue
+		}
+		portal := strings.Split(fields[0], ",")[0]
+		_ = exec.Command("iscsiadm", "-m", "node", "-T", iqn, "-p", portal, "-u").Run()
+	}
+	// Delete the node db entry for IQN
+	_ = exec.Command("iscsiadm", "-m", "node", "-T", iqn, "-o", "delete").Run()
+	return nil
 }
