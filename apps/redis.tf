@@ -183,7 +183,7 @@ resource "kubernetes_deployment_v1" "redisinsight" {
 
         container {
           name  = "redisinsight"
-          image = "redis/redisinsight:2.62"
+          image = "redis/redisinsight:2.70"
 
           image_pull_policy = "IfNotPresent"
 
