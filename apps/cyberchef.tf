@@ -5,4 +5,8 @@ resource "helm_release" "cyberchef" {
   chart      = "cyberchef"
   values     = [file("${path.module}/values/cyberchef-values.yaml")]
   version    = "1.3.4"
+
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }

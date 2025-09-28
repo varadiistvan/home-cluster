@@ -29,5 +29,9 @@ resource "helm_release" "endless-wiki" {
   repository_password = var.home_registry_password
 
   timeout = 600
+
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }
 

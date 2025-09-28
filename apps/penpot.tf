@@ -115,6 +115,10 @@ resource "helm_release" "penpot" {
     name  = "config.postgresql.password"
     value = random_password.penpot_passwords.result
   }]
+
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }
 
 

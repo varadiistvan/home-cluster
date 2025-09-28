@@ -44,6 +44,9 @@ resource "helm_release" "mongodb_community_operator" {
 
   values = [file("${path.module}/values/mongodb-operator-values.yaml")]
 
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }
 
 

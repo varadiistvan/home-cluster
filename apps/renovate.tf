@@ -50,5 +50,9 @@ resource "helm_release" "renovate" {
     helm_release.redis["renovate"],
     kubernetes_secret_v1.renovate_secret
   ]
+
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }
 

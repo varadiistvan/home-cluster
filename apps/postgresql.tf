@@ -23,6 +23,10 @@ resource "helm_release" "postgres" {
     name  = "primary.initdb.password"
     value = "bruh4"
   }]
+
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }
 
 resource "helm_release" "postgres-operator" {
@@ -52,5 +56,8 @@ resource "helm_release" "postgres-operator" {
     }
   ]
 
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }
 

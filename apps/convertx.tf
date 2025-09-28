@@ -24,4 +24,8 @@ resource "helm_release" "convertx" {
   repository_password = var.home_registry_password
 
   depends_on = [kubernetes_secret.convertx_jwt]
+
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }

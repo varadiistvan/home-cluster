@@ -8,4 +8,7 @@ resource "helm_release" "siyuan" {
   depends_on = [kubernetes_namespace.apps]
   timeout    = 600
 
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }

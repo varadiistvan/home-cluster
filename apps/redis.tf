@@ -38,6 +38,10 @@ resource "helm_release" "redis" {
   }]
 
   depends_on = [kubernetes_namespace.apps, kubernetes_secret.redis_auth]
+
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }
 
 

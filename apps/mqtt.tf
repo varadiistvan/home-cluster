@@ -62,6 +62,10 @@ resource "helm_release" "vernemq" {
   }]
 
   timeout = 600
+
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }
 
 
@@ -85,6 +89,9 @@ resource "helm_release" "z2m" {
     }
   ]
 
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }
 
 resource "kubernetes_ingress_v1" "z2m_frontend" {

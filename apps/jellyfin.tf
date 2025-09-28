@@ -7,5 +7,9 @@ resource "helm_release" "jellyfin" {
   values     = [file("${path.module}/values/jellyfin-values.yaml")]
   timeout    = 600
   depends_on = [kubernetes_namespace.apps]
+
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }
 

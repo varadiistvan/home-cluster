@@ -139,6 +139,10 @@ resource "helm_release" "immich" {
     },
   ]
 
+  lifecycle {
+    ignore_changes = [metadata]
+  }
+
 }
 
 

@@ -22,5 +22,8 @@ resource "helm_release" "stirling_pdf" {
   timeout    = 600
   depends_on = [kubernetes_namespace.apps, kubernetes_config_map.stirling_pdf_config]
 
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }
 

@@ -82,4 +82,8 @@ resource "helm_release" "mealie" {
   repository_password = var.home_registry_password
 
   depends_on = [kubectl_manifest.mealie_database]
+
+  lifecycle {
+    ignore_changes = [metadata]
+  }
 }
