@@ -22,6 +22,7 @@ import (
 	"os"
 	"os/exec"
 	"strings"
+	"syscall"
 	"time"
 
 	iscsiLib "github.com/kubernetes-csi/csi-driver-iscsi/pkg/iscsilib"
@@ -88,68 +89,72 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 }
 
 func (util *ISCSIUtil) DetachDisk(c iscsiDiskUnmounter, targetPath string) error {
+	// If path doesn't exist, nothing to do.
+	if pathExists, err := mount.PathExists(targetPath); err != nil {
+		return fmt.Errorf("error checking if path exists: %v", err)
+	} else if !pathExists {
+		klog.Warningf("warning: Unmount skipped because path does not exist: %v", targetPath)
+		return nil
+	}
+
+	// Get current ref count before unmount.
 	_, cnt, err := mount.GetDeviceNameFromMount(c.mounter, targetPath)
 	if err != nil {
 		klog.Errorf("iscsi detach disk: failed to get device from mnt: %s\nError: %v", targetPath, err)
 		return err
 	}
-	if pathExists, pathErr := mount.PathExists(targetPath); pathErr != nil {
-		return fmt.Errorf("error checking if path exists: %v", pathErr)
-	} else if !pathExists {
-		klog.Warningf("warning: Unmount skipped because path does not exist: %v", targetPath)
-		return nil
-	}
-	iscsiInfoPath := getIscsiInfoPath(c.VolName)
-	klog.Infof("loading ISCSI connection info from %s", iscsiInfoPath)
-	connector, err := iscsiLib.GetConnectorFromFile(iscsiInfoPath)
-	if err != nil {
-		if errors.Is(err, os.ErrNotExist) {
-			// Pod/plugin probably restarted and we lost the JSON.
-			// Best-effort: logout & delete DB entry by IQN across all nodes entries.
-			klog.Warningf("connector state missing, attempting best-effort logout for %s", c.VolName)
-			_ = bestEffortLogoutByIQN(c.VolName)
-			if err := os.RemoveAll(targetPath); err != nil && !os.IsNotExist(err) {
-				klog.Warningf("cleanup targetPath failed: %v", err)
-			}
-			return nil
+
+	// Unmount (lazy on EBUSY).
+	if err := c.mounter.Unmount(targetPath); err != nil {
+		// Handle "device or resource busy"
+		if errors.Is(err, syscall.EBUSY) || strings.Contains(err.Error(), "device or resource busy") {
+			_ = exec.Command("umount", "-l", targetPath).Run()
+		} else {
+			klog.Errorf("iscsi detach disk: failed to unmount: %s\nError: %v", targetPath, err)
+			return err
 		}
-		return status.Error(codes.Internal, err.Error())
-	}
-	if err = c.mounter.Unmount(targetPath); err != nil {
-		klog.Errorf("iscsi detach disk: failed to unmount: %s\nError: %v", targetPath, err)
-		return err
 	}
 
-	retries := 5
-	for range retries {
-		cnt--
-		if cnt <= 0 {
-			break
-		}
-		klog.Infof("device is still in use (refs=%d), waiting...", cnt)
+	// Wait briefly for refs to drop.
+	for i := 0; i < 5 && cnt > 0; i++ {
 		time.Sleep(1 * time.Second)
 		_, cnt2, _ := mount.GetDeviceNameFromMount(c.mounter, targetPath)
 		cnt = cnt2
 	}
 
-	klog.Info("detaching ISCSI device")
-	err = connector.DisconnectVolume()
-	if err != nil {
-		klog.Errorf("iscsi detach disk: failed to disconnect volume Error: %v", err)
-		return err
+	// Try to load connector state (now persisted under /var/lib/iscsi-csi).
+	iscsiInfoPath := getIscsiInfoPath(c.VolName)
+	klog.Infof("loading ISCSI connection info from %s", iscsiInfoPath)
+	connector, cerr := iscsiLib.GetConnectorFromFile(iscsiInfoPath)
+	if cerr != nil {
+		if errors.Is(cerr, os.ErrNotExist) {
+			// Pod/plugin probably restarted and we lost the JSON.
+			// Best-effort: logout & delete DB entry by IQN.
+			klog.Warningf("connector state missing, attempting best-effort logout for %s", c.VolName)
+			_ = bestEffortLogoutByIQN(c.VolName)
+		} else {
+			return status.Error(codes.Internal, cerr.Error())
+		}
+	} else {
+		klog.Info("detaching ISCSI device")
+		if err := connector.DisconnectVolume(); err != nil {
+			klog.Errorf("iscsi detach disk: failed to disconnect volume Error: %v", err)
+			return err
+		}
+		iscsiLib.Disconnect(connector.TargetIqn, connector.TargetPortals)
 	}
 
-	iscsiLib.Disconnect(connector.TargetIqn, connector.TargetPortals)
-	if err := os.RemoveAll(targetPath); err != nil {
-		klog.Errorf("iscsi: failed to remove mount path Error: %v", err)
+	// Robust mountpoint cleanup (removes dir if safe).
+	if err := mount.CleanupMountPoint(targetPath, c.mounter, false); err != nil {
+		return fmt.Errorf("cleanup mountpoint failed: %w", err)
 	}
-	err = os.Remove(iscsiInfoPath)
-	if err != nil {
+
+	// Remove connector file (ignore if already gone).
+	if err := os.Remove(iscsiInfoPath); err != nil && !errors.Is(err, os.ErrNotExist) {
 		return err
 	}
 
 	klog.Info("successfully detached ISCSI device")
-
 	return nil
 }
 
