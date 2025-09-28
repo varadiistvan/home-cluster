@@ -1,5 +1,6 @@
 image:
   repository: harbor.stevevaradi.me/hub/jellyfin/jellyfin
+  tag: "10.10.7"
 
 ingress:
   enabled: true

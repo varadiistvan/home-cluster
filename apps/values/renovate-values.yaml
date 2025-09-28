@@ -62,29 +62,35 @@ renovate:
       },
       
       "packageRules": [
-     
         {
           "matchDatasources": ["docker"],
-          "matchPackagePatterns": ["^ghcr\\.io/"],
-          "registryUrls": ["https://harbor.stevevaradi.me/ghcr"]
+          "matchPackagePatterns": ["^harbor\\.stevevaradi\\.me/ghcr/"],
+          "registryUrls": ["https://ghcr.io"]
+          // (optional) set hostRules for ghcr.io if private
         },
+
         {
           "matchDatasources": ["docker"],
-          "matchPackagePatterns": ["^quay\\.io/"],
-          "registryUrls": ["https://harbor.stevevaradi.me/quay"]
+          "matchPackagePatterns": ["^harbor\\.stevevaradi\\.me/quay/"],
+          "registryUrls": ["https://quay.io"]
         },
+
         {
           "matchDatasources": ["docker"],
-          "matchPackagePatterns": ["^registry\\.k8s\\.io/"],
-          "registryUrls": ["https://harbor.stevevaradi.me/k8s-reg"]
+          "matchPackagePatterns": ["^harbor\\.stevevaradi\\.me/k8s-reg/"],
+          "registryUrls": ["https://registry.k8s.io"]
         },
+
         {
           "matchDatasources": ["docker"],
-          "matchPackageNames": [
-            "alpine", "golang", "rust", "docker/dockerfile",
-            "bitnami/postgresql", "rancher/system-upgrade-controller"
-          ],
-          "registryUrls": ["https://harbor.stevevaradi.me/hub"]
+          "matchPackagePatterns": ["^harbor\\.stevevaradi\\.me/hub/[^/]+/"],
+          "registryUrls": ["https://index.docker.io"]
+        },
+
+        {
+          "matchDatasources": ["docker"],
+          "matchPackagePatterns": ["^harbor\\.stevevaradi\\.me/hub/library/"],
+          "registryUrls": ["https://index.docker.io"]
         }
       ],
 
