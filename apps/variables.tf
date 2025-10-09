@@ -33,3 +33,7 @@ variable "renovate_github_token" {
   sensitive = true
 }
 
+variable "copyparty_password" {
+  type      = string
+  sensitive = true
+}

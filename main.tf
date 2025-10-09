@@ -100,6 +100,7 @@ module "apps" {
   renovate_minio_key     = var.renovate_minio_key
   renovate_minio_secret  = var.renovate_minio_secret
   renovate_token         = var.renovate_token
+  copyparty_password     = var.copyparty_password
 
   providers = {
     kubernetes = kubernetes

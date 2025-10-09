@@ -1,0 +1,65 @@
+replicaCount: 1
+image:
+  repository: harbor.stevevaradi.me/hub/copyparty/ac
+  pullPolicy: IfNotPresent
+  tag: 1.19.16
+
+imagePullSecrets:
+  - name: registry-pass
+
+serviceAccount:
+  create: true
+  automount: true
+
+service:
+  type: ClusterIP
+  http: 3923
+  smb: 945
+  ftp: 21
+  tftp: 69
+  ftps: 990
+  pftp: [12000, 12099]
+  ssdp: 1900
+  mdns: 5353
+
+ingress:
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.0/24,10.192.1.0/24
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+
+  hosts:
+    - host: copyparty.stevevaradi.me
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: copyparty-tls
+      hosts:
+        - copyparty.stevevaradi.me
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+volumes: []
+volumeMounts: []
+storage:
+  storageClass: "iscsi-csi"
+  size: "100Gi"
+  accessModes: [ReadWriteOnce]
+
+existingConfigMap: ""
