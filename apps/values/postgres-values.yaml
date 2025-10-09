@@ -38,6 +38,9 @@ postgresqlSharedPreloadLibraries: "pgaudit,vectors.so,vchord.so"
 
 primary:
   resourcesPreset: "small"
+  pgHbaConfiguration: |-
+    host replication repl_user 10.42.0.0/16 md5
+    host all          all      10.42.0.0/16 md5
 
   podAnnotations:
     nginx.ingress.kubernetes.io/backend-protocol: "TCP"
@@ -57,11 +60,17 @@ primary:
 
 volumePermissions:
   enabled: true
+  image:
+    registry: harbor.stevevaradi.me/hub
+    repository: bitnamilegacy/os-shell
 
 serviceAccount:
   create: true
 
 metrics:
+  image:
+    registry: harbor.stevevaradi.me/hub
+    repository: bitnamilegacy/postgres-exporter
   enabled: true
   serviceMonitor:
     enabled: true
