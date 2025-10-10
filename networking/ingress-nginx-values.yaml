@@ -48,3 +48,8 @@ global:
 tcp:
   "5432": "apps/postgres-postgresql:5432"
   "8883": "apps/vernemq:8883"
+  "22000": "apps/syncthing-listeners:22000"
+
+udp:
+  "21027": "apps/syncthing-discovery:21027"
+  "22000": "apps/syncthing-listeners-udp:22000"

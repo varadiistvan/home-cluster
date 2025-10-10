@@ -1,0 +1,44 @@
+global:
+  fallbackDefaults:
+    storageClass: iscsi-csi
+
+TZ: Europe/Amsterdam
+
+diagnosticMode:
+  enabled: false
+
+imagePullSecret:
+  registry-pass:
+    enabled: true
+    existingSecret: registry-pass
+
+configmap: {}
+
+secret: {}
+
+image:
+  repository: harbor.stevevaradi.me/hub/syncthing/syncthing
+  pullPolicy: IfNotPresent
+
+persistence:
+  config:
+    enabled: true
+    mountPath: "/var/syncthing"
+
+ingress:
+  syncthing:
+    enabled: true
+    primary: true
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+      nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.0/24,10.192.1.0/24
+    ingressClassName: nginx
+    hosts:
+      - host: syncthing.stevevaradi.me
+        paths:
+          - path: /
+            pathType: Prefix
+    tls:
+      - secretName: syncthing-tls
+        hosts:
+          - syncthing.stevevaradi.me
