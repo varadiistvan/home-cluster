@@ -1,0 +1,116 @@
+{{/* GUI service */}}
+{{- if .Values.service.gui.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "syncthing.fullname" . }}-gui
+  labels:
+    {{- include "syncthing.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.service.gui.annotations | nindent 4 }}
+spec:
+  type: {{ .Values.service.gui.type }}
+  selector:
+    {{- include "syncthing.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: http
+      port: {{ .Values.service.gui.port }}
+      targetPort: gui
+      protocol: TCP
+---
+{{- end }}
+
+{{/* Decide whether to combine TCP+UDP into one Service (same type+port). */}}
+{{- $combine := and .Values.service.tcp.enabled .Values.service.udp.enabled (eq .Values.service.tcp.type .Values.service.udp.type) (eq (int .Values.service.tcp.port) (int .Values.service.udp.port)) }}
+
+{{- if $combine }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "syncthing.fullname" . }}-data
+  labels:
+    {{- include "syncthing.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.service.tcp.annotations | nindent 4 }}
+spec:
+  type: {{ .Values.service.tcp.type }}
+  externalTrafficPolicy: {{ .Values.service.tcp.externalTrafficPolicy | default "Cluster" }}
+  selector:
+    {{- include "syncthing.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: st-tcp
+      port: {{ .Values.service.tcp.port }}
+      targetPort: st-tcp
+      protocol: TCP
+    - name: st-udp
+      port: {{ .Values.service.udp.port }}
+      targetPort: st-udp
+      protocol: UDP
+{{- else }}
+
+{{- if .Values.service.tcp.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "syncthing.fullname" . }}-tcp
+  labels:
+    {{- include "syncthing.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.service.tcp.annotations | nindent 4 }}
+spec:
+  type: {{ .Values.service.tcp.type }}
+  externalTrafficPolicy: {{ .Values.service.tcp.externalTrafficPolicy | default "Cluster" }}
+  selector:
+    {{- include "syncthing.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: st-tcp
+      port: {{ .Values.service.tcp.port }}
+      targetPort: st-tcp
+      protocol: TCP
+---
+{{- end }}
+
+{{- if .Values.service.udp.enabled }}
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "syncthing.fullname" . }}-udp
+  labels:
+    {{- include "syncthing.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.service.udp.annotations | nindent 4 }}
+spec:
+  type: {{ .Values.service.udp.type }}
+  externalTrafficPolicy: {{ .Values.service.udp.externalTrafficPolicy | default "Cluster" }}
+  selector:
+    {{- include "syncthing.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: st-udp
+      port: {{ .Values.service.udp.port }}
+      targetPort: st-udp
+      protocol: UDP
+{{- end }}
+{{- end }}
+
+{{- if .Values.service.discovery.enabled }}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: {{ include "syncthing.fullname" . }}-discovery
+  labels:
+    {{- include "syncthing.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.service.discovery.annotations | nindent 4 }}
+spec:
+  type: {{ .Values.service.discovery.type }}
+  externalTrafficPolicy: {{ .Values.service.discovery.externalTrafficPolicy | default "Cluster" }}
+  selector:
+    {{- include "syncthing.selectorLabels" . | nindent 4 }}
+  ports:
+    - name: disco
+      port: {{ .Values.service.discovery.port }}
+      targetPort: disco
+      protocol: UDP
+{{- end }}
+

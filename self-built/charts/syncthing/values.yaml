@@ -1,0 +1,129 @@
+image:
+  repository: syncthing/syncthing
+  # Uses chart appVersion when left empty
+  tag: ""
+  pullPolicy: IfNotPresent
+
+imagePullSecrets: []
+# - name: pull-secret
+
+# Higher than 1 is not officially supported
+replicaCount: 1
+
+podSecurityContext:
+  fsGroup: 1000
+  runAsUser: 1000
+  runAsGroup: 1000
+
+securityContext:
+  allowPrivilegeEscalation: false
+  readOnlyRootFilesystem: false
+  capabilities:
+    drop: ["ALL"]
+
+# -- Resource limits and requests.
+#
+# Ref: https://kubernetes.io/docs/concepts/configuration/manage-resources-containers/
+resources: {}
+  # limits:
+  #   cpu: "100m"
+  #   memory: "128Mi"
+  # requests:
+  #   cpu: "100m"
+  #   memory: "128Mi"
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+persistence:
+  enabled: false
+  size: 200Gi
+  storageClass: ""
+  accessModes: ["ReadWriteOnce"]
+
+service:
+  # ClusterIP for GUI (do not expose publicly by default)
+  gui:
+    enabled: true
+    type: ClusterIP
+    port: 8384
+    annotations: {}
+  # LoadBalancer Services for data ports (split TCP/UDP for clean upgrades & fewer patch issues)
+  tcp:
+    enabled: true
+    type: LoadBalancer
+    port: 22000
+    annotations: {}
+    externalTrafficPolicy: Local
+  udp:
+    enabled: true
+    type: LoadBalancer
+    port: 22000
+    annotations: {}
+    externalTrafficPolicy: Local
+  discovery:
+    enabled: false
+    type: LoadBalancer
+    port: 21027
+    annotations: {}
+    externalTrafficPolicy: Local
+
+gateway:
+  enabled: false
+  # Gateway object (only created if CRDs & this flag are true)
+  createGateway: true
+  name: syncthing-gw
+  className: ""
+  # Optional public hostname(s) for GUI
+  guiHost: ""
+  tls:
+    enabled: false
+    secretName: "" # bring-your-own cert secret if TLS for GUI
+  listeners:
+    httpPort: 80 # GUI via HTTPRoute
+    httpsPort: 443
+    tcpPort: 22000 # data via TCPRoute (guarded by CRDs)
+    udpPort: 22000 # data via UDPRoute (guarded by CRDs)
+  enableRoutes:
+    http: true
+    tcp: false # default off for Cilium (no TCPRoute in GA)
+    udp: false # default off for Cilium (no UDPRoute in GA)
+
+ingress:
+  enabled: false
+  className: ""
+  annotations: {}
+  hosts:
+    - host: syncthing.example.com
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls: []
+    # - secretName: copyparty-tls
+    #   hosts:
+    #     - copyparty.example.com
+
+syncthing:
+  home: /var/syncthing
+  timezone: UTC
+  puid: 1000
+  pgid: 1000
+
+  # Initial config tweaks applied by an initContainer (one-time per fresh PV)
+  config:
+    gui:
+      address: "0.0.0.0:8384"
+      tls: false
+    options:
+      globalAnnounceEnabled: false
+      localAnnounceEnabled: true
+      # Static listen addresses; disable the "default" that includes relays
+      # See docs for accepted forms (tcp://, quic://, etc).
+      listenAddresses:
+        - "tcp://0.0.0.0:22000"
+        - "quic://0.0.0.0:22000"
+      # Optional: define as local-only networks to avoid relay/stun reliance
+      alwaysLocalNets: []
+      # Optional: disable STUN keepalives (0 = off)
+      stunKeepaliveStartS: 0

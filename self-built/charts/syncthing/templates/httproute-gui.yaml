@@ -1,0 +1,19 @@
+{{- if and .Values.gateway.enabled (include "syncthing.hasHTTPRoute" .) .Values.gateway.enableRoutes.http }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: {{ include "syncthing.fullname" . }}-gui
+  labels:
+    {{- include "syncthing.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: {{ .Values.gateway.name }}
+  {{- if .Values.gateway.guiHost }}
+  hostnames: [ {{ .Values.gateway.guiHost | quote }} ]
+  {{- end }}
+  rules:
+    - backendRefs:
+        - name: {{ include "syncthing.fullname" . }}-gui
+          port: {{ .Values.service.gui.port }}
+{{- end }}
+

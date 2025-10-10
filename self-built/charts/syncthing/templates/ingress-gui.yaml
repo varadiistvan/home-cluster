@@ -1,0 +1,32 @@
+{{- if and .Values.ingress.enabled (not .Values.gateway.enabled) }}
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: {{ include "syncthing.fullname" . }}-gui
+  labels:
+    {{- include "syncthing.labels" . | nindent 4 }}
+  annotations:
+    {{- toYaml .Values.ingress.annotations | nindent 4 }}
+spec:
+  {{- if .Values.ingress.className }}
+  ingressClassName: {{ .Values.ingress.className | quote }}
+  {{- end }}
+  {{- if .Values.ingress.tls }}
+  tls:
+    {{- toYaml .Values.ingress.tls | nindent 4 }}
+  {{- end }}
+  rules:
+    {{- range .Values.ingress.hosts }}
+    - host: {{ .host | quote }}
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: {{ include "syncthing.fullname" $ }}-gui
+                port:
+                  number: {{ $.Values.service.gui.port }}
+    {{- end }}
+{{- end }}
+

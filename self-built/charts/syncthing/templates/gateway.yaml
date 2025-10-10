@@ -1,0 +1,48 @@
+{{- if and .Values.gateway.enabled (include "syncthing.hasGateway" .) .Values.gateway.createGateway }}
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: {{ .Values.gateway.name }}
+  labels:
+    {{- include "syncthing.labels" . | nindent 4 }}
+spec:
+  gatewayClassName: {{ .Values.gateway.className | default "cilium" }}
+  listeners:
+    {{- if and .Values.gateway.enableRoutes.http (include "syncthing.hasHTTPRoute" .) }}
+    - name: gui
+      protocol: HTTP
+      port: {{ .Values.gateway.listeners.httpPort }}
+      {{- if .Values.gateway.guiHost }}
+      hostname: {{ .Values.gateway.guiHost | quote }}
+      {{- end }}
+      allowedRoutes:
+        kinds: [{ kind: HTTPRoute }]
+    {{- if and .Values.gateway.tls.enabled .Values.gateway.listeners.httpsPort }}
+    - name: gui-tls
+      protocol: HTTPS
+      port: {{ .Values.gateway.listeners.httpsPort }}
+      hostname: {{ .Values.gateway.guiHost | quote }}
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: {{ .Values.gateway.tls.secretName }}
+      allowedRoutes:
+        kinds: [{ kind: HTTPRoute }]
+    {{- end }}
+    {{- end }}
+    {{- if and .Values.gateway.enableRoutes.tcp (include "syncthing.hasTCPRoute" .) }}
+    - name: syncthing-tcp
+      protocol: TCP
+      port: {{ .Values.gateway.listeners.tcpPort }}
+      allowedRoutes:
+        kinds: [{ kind: TCPRoute }]
+    {{- end }}
+    {{- if and .Values.gateway.enableRoutes.udp (include "syncthing.hasUDPRoute" .) }}
+    - name: syncthing-udp
+      protocol: UDP
+      port: {{ .Values.gateway.listeners.udpPort }}
+      allowedRoutes:
+        kinds: [{ kind: UDPRoute }]
+    {{- end }}
+{{- end }}
+

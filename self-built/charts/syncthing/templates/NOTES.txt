@@ -1,0 +1,14 @@
+Syncthing deployed.
+
+• GUI: Service {{ include "syncthing.fullname" . }}-gui:{{ .Values.service.gui.port }} ({{ .Values.service.gui.type }})
+• Data ports:
+  - Combined: {{- if and .Values.service.tcp.enabled .Values.service.udp.enabled (eq .Values.service.tcp.type .Values.service.udp.type) (eq (int .Values.service.tcp.port) (int .Values.service.udp.port)) }} Service {{ include "syncthing.fullname" . }}-data:{{ .Values.service.tcp.port }} ({{ .Values.service.tcp.type }})
+    {{- else }} TCP: {{ if .Values.service.tcp.enabled }}{{ include "syncthing.fullname" . }}-tcp:{{ .Values.service.tcp.port }} ({{ .Values.service.tcp.type }}){{ else }}disabled{{ end }}, UDP: {{ if .Values.service.udp.enabled }}{{ include "syncthing.fullname" . }}-udp:{{ .Values.service.udp.port }} ({{ .Values.service.udp.type }}){{ else }}disabled{{ end }}{{- end }}
+
+Tips
+----
+• For a single public IP on TCP+UDP, keep both enabled with same type+port; chart will emit one LoadBalancer service with both ports.
+• If you ever change the ports list and Kubernetes rejects a patch due to port order, delete the affected Service and re-upgrade.
+• In each remote device, set Addresses like: tcp://your.domain:22000,quic://your.domain:22000
+• Global announce & relays are disabled by default in this chart; LAN announce is on.
+

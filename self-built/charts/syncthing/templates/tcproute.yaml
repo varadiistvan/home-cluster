@@ -1,0 +1,20 @@
+{{- if and .Values.gateway.enabled (include "syncthing.hasTCPRoute" .) .Values.gateway.enableRoutes.tcp }}
+apiVersion: gateway.networking.k8s.io/v1alpha2
+kind: TCPRoute
+metadata:
+  name: {{ include "syncthing.fullname" . }}-tcp
+  labels:
+    {{- include "syncthing.labels" . | nindent 4 }}
+spec:
+  parentRefs:
+    - name: {{ .Values.gateway.name }}
+  rules:
+    - backendRefs:
+        - name: {{ if and .Values.service.tcp.enabled .Values.service.udp.enabled (eq .Values.service.tcp.port .Values.service.udp.port) (eq .Values.service.tcp.type .Values.service.udp.type) -}}
+                  {{ include "syncthing.fullname" . }}-data
+                  {{- else -}}
+                  {{ include "syncthing.fullname" . }}-tcp
+                  {{- end }}
+          port: {{ .Values.gateway.listeners.tcpPort }}
+{{- end }}
+

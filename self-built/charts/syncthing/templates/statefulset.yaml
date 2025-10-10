@@ -1,0 +1,115 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: {{ include "syncthing.fullname" . }}
+  labels:
+    {{- include "syncthing.labels" . | nindent 4 }}
+spec:
+  serviceName: {{ include "syncthing.fullname" . }}
+  replicas: {{ .Values.replicaCount }}
+  selector:
+    matchLabels:
+      {{- include "syncthing.selectorLabels" . | nindent 6 }}
+  template:
+    metadata:
+      labels:
+        {{- include "syncthing.selectorLabels" . | nindent 8 }}
+    spec:
+      {{- if .Values.imagePullSecrets }}
+      imagePullSecrets:
+        {{- toYaml .Values.imagePullSecrets | nindent 8 }}
+      {{- end }}
+      securityContext:
+        {{- toYaml .Values.podSecurityContext | nindent 8 }}
+      initContainers:
+        - name: gen-config
+          image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              set -e
+              if [ ! -f "{{ .Values.syncthing.home }}/config.xml" ]; then
+                syncthing -home="{{ .Values.syncthing.home }}" -generate="{{ .Values.syncthing.home }}"
+              fi
+          volumeMounts:
+            - name: data
+              mountPath: {{ .Values.syncthing.home }}
+        - name: tweak-config
+          image: alpine:3.20
+          command: ["/bin/sh","/init/configure.sh"]
+          env:
+            - name: CONF_DIR
+              value: "{{ .Values.syncthing.home }}"
+            - name: GUI_ADDRESS
+              value: "{{ .Values.syncthing.config.gui.address }}"
+            - name: GUI_TLS
+              value: "{{ ternary "true" "false" .Values.syncthing.config.gui.tls }}"
+            - name: GLOBAL_ANNOUNCE
+              value: "{{ ternary "true" "false" .Values.syncthing.config.options.globalAnnounceEnabled }}"
+            - name: LOCAL_ANNOUNCE
+              value: "{{ ternary "true" "false" .Values.syncthing.config.options.localAnnounceEnabled }}"
+            - name: STUN_KEEPALIVE_STARTS
+              value: "{{ .Values.syncthing.config.options.stunKeepaliveStartS | default 0 }}"
+          volumeMounts:
+            - name: init
+              mountPath: /init
+            - name: data
+              mountPath: {{ .Values.syncthing.home }}
+      containers:
+        - name: syncthing
+          image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
+          imagePullPolicy: {{ .Values.image.pullPolicy }}
+          securityContext:
+            {{- toYaml .Values.securityContext | nindent 12 }}
+          env:
+            - name: TZ
+              value: "{{ .Values.syncthing.timezone }}"
+            - name: STHOMEDIR
+              value: "{{ .Values.syncthing.home }}"
+            - name: PUID
+              value: "{{ .Values.syncthing.puid }}"
+            - name: PGID
+              value: "{{ .Values.syncthing.pgid }}"
+          ports:
+            - { name: gui,    containerPort: 8384, protocol: TCP }
+            - { name: st-tcp, containerPort: 22000, protocol: TCP }
+            - { name: st-udp, containerPort: 22000, protocol: UDP }
+            - { name: disco,  containerPort: 21027, protocol: UDP }
+          volumeMounts:
+            - name: data
+              mountPath: {{ .Values.syncthing.home }}
+          readinessProbe:
+            tcpSocket: { port: 8384 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: 8384 }
+            initialDelaySeconds: 30
+            periodSeconds: 30
+          resources:
+            {{- toYaml .Values.resources | nindent 12 }}
+      volumes:
+        - name: init
+          configMap:
+            name: {{ include "syncthing.fullname" . }}-init
+      {{- if not .Values.persistence.enabled }}
+        - name: data
+          emptyDir: {}
+      {{- end }}
+  {{- if .Values.persistence.enabled }}
+  volumeClaimTemplates:
+    - metadata:
+        name: data
+        labels:
+          {{- include "syncthing.labels" . | nindent 10 }}
+      spec:
+        accessModes: {{ toYaml .Values.persistence.accessModes | nindent 10 }}
+        {{- if .Values.persistence.storageClass }}
+        storageClassName: {{ .Values.persistence.storageClass }}
+        {{- end }}
+        resources:
+          requests:
+            storage: {{ .Values.persistence.size }}
+  {{- end }}
+
