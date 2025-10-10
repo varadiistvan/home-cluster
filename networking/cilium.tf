@@ -1,3 +1,35 @@
+locals {
+  gateway_api_crds_sha256 = "6a4029e661446d64add866a00ecdc40c14219b68777ab614c5cdaac0adb481f1"
+}
+
+data "http" "gateway_api_crds" {
+  url = "https://github.com/kubernetes-sigs/gateway-api/releases/download/v1.4.0/standard-install.yaml"
+
+  request_headers = {
+    Accept = "text/yaml"
+  }
+
+  lifecycle {
+    postcondition {
+      condition     = contains([200], self.status_code)
+      error_message = "Status code invalid"
+    }
+    postcondition {
+      condition     = sha256(base64decode(self.response_body_base64)) == local.gateway_api_crds_sha256
+      error_message = "Hash mismatch for Gateway API CRDs (possible MITM or unexpected content)."
+    }
+  }
+}
+
+resource "kubectl_manifest" "gateway_api_crds" {
+  for_each = {
+    for manifest in provider::kubernetes::manifest_decode_multi(data.http.gateway_api_crds.response_body) :
+    "${manifest.kind}--${manifest.metadata.name}" => yamlencode(manifest)
+  }
+
+  yaml_body = each.value
+}
+
 resource "helm_release" "cilium" {
   name       = "cilium"
   namespace  = "kube-system"
@@ -7,7 +39,7 @@ resource "helm_release" "cilium" {
   values     = [file("${path.module}/cilium-values.yaml")]
   timeout    = 300
 
-  depends_on = [kubectl_manifest.ca_issuer]
+  depends_on = [kubectl_manifest.ca_issuer, kubectl_manifest.gateway_api_crds]
 }
 
 resource "kubectl_manifest" "main_ingress_ip_pool" {

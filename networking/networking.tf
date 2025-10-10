@@ -9,5 +9,8 @@ terraform {
     kubectl = {
       source = "alekc/kubectl"
     }
+    http = {
+      source = "hashicorp/http"
+    }
   }
 }

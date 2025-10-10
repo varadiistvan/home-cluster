@@ -125,3 +125,8 @@ k8sClientRateLimit:
   burst: 60
 
 kubeProxyReplacement: true
+
+gatewayAPI:
+  enabled: true
+  enableAppProtocol: true
+  enableAlpn: true

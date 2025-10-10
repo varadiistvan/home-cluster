@@ -85,6 +85,7 @@ module "networking" {
     kubernetes = kubernetes
     helm       = helm
     kubectl    = kubectl
+    http       = http
   }
 
   depends_on = [module.storage]
