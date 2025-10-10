@@ -17,10 +17,17 @@ limitations under the License.
 package iscsi
 
 import (
+	"fmt"
+	"os"
+	"path/filepath"
+	"strings"
+
 	"github.com/container-storage-interface/spec/lib/go/csi"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	"k8s.io/mount-utils"
+	utilexec "k8s.io/utils/exec"
 )
 
 type nodeServer struct {
@@ -92,7 +99,7 @@ func (ns *nodeServer) NodeGetCapabilities(ctx context.Context, req *csi.NodeGetC
 			{
 				Type: &csi.NodeServiceCapability_Rpc{
 					Rpc: &csi.NodeServiceCapability_RPC{
-						Type: csi.NodeServiceCapability_RPC_UNKNOWN,
+						Type: csi.NodeServiceCapability_RPC_EXPAND_VOLUME,
 					},
 				},
 			},
@@ -105,5 +112,78 @@ func (ns *nodeServer) NodeGetVolumeStats(ctx context.Context, in *csi.NodeGetVol
 }
 
 func (ns *nodeServer) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandVolumeRequest) (*csi.NodeExpandVolumeResponse, error) {
-	return nil, status.Error(codes.Unimplemented, "")
+	volID := req.GetVolumeId()
+	volPath := req.GetVolumePath()
+	if volID == "" || volPath == "" {
+		return nil, status.Error(codes.InvalidArgument, "volume_id and volume_path are required")
+	}
+
+	// 1) Resolve the device that backs volPath
+	m := mount.New("")
+	devicePath, _, err := mount.GetDeviceNameFromMount(m, volPath)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "get device from mount %q: %v", volPath, err)
+	}
+	if devicePath == "" {
+		return nil, status.Errorf(codes.Internal, "no device found for %q", volPath)
+	}
+
+	// 2) Best-effort rescan so the kernel sees the larger LUN
+	_ = rescanDevice(devicePath) // ignore error; resizefs will fail if truly not bigger
+
+	// 3) Resize the filesystem using k8s mount-utils (handles ext and xfs)
+	resizer := mount.NewResizeFs(utilexec.New())
+	need, err := resizer.NeedResize(devicePath, volPath)
+	if err != nil {
+		return nil, status.Errorf(codes.Internal, "NeedResize(%s,%s): %v", devicePath, volPath, err)
+	}
+	if need {
+		if _, err := resizer.Resize(devicePath, volPath); err != nil {
+			return nil, status.Errorf(codes.Internal, "Resize(%s,%s): %v", devicePath, volPath, err)
+		}
+	}
+
+	// 4) (Optional) report final size
+	capBytes, _ := getSizeBytes(devicePath)
+	return &csi.NodeExpandVolumeResponse{CapacityBytes: capBytes}, nil
+}
+
+// --- helpers ---
+
+func rescanDevice(devPath string) error {
+	// Follow symlinks: /dev/disk/by-id/… -> /dev/sdX or /dev/dm-*
+	real, err := filepath.EvalSymlinks(devPath)
+	if err != nil {
+		real = devPath
+	}
+	base := filepath.Base(real)
+
+	// If this is a partition (e.g., sdb1), rescan the parent (sdb).
+	// For simplicity, avoid partitions in your design if you can.
+	parent := base
+	if strings.HasPrefix(base, "sd") || strings.HasPrefix(base, "vd") || strings.HasPrefix(base, "xvd") {
+		// crude partition detection: sdX1 -> sdX
+		parent = strings.TrimRightFunc(base, func(r rune) bool { return r >= '0' && r <= '9' })
+	}
+
+	// /sys/class/block/<dev>/device/rescan
+	p := fmt.Sprintf("/sys/class/block/%s/device/rescan", parent)
+	return os.WriteFile(p, []byte("1\n"), 0o200)
+}
+
+func getSizeBytes(devPath string) (int64, error) {
+	// You can call `blockdev --getsize64` via utilexec or read /sys/class/block/<dev>/size * 512.
+	real, err := filepath.EvalSymlinks(devPath)
+	if err != nil {
+		real = devPath
+	}
+	base := filepath.Base(real)
+	data, err := os.ReadFile(fmt.Sprintf("/sys/class/block/%s/size", base))
+	if err != nil {
+		return 0, err
+	}
+	// sectors * 512
+	var sectors int64
+	fmt.Sscanf(string(data), "%d", &sectors)
+	return sectors * 512, nil
 }

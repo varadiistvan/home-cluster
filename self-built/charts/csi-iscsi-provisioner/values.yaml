@@ -14,7 +14,7 @@ controllerPlugin:
   image:
     repository: harbor.stevevaradi.me/stevevaradi/csi-iscsi-provisioner
     pullPolicy: IfNotPresent
-    tag: "0.6.0"
+    tag: "0.7.1"
   sidecar:
     provisioner:
       image:
@@ -27,11 +27,9 @@ nodePlugin:
   imagePullSecrets:
     - name: registry-pass
   image:
-    # This is the official iSCSI node plugin from Kubernetes CSI.
     repository: harbor.stevevaradi.me/stevevaradi/csi-driver-iscsi-arm
     pullPolicy: Always
-    # Using a known stable tag
-    tag: "v2.8.4"
+    tag: "v2.11.0"
   sidecar:
     registrar:
       image:
