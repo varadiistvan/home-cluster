@@ -9,6 +9,7 @@ use xattr::{get, set};
 
 // Utility to run a command and get its output with error handling
 fn run_command(command: &str, args: &[&str]) -> Result<Output, String> {
+    println!("Running command {command} {}", args.join(" "));
     let output = Command::new(command)
         .args(args)
         .output()
@@ -168,25 +169,24 @@ pub fn resize_lun(target_name: &str, path: &str, new_size_bytes: i64) -> Result<
     if !is_api_managed(path)? {
         return Err("LUN is not managed by API".to_string());
     }
-
-    let current_size_bytes = get_lun_size(path)?;
-
-    if new_size_bytes == current_size_bytes {
-        return Ok(()); // No action needed if the size is unchanged
+    let cur = get_lun_size(path)?;
+    if new_size_bytes == cur {
+        return Ok(());
+    }
+    if new_size_bytes < cur {
+        return Err("Cannot resize to a smaller size".into());
     }
 
-    if new_size_bytes < current_size_bytes {
-        return Err("Cannot resize to a smaller size".to_string());
-    }
-
-    // Resize the LUN image
+    // 1) Grow the backing store
     run_command(
         "qemu-img",
         &["resize", path, &format!("{}", new_size_bytes)],
     )?;
 
-    // Directly update the LUN in the iSCSI target without deleting
-    run_command(
+    // 2) Refresh the LUN by recreating it under the same target (no full target delete)
+    let tid = get_tid_for_target(target_name)?;
+    // Take offline (best effort)
+    let _ = run_command(
         "tgtadm",
         &[
             "--lld",
@@ -195,15 +195,66 @@ pub fn resize_lun(target_name: &str, path: &str, new_size_bytes: i64) -> Result<
             "logicalunit",
             "--op",
             "update",
-            "--targetname",
-            target_name,
+            "--tid",
+            &tid.to_string(),
+            "--lun",
+            "1",
+            "--params",
+            "online=0",
+        ],
+    );
+    // Delete LUN 1
+    run_command(
+        "tgtadm",
+        &[
+            "--lld",
+            "iscsi",
+            "--mode",
+            "logicalunit",
+            "--op",
+            "delete",
+            "--tid",
+            &tid.to_string(),
+            "--lun",
+            "1",
+        ],
+    )?;
+    // Re-add LUN 1 with the same backing store
+    run_command(
+        "tgtadm",
+        &[
+            "--lld",
+            "iscsi",
+            "--mode",
+            "logicalunit",
+            "--op",
+            "new",
+            "--tid",
+            &tid.to_string(),
             "--lun",
             "1",
             "--backing-store",
             path,
         ],
-    )
-    .map_err(|e| format!("Failed to update LUN in target '{}': {}", target_name, e))?;
+    )?;
+    // Bring online
+    let _ = run_command(
+        "tgtadm",
+        &[
+            "--lld",
+            "iscsi",
+            "--mode",
+            "logicalunit",
+            "--op",
+            "update",
+            "--tid",
+            &tid.to_string(),
+            "--lun",
+            "1",
+            "--params",
+            "online=1",
+        ],
+    );
 
     Ok(())
 }

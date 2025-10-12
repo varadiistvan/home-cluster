@@ -67,7 +67,8 @@ async fn list_luns() -> Result<Json<Vec<Lun>>, String> {
 
 async fn resize_lun(Json(payload): Json<ResizeLunRequest>) -> Json<String> {
     let lun_path = format!("{}/{}.img", get_lun_base_path(), payload.target_name);
-    match iscsi::resize_lun(&payload.target_name, &lun_path, payload.new_size_bytes) {
+    let target_name = format!("iqn.{}", &payload.target_name);
+    match iscsi::resize_lun(&target_name, &lun_path, payload.new_size_bytes) {
         Ok(_) => Json("LUN resized successfully".to_string()),
         Err(e) => Json(format!("Error: {}", e)),
     }

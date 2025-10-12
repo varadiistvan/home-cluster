@@ -14,6 +14,9 @@ controllerPlugin:
 nodePlugin:
   imagePullSecrets:
     - name: registry-pass
+  image:
+    repository: harbor.stevevaradi.me/stevevaradi/csi-driver-iscsi
+    tag: "v2.13.0"
 
 apiServer:
   url: "http://192.168.0.151:51084"

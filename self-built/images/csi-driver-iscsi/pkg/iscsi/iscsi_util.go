@@ -106,8 +106,11 @@ func (util *ISCSIUtil) DetachDisk(c iscsiDiskUnmounter, targetPath string) error
 
 	// Unmount (lazy on EBUSY).
 	if err := c.mounter.Unmount(targetPath); err != nil {
-		// Handle "device or resource busy"
-		if errors.Is(err, syscall.EBUSY) || strings.Contains(err.Error(), "device or resource busy") {
+		// "not mounted" or similar -> succeed
+		if strings.Contains(err.Error(), "not mounted") ||
+			errors.Is(err, syscall.EINVAL) || errors.Is(err, syscall.ENOENT) {
+			klog.Infof("Unmount skipped: %s not mounted", targetPath)
+		} else if errors.Is(err, syscall.EBUSY) || strings.Contains(err.Error(), "device or resource busy") {
 			_ = exec.Command("umount", "-l", targetPath).Run()
 		} else {
 			klog.Errorf("iscsi detach disk: failed to unmount: %s\nError: %v", targetPath, err)

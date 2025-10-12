@@ -23,9 +23,11 @@ import (
 	"strings"
 
 	"github.com/container-storage-interface/spec/lib/go/csi"
+	iscsiLib "github.com/kubernetes-csi/csi-driver-iscsi/pkg/iscsilib"
 	"golang.org/x/net/context"
 	"google.golang.org/grpc/codes"
 	"google.golang.org/grpc/status"
+	klog "k8s.io/klog/v2"
 	"k8s.io/mount-utils"
 	utilexec "k8s.io/utils/exec"
 )
@@ -128,8 +130,20 @@ func (ns *nodeServer) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandV
 		return nil, status.Errorf(codes.Internal, "no device found for %q", volPath)
 	}
 
+	path := req.GetVolumePath()
+	if st := req.GetStagingTargetPath(); st != "" {
+		if ok, _ := mount.PathExists(st); ok {
+			path = st
+		}
+	}
+	dev, _, err := mount.GetDeviceNameFromMount(m, path)
+
 	// 2) Best-effort rescan so the kernel sees the larger LUN
-	_ = rescanDevice(devicePath) // ignore error; resizefs will fail if truly not bigger
+	before, _ := getSizeBytes(dev)
+	_ = fullRescanForVolume(dev, req.GetVolumeId()) // see impl below
+	_ = utilexec.New().Command("udevadm", "settle").Run()
+	after, _ := getSizeBytes(dev)
+	klog.Infof("expand %s: size before=%d after=%d want>=%d", dev, before, after, req.GetCapacityRange().GetRequiredBytes())
 
 	// 3) Resize the filesystem using k8s mount-utils (handles ext and xfs)
 	resizer := mount.NewResizeFs(utilexec.New())
@@ -150,25 +164,91 @@ func (ns *nodeServer) NodeExpandVolume(ctx context.Context, req *csi.NodeExpandV
 
 // --- helpers ---
 
-func rescanDevice(devPath string) error {
-	// Follow symlinks: /dev/disk/by-id/… -> /dev/sdX or /dev/dm-*
-	real, err := filepath.EvalSymlinks(devPath)
-	if err != nil {
-		real = devPath
+func fullRescanForVolume(devPath, volID string) error {
+	// 1) Use connector for this vol to rescan sessions + by-path device(s)
+	if conn, err := iscsiLib.GetConnectorFromFile(getIscsiInfoPath(volID)); err == nil {
+		// Start from the struct's list
+		portals := append([]string(nil), conn.TargetPortals...)
+
+		// If the connector had no portals, derive from /dev/disk/by-path
+		if len(portals) == 0 && conn.TargetIqn != "" {
+			pattern := fmt.Sprintf("/dev/disk/by-path/ip-*-iscsi-%s-lun-%d", conn.TargetIqn, conn.Lun)
+			matches, _ := filepath.Glob(pattern)
+			for _, by := range matches {
+				base := filepath.Base(by) // ip-<portal>-iscsi-<iqn>-lun-<lun>
+				// extract <portal> between "ip-" and "-iscsi-"
+				const prefix = "ip-"
+				const sep = "-iscsi-"
+				if strings.HasPrefix(base, prefix) {
+					rest := strings.TrimPrefix(base, prefix)
+					if i := strings.Index(rest, sep); i > 0 {
+						portals = append(portals, rest[:i]) // e.g. "10.0.0.1:3260"
+					}
+				}
+				if real, e := filepath.EvalSymlinks(by); e == nil {
+					_ = rescanBlockDevice(real) // also rescan the exact sdX backing this path
+				}
+			}
+		}
+
+		// De-dupe and rescan each portal for this IQN
+		seen := map[string]struct{}{}
+		for _, p := range portals {
+			if p == "" {
+				continue
+			}
+			if _, ok := seen[p]; ok {
+				continue
+			}
+			seen[p] = struct{}{}
+			_ = utilexec.New().Command("iscsiadm", "-m", "node", "-T", conn.TargetIqn, "-p", p, "--rescan").Run()
+		}
 	}
+
+	// 2) Generic rescan of the actual device and its slaves
+	_ = rescanBlockDevice(devPath)
+
+	// 3) If multipath, resize only that map
+	if real, _ := filepath.EvalSymlinks(devPath); strings.HasPrefix(filepath.Base(real), "dm-") {
+		name := readTrim("/sys/class/block/" + filepath.Base(real) + "/dm/name")
+		if name != "" {
+			_ = utilexec.New().Command("multipathd", "-k", "resize map "+name).Run()
+		}
+		_ = utilexec.New().Command("multipath", "-r").Run()
+	}
+	return nil
+}
+
+func rescanBlockDevice(devPath string) error {
+	real, _ := filepath.EvalSymlinks(devPath)
 	base := filepath.Base(real)
 
-	// If this is a partition (e.g., sdb1), rescan the parent (sdb).
-	// For simplicity, avoid partitions in your design if you can.
+	// If partition, find parent via sysfs (don’t guess by trimming digits)
 	parent := base
-	if strings.HasPrefix(base, "sd") || strings.HasPrefix(base, "vd") || strings.HasPrefix(base, "xvd") {
-		// crude partition detection: sdX1 -> sdX
-		parent = strings.TrimRightFunc(base, func(r rune) bool { return r >= '0' && r <= '9' })
+	if _, err := os.Stat("/sys/class/block/" + base + "/partition"); err == nil {
+		link, _ := filepath.EvalSymlinks("/sys/class/block/" + base)
+		parent = filepath.Base(filepath.Dir(link))
 	}
 
-	// /sys/class/block/<dev>/device/rescan
-	p := fmt.Sprintf("/sys/class/block/%s/device/rescan", parent)
-	return os.WriteFile(p, []byte("1\n"), 0o200)
+	// Per-disk rescan
+	_ = os.WriteFile("/sys/class/block/"+parent+"/device/rescan", []byte("1\n"), 0o200)
+
+	// If dm-*, rescan all slaves too
+	if strings.HasPrefix(base, "dm-") {
+		entries, _ := os.ReadDir("/sys/class/block/" + base + "/slaves")
+		for _, e := range entries {
+			_ = os.WriteFile("/sys/class/block/"+e.Name()+"/device/rescan", []byte("1\n"), 0o200)
+		}
+	}
+	return nil
+}
+
+func readTrim(p string) string {
+	b, err := os.ReadFile(p)
+	if err != nil {
+		return ""
+	}
+	return strings.TrimSpace(string(b))
 }
 
 func getSizeBytes(devPath string) (int64, error) {
