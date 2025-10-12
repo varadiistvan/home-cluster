@@ -24,6 +24,15 @@ terraform {
       source  = "hashicorp/http"
       version = "3.5.0"
     }
+    external = {
+      source  = "hashicorp/external"
+      version = "2.3.5"
+    }
+    local = {
+      source  = "hashicorp/local"
+      version = "2.5.3"
+    }
+
   }
 
   backend "s3" {
@@ -102,12 +111,15 @@ module "apps" {
   renovate_minio_secret  = var.renovate_minio_secret
   renovate_token         = var.renovate_token
   copyparty_password     = var.copyparty_password
+  geeki_master           = var.geeki_master
 
   providers = {
     kubernetes = kubernetes
     helm       = helm
     kubectl    = kubectl
     time       = time
+    external   = external
+    local      = local
   }
 
   depends_on = [module.networking, module.storage]

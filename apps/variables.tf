@@ -37,3 +37,8 @@ variable "copyparty_password" {
   type      = string
   sensitive = true
 }
+
+variable "geeki_master" {
+  type      = string
+  sensitive = true
+}
