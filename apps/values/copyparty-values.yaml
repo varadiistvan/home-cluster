@@ -59,7 +59,7 @@ volumes: []
 volumeMounts: []
 storage:
   storageClass: "iscsi-csi"
-  size: "100Gi"
+  size: "400Gi"
   accessModes: [ReadWriteOnce]
 
 existingConfigMap: ""
