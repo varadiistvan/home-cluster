@@ -12,5 +12,8 @@ terraform {
     http = {
       source = "hashicorp/http"
     }
+    local = {
+      source = "hashicorp/local"
+    }
   }
 }
