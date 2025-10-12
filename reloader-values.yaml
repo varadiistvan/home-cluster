@@ -15,7 +15,8 @@ image:
   pullPolicy: IfNotPresent
 
 reloader:
-  autoReloadAll: false
+  # Reload without annotations
+  autoReloadAll: true
   ignoreJobs: true
   ignoreCronJobs: true
   reloadOnCreate: false
