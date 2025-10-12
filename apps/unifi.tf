@@ -1,5 +1,5 @@
 locals {
-  ip = "192.168.0.153"
+  unifi_ip = "192.168.0.153"
 }
 
 resource "kubectl_manifest" "unifi_ip_pool" {
@@ -10,8 +10,8 @@ resource "kubectl_manifest" "unifi_ip_pool" {
       name: vip-unifi
     spec:
       blocks:
-        - start: ${local.ip}
-          stop:  ${local.ip}
+        - start: ${local.unifi_ip}
+          stop:  ${local.unifi_ip}
   YAML
 }
 
@@ -76,7 +76,7 @@ resource "helm_release" "unifi" {
 
   set = [{
     name  = "unifiedService.loadBalancerIP"
-    value = local.ip
+    value = local.unifi_ip
   }]
 
   # set_list = [{
