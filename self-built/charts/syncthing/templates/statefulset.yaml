@@ -22,6 +22,23 @@ spec:
       securityContext:
         {{- toYaml .Values.podSecurityContext | nindent 8 }}
       initContainers:
+        # 0) Ensure correct ownership so Syncthing doesn't spam chmod warnings
+        - name: fix-perms
+          image: alpine:3.20
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              set -e
+              install -d -o {{ .Values.syncthing.puid }} -g {{ .Values.syncthing.pgid }} -m 0750 "{{ .Values.syncthing.home }}"
+              chown -R {{ .Values.syncthing.puid }}:{{ .Values.syncthing.pgid }} "{{ .Values.syncthing.home }}"
+          volumeMounts:
+            - name: data
+              mountPath: {{ .Values.syncthing.home }}
+
+        # 1) Generate config for Syncthing v2+
         - name: gen-config
           image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
           imagePullPolicy: {{ .Values.image.pullPolicy }}
@@ -30,13 +47,18 @@ spec:
             - |
               set -e
               if [ ! -f "{{ .Values.syncthing.home }}/config.xml" ]; then
-                syncthing -home="{{ .Values.syncthing.home }}" -generate="{{ .Values.syncthing.home }}"
+                syncthing generate --home="{{ .Values.syncthing.home }}"
               fi
           volumeMounts:
             - name: data
               mountPath: {{ .Values.syncthing.home }}
+
+        # 2) Tweak config.xml with xmlstarlet
         - name: tweak-config
           image: alpine:3.20
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
           command: ["/bin/sh","/init/configure.sh"]
           env:
             - name: CONF_DIR
@@ -56,6 +78,7 @@ spec:
               mountPath: /init
             - name: data
               mountPath: {{ .Values.syncthing.home }}
+
       containers:
         - name: syncthing
           image: "{{ .Values.image.repository }}:{{ default .Chart.AppVersion .Values.image.tag }}"
@@ -71,6 +94,17 @@ spec:
               value: "{{ .Values.syncthing.puid }}"
             - name: PGID
               value: "{{ .Values.syncthing.pgid }}"
+          # Add --no-port-probing by default to avoid NAT-PMP/UPnP noise (can be disabled via value)
+          command: ["/bin/sh","-c"]
+          args:
+            - |
+              set -e
+              FLAGS=""
+              {{- $noPort := default true .Values.syncthing.noPortProbing }}
+              {{- if $noPort }}
+              FLAGS="$FLAGS --no-port-probing"
+              {{- end }}
+              exec syncthing serve --home="{{ .Values.syncthing.home }}" $FLAGS
           ports:
             - { name: gui,    containerPort: 8384, protocol: TCP }
             - { name: st-tcp, containerPort: 22000, protocol: TCP }
@@ -89,6 +123,7 @@ spec:
             periodSeconds: 30
           resources:
             {{- toYaml .Values.resources | nindent 12 }}
+
       volumes:
         - name: init
           configMap:

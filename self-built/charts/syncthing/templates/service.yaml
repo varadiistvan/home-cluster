@@ -20,7 +20,7 @@ spec:
 ---
 {{- end }}
 
-{{/* Decide whether to combine TCP+UDP into one Service (same type+port). */}}
+{{/* Combine TCP+UDP (same type+port) into one Service; optionally fold discovery UDP:21027 into the same LB. */}}
 {{- $combine := and .Values.service.tcp.enabled .Values.service.udp.enabled (eq .Values.service.tcp.type .Values.service.udp.type) (eq (int .Values.service.tcp.port) (int .Values.service.udp.port)) }}
 
 {{- if $combine }}
@@ -46,6 +46,12 @@ spec:
       port: {{ .Values.service.udp.port }}
       targetPort: st-udp
       protocol: UDP
+    {{- if .Values.service.discovery.enabled }}
+    - name: disco
+      port: {{ .Values.service.discovery.port }}
+      targetPort: disco
+      protocol: UDP
+    {{- end }}
 {{- else }}
 
 {{- if .Values.service.tcp.enabled }}
@@ -90,7 +96,6 @@ spec:
       targetPort: st-udp
       protocol: UDP
 {{- end }}
-{{- end }}
 
 {{- if .Values.service.discovery.enabled }}
 ---
@@ -112,5 +117,7 @@ spec:
       port: {{ .Values.service.discovery.port }}
       targetPort: disco
       protocol: UDP
+{{- end }}
+
 {{- end }}
 

@@ -1,44 +1,85 @@
-global:
-  fallbackDefaults:
-    storageClass: iscsi-csi
-
-TZ: Europe/Amsterdam
-
-diagnosticMode:
-  enabled: false
-
-imagePullSecret:
-  registry-pass:
-    enabled: true
-    existingSecret: registry-pass
-
-configmap: {}
-
-secret: {}
-
 image:
   repository: harbor.stevevaradi.me/hub/syncthing/syncthing
   pullPolicy: IfNotPresent
 
+imagePullSecrets:
+  - name: registry-pass
+
 persistence:
-  config:
+  enabled: true
+  size: 50Gi
+  storageClass: "iscsi-csi"
+  accessModes: ["ReadWriteOnce"]
+
+service:
+  tcp:
     enabled: true
-    mountPath: "/var/syncthing"
+    type: LoadBalancer
+    port: 22000
+    annotations: {}
+    externalTrafficPolicy: Cluster
+  udp:
+    enabled: true
+    type: LoadBalancer
+    port: 22000
+    annotations: {}
+    externalTrafficPolicy: Cluster
+  discovery:
+    enabled: true
+    type: LoadBalancer
+    port: 21027
+    annotations: {}
+    externalTrafficPolicy: Local
+
+# gateway:
+#   enabled: false
+#   # Gateway object (only created if CRDs & this flag are true)
+#   createGateway: true
+#   name: syncthing-gw
+#   className: ""
+#   # Optional public hostname(s) for GUI
+#   guiHost: ""
+#   tls:
+#     enabled: false
+#     secretName: "" # bring-your-own cert secret if TLS for GUI
+#   listeners:
+#     httpPort: 80 # GUI via HTTPRoute
+#     httpsPort: 443
+#     tcpPort: 22000 # data via TCPRoute (guarded by CRDs)
+#     udpPort: 22000 # data via UDPRoute (guarded by CRDs)
+#   enableRoutes:
+#     http: true
+#     tcp: false # default off for Cilium (no TCPRoute in GA)
+#     udp: false # default off for Cilium (no UDPRoute in GA)
 
 ingress:
-  syncthing:
-    enabled: true
-    primary: true
-    annotations:
-      cert-manager.io/cluster-issuer: letsencrypt
-      nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.0/24,10.192.1.0/24
-    ingressClassName: nginx
-    hosts:
-      - host: syncthing.stevevaradi.me
-        paths:
-          - path: /
-            pathType: Prefix
-    tls:
-      - secretName: syncthing-tls
-        hosts:
-          - syncthing.stevevaradi.me
+  enabled: true
+  className: "nginx"
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.0/24,10.192.1.0/24
+
+  hosts:
+    - host: syncthing.stevevaradi.me
+      paths:
+        - path: /
+          pathType: Prefix
+  tls:
+    - secretName: syncthing-tls
+      hosts:
+        - syncthing.stevevaradi.me
+
+syncthing:
+  timezone: Europe/Amsterdam
+  config:
+    gui:
+      address: "0.0.0.0:8384"
+      tls: false
+    options:
+      globalAnnounceEnabled: false
+      localAnnounceEnabled: true
+      listenAddresses:
+        - "tcp://0.0.0.0:22000"
+        - "quic://0.0.0.0:22000"
+      alwaysLocalNets: []
+      stunKeepaliveStartS: 0

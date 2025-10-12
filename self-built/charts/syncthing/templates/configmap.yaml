@@ -7,8 +7,11 @@ metadata:
 data:
   configure.sh: |
     #!/bin/sh
-    set -euo pipefail
-    apk add --no-cache xmlstarlet >/dev/null 2>&1 || true
+    set -eu
+    (set -o pipefail 2>/dev/null) || true
+
+    apk add --no-cache xmlstarlet >/dev/null
+    command -v xml >/dev/null || { echo "xmlstarlet not installed"; exit 1; }
 
     CONF="${CONF_DIR:-/var/syncthing}/config.xml"
     [ -f "$CONF" ] || { echo "config.xml not found at $CONF"; exit 0; }
@@ -30,19 +33,10 @@ data:
       -u '/configuration/options/stunKeepaliveStartS'   -v "${STUN_KEEPALIVE_STARTS:-0}" \
       "$CONF"
 
-    # Replace listenAddress entries with chart-provided list
+    # Replace listenAddress entries (defaults: tcp+quic on 22000)
     xml ed -L -d '/configuration/options/listenAddress' "$CONF"
-{{- range $addr := .Values.syncthing.config.options.listenAddresses }}
-    xml ed -L -s '/configuration/options' -t elem -n listenAddress -v '{{ $addr }}' "$CONF"
-{{- end }}
-
-    # Optional alwaysLocalNets
-{{- if .Values.syncthing.config.options.alwaysLocalNets }}
-    xml ed -L -d '/configuration/options/alwaysLocalNet' "$CONF"
-{{- range $cidr := .Values.syncthing.config.options.alwaysLocalNets }}
-    xml ed -L -s '/configuration/options' -t elem -n alwaysLocalNet -v '{{ $cidr }}' "$CONF"
-{{- end }}
-{{- end }}
+    xml ed -L -s '/configuration/options' -t elem -n listenAddress -v 'tcp://0.0.0.0:22000' "$CONF"
+    xml ed -L -s '/configuration/options' -t elem -n listenAddress -v 'quic://0.0.0.0:22000' "$CONF"
 
     echo "Syncthing config tweaked."
 
