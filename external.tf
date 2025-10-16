@@ -124,9 +124,9 @@ resource "kubernetes_ingress_v1" "minio" {
 }
 
 
-resource "kubernetes_service_v1" "octoprint_external" {
+resource "kubernetes_service_v1" "mainsail_external" {
   metadata {
-    name      = "octoprint-external"
+    name      = "mainsail-external"
     namespace = kubernetes_namespace.external.id
   }
   spec {
@@ -136,18 +136,24 @@ resource "kubernetes_service_v1" "octoprint_external" {
       target_port = 80
       protocol    = "TCP"
     }
+    port {
+      name        = "cam"
+      port        = 8899
+      target_port = 8899
+      protocol    = "TCP"
+    }
   }
 }
 
-resource "kubernetes_manifest" "octoprint_endpoint_slice" {
+resource "kubernetes_manifest" "mainsail_endpoint_slice" {
   manifest = {
     apiVersion = "discovery.k8s.io/v1"
     kind       = "EndpointSlice"
     metadata = {
-      name      = "octoprint-external-1"
+      name      = "mainsail-external-1"
       namespace = kubernetes_namespace.external.id
       labels = {
-        "kubernetes.io/service-name" = kubernetes_service_v1.octoprint_external.metadata[0].name
+        "kubernetes.io/service-name" = kubernetes_service_v1.mainsail_external.metadata[0].name
       }
     }
     addressType = "IPv4"
@@ -157,6 +163,11 @@ resource "kubernetes_manifest" "octoprint_endpoint_slice" {
         protocol = "TCP"
         port     = 80
       },
+      {
+        name     = "cam"
+        protocol = "TCP"
+        port     = 8899
+      }
     ]
     endpoints = [
       {
@@ -167,9 +178,9 @@ resource "kubernetes_manifest" "octoprint_endpoint_slice" {
   }
 }
 
-resource "kubernetes_ingress_v1" "octoprint" {
+resource "kubernetes_ingress_v1" "mainsail" {
   metadata {
-    name      = "octoprint"
+    name      = "mainsail"
     namespace = kubernetes_namespace.external.id
     annotations = {
       "cert-manager.io/cluster-issuer" = "letsencrypt"
@@ -180,6 +191,7 @@ resource "kubernetes_ingress_v1" "octoprint" {
       "nginx.ingress.kubernetes.io/proxy-send-timeout"      = "600"
       "nginx.ingress.kubernetes.io/proxy-request-buffering" = "off"
       "nginx.ingress.kubernetes.io/backend-protocol"        = "HTTP"
+      "nginx.ingress.kubernetes.io/use-regex"               = "true"
     }
   }
 
@@ -187,21 +199,33 @@ resource "kubernetes_ingress_v1" "octoprint" {
     ingress_class_name = "nginx"
 
     tls {
-      hosts       = ["octoprint.stevevaradi.me"]
-      secret_name = "octoprint-tls"
+      hosts       = ["mainsail.stevevaradi.me"]
+      secret_name = "mainsail-tls"
     }
 
     rule {
-      host = "octoprint.stevevaradi.me"
+      host = "mainsail.stevevaradi.me"
       http {
         path {
           path      = "/"
           path_type = "Prefix"
           backend {
             service {
-              name = kubernetes_service_v1.octoprint_external.metadata[0].name
+              name = kubernetes_service_v1.mainsail_external.metadata[0].name
               port {
                 name = "web"
+              }
+            }
+          }
+        }
+        path {
+          path      = "/(stream)|(snapshot)"
+          path_type = "ImplementationSpecific"
+          backend {
+            service {
+              name = kubernetes_service_v1.mainsail_external.metadata[0].name
+              port {
+                name = "cam"
               }
             }
           }

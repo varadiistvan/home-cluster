@@ -113,6 +113,7 @@ module "apps" {
   renovate_token         = var.renovate_token
   copyparty_password     = var.copyparty_password
   geeki_master           = var.geeki_master
+  gmail_app_pass         = var.gmail_app_pass
 
   providers = {
     kubernetes = kubernetes

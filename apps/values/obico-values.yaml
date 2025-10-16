@@ -1,0 +1,90 @@
+server:
+  image:
+    repository: harbor.stevevaradi.me/ghcr/gabe565/obico/web
+    tag: sha-e3993e83d5a7f07617275c3e71b011c5ca59fa4d
+
+  env:
+    EMAIL_HOST: smtp.gmail.com
+    EMAIL_PORT: "587"
+    EMAIL_USE_TLS: "True"
+    EMAIL_HOST_USER: varadiista.1
+    DEFAULT_FROM_EMAIL: varadiista.1@gmail.com
+    # ADMIN_IP_WHITELIST:
+    SITE_IS_PUBLIC: "True"
+    ACCOUNT_ALLOW_SIGN_UP: "True"
+    # SOCIAL_LOGIN: "False"
+    # OCTOPRINT_TUNNEL_PORT_RANGE: "0-0"
+    # TELEGRAM_BOT_TOKEN:
+    # TWILIO_ACCOUNT_SID:
+    # TWILIO_AUTH_TOKEN:
+    # TWILIO_FROM_NUMBER:
+    # SENTRY_DSN:
+    # PUSHOVER_APP_TOKEN:
+    # SLACK_CLIENT_ID:
+    # SLACK_CLIENT_SECRET:
+
+  persistence:
+    data:
+      enabled: true
+      storageClass: iscsi-csi
+      accessMode: ReadWriteOnce
+      size: 10Gi
+    media:
+      enabled: true
+      storageClass: iscsi-csi
+      accessMode: ReadWriteOnce
+      size: 10Gi
+
+  ingress:
+    main:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+        nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.0/24,10.192.1.0/24
+        nginx.ingress.kubernetes.io/proxy-body-size: "0"
+        nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+        nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+        nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+      hosts:
+        - host: obico.stevevaradi.me
+          paths:
+            - path: /
+      tls:
+        - secretName: obico-tls
+          hosts:
+            - obico.stevevaradi.me
+
+ml-api:
+  image:
+    repository: harbor.stevevaradi.me/ghcr/gabe565/obico/ml-api
+    tag: sha-e3993e83d5a7f07617275c3e71b011c5ca59fa4d
+
+imagePullSecrets:
+  - name: registry-pass
+
+redis:
+  enabled: true
+  auth:
+    enabled: true
+    password: huhh
+  global:
+    imageRegistry: harbor.stevevaradi.me/hub
+    security:
+      allowInsecureImages: true
+  image:
+    repository: bitnamilegacy/redis
+  sentinel:
+    image:
+      repository: bitnamilegacy/redis-sentinel
+  metrics:
+    image:
+      repository: bitnamilegacy/redis-exporter
+  volumePermissions:
+    image:
+      repository: bitnamilegacy/os-shell
+  kubectl:
+    image:
+      repository: bitnamilegacy/kubectl
+  sysctl:
+    image:
+      repository: bitnamilegacy/os-shell

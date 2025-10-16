@@ -84,3 +84,8 @@ variable "geeki_master" {
   type      = string
   sensitive = true
 }
+
+variable "gmail_app_pass" {
+  type      = string
+  sensitive = true
+}
