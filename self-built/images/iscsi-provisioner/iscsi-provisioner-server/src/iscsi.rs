@@ -4,6 +4,7 @@ use std::io::Write;
 use std::os::unix::process::ExitStatusExt;
 use std::path::Path;
 use std::process::{Command, Output};
+use std::time::Duration;
 use std::{env, fs};
 use xattr::{get, set};
 
@@ -37,6 +38,8 @@ pub fn create_and_expose_lun(
 
     set(lun_path, "user.iscsi-api", b"managed")
         .map_err(|e| format!("Error setting xattr: {}", e))?;
+
+    std::thread::sleep(Duration::from_secs(5));
 
     // Create and expose the LUN via iSCSI using existing function
     let res = create_iscsi_lun(target_name, lun_path, initiator_cidr)
@@ -182,6 +185,8 @@ pub fn resize_lun(target_name: &str, path: &str, new_size_bytes: i64) -> Result<
         "qemu-img",
         &["resize", path, &format!("{}", new_size_bytes)],
     )?;
+
+    std::thread::sleep(Duration::from_secs(5));
 
     // 2) Refresh the LUN by recreating it under the same target (no full target delete)
     let tid = get_tid_for_target(target_name)?;
