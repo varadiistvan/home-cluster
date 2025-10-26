@@ -234,3 +234,94 @@ resource "kubernetes_ingress_v1" "mainsail" {
     }
   }
 }
+
+resource "kubernetes_service_v1" "ollama_external" {
+  metadata {
+    name      = "ollama-external"
+    namespace = kubernetes_namespace.external.id
+  }
+  spec {
+    port {
+      name        = "web"
+      port        = 11434
+      target_port = 11434
+      protocol    = "TCP"
+    }
+  }
+}
+
+resource "kubernetes_manifest" "ollama_endpoint_slice" {
+  manifest = {
+    apiVersion = "discovery.k8s.io/v1"
+    kind       = "EndpointSlice"
+    metadata = {
+      name      = "ollama-external-1"
+      namespace = kubernetes_namespace.external.id
+      labels = {
+        "kubernetes.io/service-name" = kubernetes_service_v1.ollama_external.metadata[0].name
+      }
+    }
+    addressType = "IPv4"
+    ports = [
+      {
+        name     = "web"
+        protocol = "TCP"
+        port     = 11434
+      },
+    ]
+    endpoints = [
+      {
+        addresses  = ["192.168.0.145"]
+        conditions = { ready = true }
+      }
+    ]
+  }
+}
+
+resource "kubernetes_ingress_v1" "ollama" {
+  metadata {
+    name      = "ollama"
+    namespace = kubernetes_namespace.external.id
+    annotations = {
+      "cert-manager.io/cluster-issuer" = "letsencrypt"
+
+      "nginx.ingress.kubernetes.io/whitelist-source-range"  = "192.168.0.0/24,10.192.1.0/24"
+      "nginx.ingress.kubernetes.io/proxy-body-size"         = "0"
+      "nginx.ingress.kubernetes.io/proxy-read-timeout"      = "600"
+      "nginx.ingress.kubernetes.io/proxy-send-timeout"      = "600"
+      "nginx.ingress.kubernetes.io/proxy-request-buffering" = "off"
+      "nginx.ingress.kubernetes.io/backend-protocol"        = "HTTP"
+      "nginx.ingress.kubernetes.io/use-regex"               = "true"
+    }
+  }
+
+  spec {
+    ingress_class_name = "nginx"
+
+    tls {
+      hosts       = ["ollama.stevevaradi.me"]
+      secret_name = "ollama-tls"
+    }
+
+    rule {
+      host = "ollama.stevevaradi.me"
+      http {
+        path {
+          path      = "/"
+          path_type = "Prefix"
+          backend {
+            service {
+              name = kubernetes_service_v1.ollama_external.metadata[0].name
+              port {
+                name = "web"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+
+
