@@ -10,72 +10,30 @@ resource "kubernetes_secret" "penpot_password" {
   }
 
   data = {
+    username = "penpot"
     password = random_password.penpot_passwords.result
   }
 
 }
 
-resource "kubectl_manifest" "penpot_user" {
-  yaml_body = <<YAML
-    apiVersion: stevevaradi.me/v1
-    kind: PostgresUser
+resource "kubectl_manifest" "penpot_db" {
+  yaml_body = <<-YAML
+    apiVersion: postgresql.cnpg.io/v1
+    kind: Database
     metadata:
-      name: penpot-user
+      name: penpot-db
       namespace: apps
     spec:
-      instance:
-        host: postgres-postgresql.apps.svc.cluster.local
-        port: 5432
-        adminCredentials:
-          username: postgres
-          secretRef:
-            name: postgres-auth
-            passwordKey: adminpass
-      user:
-        username: penpot
-        secretRef:
-          name: postgres-penpot
-          key: password
-        privileges:
-          - SUPERUSER
+      cluster:
+        name: ${kubectl_manifest.cnpg_cluster.name}
+      name: penpot
+      owner: penpot
+      databaseReclaimPolicy: retain
+      # CNPG will create required extensions if the binaries exist in the image
+      extensions: []
   YAML
 
-  depends_on = [helm_release.postgres-operator, kubernetes_secret.penpot_password, helm_release.postgres]
-}
-
-resource "time_sleep" "wait_for_penpot_user" {
-  depends_on      = [kubectl_manifest.penpot_user]
-  create_duration = "10s"
-}
-
-resource "kubectl_manifest" "penpot_database" {
-  yaml_body  = <<YAML
-    apiVersion: stevevaradi.me/v1
-    kind: PostgresDatabase
-    metadata:
-      name: penpot-database
-      namespace: apps
-    spec:
-      instance:
-        host: postgres-postgresql.apps.svc.cluster.local
-        port: 5432
-        adminCredentials:
-          username: postgres
-          secretRef:
-            name: postgres-auth
-            passwordKey: adminpass
-      database:
-        dbName: penpot
-        owner: penpot
-        extensions: []
-  YAML
-  depends_on = [time_sleep.wait_for_penpot_user]
-}
-
-resource "time_sleep" "penpot_wait" {
-  create_duration = "10s"
-
-  depends_on = [kubectl_manifest.penpot_database]
+  depends_on = [helm_release.cnpg_operator]
 }
 
 resource "kubernetes_secret" "penpot_api_key" {
@@ -108,7 +66,7 @@ resource "helm_release" "penpot" {
   repository = "https://helm.penpot.app"
   version    = "0.28.0"
   values     = [file("${path.module}/values/penpot-values.yaml")]
-  depends_on = [kubernetes_namespace.apps, kubernetes_secret.penpot_api_key, time_sleep.penpot_wait, kubernetes_secret.penpot_redis_uri]
+  depends_on = [kubernetes_namespace.apps, kubernetes_secret.penpot_api_key, kubernetes_secret.penpot_redis_uri]
   timeout    = 600
 
   set_sensitive = [{

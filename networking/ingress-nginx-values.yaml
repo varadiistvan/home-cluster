@@ -46,7 +46,7 @@ global:
     registry: harbor.stevevaradi.me/k8s-reg
 
 tcp:
-  "5432": "apps/postgres-postgresql:5432"
+  "5432": "apps/pg-cnpg-rw:5432"
   "8883": "apps/vernemq:8883"
   "22000": "apps/syncthing-listeners:22000"
 

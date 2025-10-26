@@ -9,65 +9,28 @@ resource "kubernetes_secret" "mealie_postgres" {
     namespace = kubernetes_namespace.apps.id
   }
   data = {
+    username          = "mealie"
+    password          = random_password.mealie_postgres_password.result
     POSTGRES_PASSWORD = random_password.mealie_postgres_password.result
   }
 }
 
-resource "kubectl_manifest" "mealie_user" {
-  yaml_body = <<YAML
-    apiVersion: stevevaradi.me/v1
-    kind: PostgresUser
+
+resource "kubectl_manifest" "mealie_db" {
+  yaml_body = <<-YAML
+    apiVersion: postgresql.cnpg.io/v1
+    kind: Database
     metadata:
-      name: mealie-user
+      name: mealie-db
       namespace: apps
     spec:
-      instance:
-        host: postgres-postgresql.apps.svc.cluster.local
-        port: 5432
-        adminCredentials:
-          username: postgres
-          secretRef:
-            name: postgres-auth
-            passwordKey: adminpass
-      user:
-        username: mealie
-        secretRef:
-          name: mealie-postgres
-          key: POSTGRES_PASSWORD
-        privileges:
-          - SUPERUSER
+      cluster:
+        name: ${kubectl_manifest.cnpg_cluster.name}
+      name: mealie
+      owner: mealie
+      extensions: []
   YAML
 
-  depends_on = [helm_release.postgres-operator, kubernetes_secret.mealie_postgres, helm_release.postgres]
-}
-
-resource "time_sleep" "wait_for_mealie_user" {
-  depends_on      = [kubectl_manifest.mealie_user]
-  create_duration = "10s"
-}
-
-resource "kubectl_manifest" "mealie_database" {
-  yaml_body  = <<YAML
-    apiVersion: stevevaradi.me/v1
-    kind: PostgresDatabase
-    metadata:
-      name: mealie-database
-      namespace: apps
-    spec:
-      instance:
-        host: postgres-postgresql.apps.svc.cluster.local
-        port: 5432
-        adminCredentials:
-          username: postgres
-          secretRef:
-            name: postgres-auth
-            passwordKey: adminpass
-      database:
-        dbName: mealie
-        owner: mealie
-        extensions: []
-  YAML
-  depends_on = [time_sleep.wait_for_mealie_user]
 }
 
 
@@ -81,7 +44,7 @@ resource "helm_release" "mealie" {
   repository_username = "stevev"
   repository_password = var.home_registry_password
 
-  depends_on = [kubectl_manifest.mealie_database]
+  depends_on = [kubectl_manifest.mealie_db]
 
   lifecycle {
     ignore_changes = [metadata]

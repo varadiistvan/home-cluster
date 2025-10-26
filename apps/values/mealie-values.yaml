@@ -15,7 +15,7 @@ mealie:
     PGID: "1000"
     POSTGRES_DB: mealie
     POSTGRES_PORT: "5432"
-    POSTGRES_SERVER: postgres-postgresql
+    POSTGRES_SERVER: pg-cnpg-rw
     POSTGRES_USER: mealie
     PUID: "1000"
     TZ: Europe/Amsterdam

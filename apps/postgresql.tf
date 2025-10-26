@@ -103,28 +103,30 @@ resource "kubectl_manifest" "cnpg_cluster" {
         shared_preload_libraries:
           - pgaudit
           - vchord
+          - vectors
 
-      bootstrap:
-        pg_basebackup:
-          source: bitnami-src
-          # optional: create/ensure an app DB/user after recovery completes
-          # database: app
-          # owner: app
-          # secret:
-          #   name: app-secret
-
-      externalClusters:
-        - name: bitnami-src
-          connectionParameters:
-            host: postgres-postgresql.apps.svc.cluster.local
-            port: "5432"
-            user: repl_user
-            dbname: postgres
-            sslmode: disable   # consider prefer/require later
-          password:
-            name: cnpg-repl
-            key: password
-
+      managed:
+        roles:
+          - name: immich
+            ensure: present
+            login: true
+            passwordSecret:
+              name: ${kubernetes_secret.immich_password.metadata[0].name}
+          - name: mealie
+            ensure: present
+            login: true
+            passwordSecret:
+              name: ${kubernetes_secret.mealie_postgres.metadata[0].name}
+          - name: penpot
+            ensure: present
+            login: true
+            passwordSecret:
+              name: ${kubernetes_secret.penpot_password.metadata[0].name} 
+          - name: planka
+            ensure: present
+            login: true
+            passwordSecret:
+              name: ${kubernetes_secret.planka_password.metadata[0].name}
       monitoring:
         enablePodMonitor: true
 
@@ -133,35 +135,3 @@ resource "kubectl_manifest" "cnpg_cluster" {
   depends_on = [helm_release.cnpg_operator]
 }
 
-
-resource "helm_release" "postgres-operator" {
-  name       = "postgres-operator"
-  namespace  = kubernetes_namespace.apps.metadata[0].name
-  chart      = "postgres-operator-chart"
-  repository = "oci://harbor.stevevaradi.me/stevevaradi"
-  version    = "0.3.2"
-
-  count = 1
-
-  depends_on = [helm_release.postgres]
-
-  set_list = [{
-    name  = "image.pullSecrets"
-    value = [kubernetes_secret.registry_pass.metadata[0].name]
-  }]
-
-  set = [
-    {
-      name  = "image.tag"
-      value = "0.1.38"
-    },
-    {
-      name  = "image.registry"
-      value = "harbor.stevevaradi.me/stevevaradi"
-    }
-  ]
-
-  lifecycle {
-    ignore_changes = [metadata]
-  }
-}

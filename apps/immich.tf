@@ -5,77 +5,36 @@ resource "kubernetes_secret" "immich_password" {
   }
 
   data = {
+    username = "immich"
     password = "testies"
   }
 
 }
 
 
-resource "kubectl_manifest" "immich_user" {
-  yaml_body = <<YAML
-    apiVersion: stevevaradi.me/v1
-    kind: PostgresUser
+resource "kubectl_manifest" "immich_db" {
+  yaml_body = <<-YAML
+    apiVersion: postgresql.cnpg.io/v1
+    kind: Database
     metadata:
-      name: immich-user
+      name: immich-db
       namespace: apps
     spec:
-      instance:
-        host: postgres-postgresql.apps.svc.cluster.local
-        port: 5432
-        adminCredentials:
-          username: postgres
-          secretRef:
-            name: postgres-auth
-            passwordKey: adminpass
-      user:
-        username: immich
-        secretRef:
-          name: postgres-immich
-          key: password
-        privileges:
-          - SUPERUSER
+      cluster:
+        name: ${kubectl_manifest.cnpg_cluster.name}
+      name: immich
+      owner: immich
+      databaseReclaimPolicy: retain
+      # CNPG will create required extensions if the binaries exist in the image
+      extensions:
+        - name: cube
+        - name: earthdistance
+        # If you're using pgvector, the extension name is "vector" (not "vectors")
+        - name: vectors
+        - name: vector
+        - name: vchord
   YAML
 
-  depends_on = [helm_release.postgres-operator, kubernetes_secret.immich_password, helm_release.postgres]
-}
-
-resource "time_sleep" "wait_for_immich_user" {
-  depends_on      = [kubectl_manifest.immich_user]
-  create_duration = "10s"
-}
-
-resource "kubectl_manifest" "immich_database" {
-  yaml_body  = <<YAML
-    apiVersion: stevevaradi.me/v1
-    kind: PostgresDatabase
-    metadata:
-      name: immich-database
-      namespace: apps
-    spec:
-      instance:
-        host: postgres-postgresql.apps.svc.cluster.local
-        port: 5432
-        adminCredentials:
-          username: postgres
-          secretRef:
-            name: postgres-auth
-            passwordKey: adminpass
-      database:
-        dbName: immich
-        owner: immich
-        extensions:
-          - earthdistance
-          - vectors
-          - cube
-          - vchord
-  YAML
-  depends_on = [time_sleep.wait_for_immich_user]
-}
-
-resource "time_sleep" "immich_wait" {
-  create_duration = "10s"
-
-  depends_on = [kubectl_manifest.immich_database]
 }
 
 resource "kubernetes_persistent_volume_claim" "immich_pvc" {
@@ -101,7 +60,7 @@ resource "helm_release" "immich" {
   version    = "0.9.3"
   repository = "https://immich-app.github.io/immich-charts"
   values     = [file("${path.module}/values/immich-values.yaml")]
-  depends_on = [kubernetes_namespace.apps, helm_release.redis, time_sleep.immich_wait, kubernetes_persistent_volume_claim.immich_pvc]
+  depends_on = [kubernetes_namespace.apps, helm_release.redis, kubernetes_persistent_volume_claim.immich_pvc]
 
   set = [{
     name  = "env.REDIS_HOSTNAME"
@@ -115,7 +74,7 @@ resource "helm_release" "immich" {
 
     {
       name  = "env.DB_HOSTNAME"
-      value = "${helm_release.postgres.name}-postgresql"
+      value = "pg-cnpg-rw"
     },
 
     {

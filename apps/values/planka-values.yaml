@@ -1,0 +1,223 @@
+replicaCount: 1
+image:
+  repository: harbor.stevevaradi.me/ghcr/plankanban/planka
+
+imagePullSecrets:
+  - name: registry-pass
+
+existingSecretkeySecret: ""
+existingAdminCredsSecret: ""
+admin_email: "varadiista.1@gmail.com"
+admin_name: "Steve"
+
+postgresql:
+  enabled: false
+
+# Base url for PLANKA. Will override `ingress.hosts[0].host`
+# Defaults to `http://localhost:3000` if ingress is disabled.
+baseUrl: https://planka.stevevaradi.me
+
+serviceAccount:
+  create: true
+
+podAnnotations: {}
+podSecurityContext: {}
+deploymentAnnotations: {}
+securityContext: {}
+
+service:
+  annotations: {}
+  type: ClusterIP
+  port: 1337
+  ## @param service.containerPort PLANKA HTTP container port
+  ## If empty will default to 1337
+  ##
+  containerPort: 1337
+
+ingress:
+  enabled: true
+  className: nginx
+  labels: {}
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/whitelist-source-range: >-
+      192.168.0.1/24,
+      10.192.1.1/24
+  hosts:
+    - host: planka.stevevaradi.me
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
+  tls:
+    - secretName: planka-tls
+      hosts:
+        - planka.stevevaradi.me
+
+resources: {}
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+nodeSelector: {}
+tolerations: []
+affinity: {}
+
+## @param existingDburlSecret Name of an existing secret containing a DBurl connection string
+## NOTE: Must contain key `uri`
+## NOTE: When it's set, the `dburl` parameter is ignored
+##
+existingDburlSecret: ""
+
+## PVC-based data storage configuration
+persistence:
+  enabled: true
+  storageClass: iscsi-csi
+  accessMode: ReadWriteOnce
+  size: 10Gi
+
+## OpenID Identity Management configuration
+##
+## Example:
+## ---------------
+## oidc:
+##   enabled: true
+##   clientId: sxxaAIAxVXlCxTmc1YLHBbQr8NL8MqLI2DUbt42d
+##   clientSecret: om4RTMRVHRszU7bqxB7RZNkHIzA8e4sGYWxeCwIMYQXPwEBWe4SY5a0wwCe9ltB3zrq5f0dnFnp34cEHD7QSMHsKvV9AiV5Z7eqDraMnv0I8IFivmuV5wovAECAYreSI
+##   issuerUrl: https://auth.local/application/o/planka/
+##   admin:
+##     roles:
+##       - planka-admin
+##
+## ---------------
+## NOTE: A minimal configuration requires setting `clientId`, `clientSecret` and `issuerUrl`. (plus `admin.roles` for administrators)
+## ref: https://docs.planka.cloud/docs/configuration/oidc/
+##
+oidc:
+  ## @param oidc.enabled Enable single sign-on (SSO) with OpenID Connect (OIDC)
+  ##
+  enabled: false
+
+  ## OIDC credentials
+  ## @param oidc.clientId A string unique to the provider that identifies your app.
+  ## @param oidc.clientSecret A secret string that the provider uses to confirm ownership of a client ID.
+  ##
+  ## NOTE: Either specify inline `clientId` and `clientSecret` or refer to them via `existingSecret`
+  ##
+  clientId: ""
+  clientSecret: ""
+
+  ## @param oidc.existingSecret Name of an existing secret containing OIDC credentials
+  ## NOTE: Must contain key `clientId` and `clientSecret`
+  ## NOTE: When it's set, the `clientId` and `clientSecret` parameters are ignored
+  ##
+  existingSecret: ""
+
+  ## @param oidc.issuerUrl The OpenID connect metadata document endpoint
+  ##
+  issuerUrl: ""
+
+  ## @param oidc.scopes A list of scopes required for OIDC client.
+  ## If empty will default to `openid`, `profile` and `email`
+  ## NOTE: PLANKA needs the email and name claims
+  ##
+  scopes: []
+
+  ## Admin permissions configuration
+  admin:
+    ## @param oidc.admin.ignoreRoles If set to true, the admin roles will be ignored.
+    ## It is useful if you want to use OIDC for authentication but not for authorization.
+    ## If empty will default to `false`
+    ##
+    ignoreRoles: false
+
+    ## @param oidc.admin.rolesAttribute The name of a custom group claim that you have configured in your OIDC provider
+    ## If empty will default to `groups`
+    ##
+    rolesAttribute: groups
+
+    ## @param oidc.admin.roles The names of the admin groups
+    ##
+    roles: []
+      # - planka-admin
+
+## Extra environment variables for planka deployment
+## Supports hard coded and getting values from a k8s secret
+## - name: test
+##   value: valuetest
+## - name: another
+##   value: another
+## - name: test-secret
+##   valueFrom:
+##     secretName: k8s-secret-name
+##     key: key-inside-the-secret
+##
+extraEnv: []
+
+## Example extraEnv for configuring SMTP
+## extraEnv:
+##   - name: SMTP_HOST
+##     value: "smtp.example.com"
+##   - name: SMTP_PORT
+##     value: "587"
+##   - name: SMTP_NAME
+##     value: "Your Name"
+##   - name: SMTP_SECURE
+##     value: "true"
+##   - name: SMTP_TLS_REJECT_UNAUTHORIZED
+##     value: "false"
+##   - name: SMTP_USER
+##     value: "your_email@example.com"
+##   - name: SMTP_PASSWORD
+##     value: "your_password"
+##   - name: SMTP_FROM
+##     value: "your_email@example.com"
+
+## Extra volume mounts configuration
+## Mount ConfigMaps, Secrets, and arbitrary volumes to the PLANKA container
+## This allows mounting any pre-existing ConfigMaps, Secrets, or other volume types
+##
+extraMounts: []
+## Example extraMounts:
+## extraMounts:
+##   - name: ca-certs
+##     mountPath: /etc/ssl/certs/ca-certificates.crt
+##     subPath: ca-bundle.crt
+##     readOnly: true
+##     configMap:
+##       name: ca-certificates
+##   - name: tls-certs
+##     mountPath: /etc/ssl/private
+##     readOnly: true
+##     secret:
+##       secretName: planka-tls
+##       items:
+##         - key: tls.crt
+##           path: server.crt
+##         - key: tls.key
+##           path: server.key
+##   - name: temp-storage
+##     mountPath: /tmp/planka-temp
+##     readOnly: false
+##     emptyDir:
+##       sizeLimit: 1Gi
+
+## Example configuration for OIDC with self-hosted Keycloak using custom CA
+## (Requires pre-existing ConfigMap "ca-certificates")
+## extraMounts:
+##   - name: keycloak-ca
+##     mountPath: /etc/ssl/certs/keycloak-ca.crt
+##     subPath: ca.crt
+##     readOnly: true
+##     configMap:
+##       name: ca-certificates
+##
+## extraEnv:
+##   - name: NODE_EXTRA_CA_CERTS
+##     value: "/etc/ssl/certs/keycloak-ca.crt"
