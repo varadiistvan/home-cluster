@@ -42,7 +42,7 @@ resource "helm_release" "renovate" {
   namespace  = kubernetes_namespace.apps.id
   repository = "oci://ghcr.io/renovatebot/charts"
   chart      = "renovate"
-  version    = "44.7.0"
+  version    = "44.15.1"
 
   values = [file("${path.module}/values/renovate-values.yaml")]
 
