@@ -183,15 +183,14 @@ resource "kubernetes_ingress_v1" "mainsail" {
     name      = "mainsail"
     namespace = kubernetes_namespace.external.id
     annotations = {
-      "cert-manager.io/cluster-issuer" = "letsencrypt"
-
+      "cert-manager.io/cluster-issuer"                      = "letsencrypt"
       "nginx.ingress.kubernetes.io/whitelist-source-range"  = "192.168.0.0/24,10.192.1.0/24"
       "nginx.ingress.kubernetes.io/proxy-body-size"         = "0"
       "nginx.ingress.kubernetes.io/proxy-read-timeout"      = "600"
       "nginx.ingress.kubernetes.io/proxy-send-timeout"      = "600"
       "nginx.ingress.kubernetes.io/proxy-request-buffering" = "off"
       "nginx.ingress.kubernetes.io/backend-protocol"        = "HTTP"
-      "nginx.ingress.kubernetes.io/use-regex"               = "true"
+      # REMOVE: "nginx.ingress.kubernetes.io/use-regex"
     }
   }
 
@@ -206,6 +205,7 @@ resource "kubernetes_ingress_v1" "mainsail" {
     rule {
       host = "mainsail.stevevaradi.me"
       http {
+        # mainsail web
         path {
           path      = "/"
           path_type = "Prefix"
@@ -218,9 +218,22 @@ resource "kubernetes_ingress_v1" "mainsail" {
             }
           }
         }
+        # camera endpoints
         path {
-          path      = "/(stream)|(snapshot)"
-          path_type = "ImplementationSpecific"
+          path      = "/stream"
+          path_type = "Exact"
+          backend {
+            service {
+              name = kubernetes_service_v1.mainsail_external.metadata[0].name
+              port {
+                name = "cam"
+              }
+            }
+          }
+        }
+        path {
+          path      = "/snapshot"
+          path_type = "Exact"
           backend {
             service {
               name = kubernetes_service_v1.mainsail_external.metadata[0].name
@@ -234,6 +247,45 @@ resource "kubernetes_ingress_v1" "mainsail" {
     }
   }
 }
+
+resource "kubernetes_ingress_v1" "mainsail_cam" {
+  metadata {
+    name      = "mainsail-cam"
+    namespace = kubernetes_namespace.external.id
+    annotations = {
+      "cert-manager.io/cluster-issuer"                      = "letsencrypt"
+      "nginx.ingress.kubernetes.io/proxy-body-size"         = "0"
+      "nginx.ingress.kubernetes.io/proxy-read-timeout"      = "600"
+      "nginx.ingress.kubernetes.io/proxy-send-timeout"      = "600"
+      "nginx.ingress.kubernetes.io/proxy-request-buffering" = "off"
+    }
+  }
+  spec {
+    ingress_class_name = "nginx"
+
+    tls {
+      hosts       = ["cam.mainsail.stevevaradi.me"]
+      secret_name = "mainsail-cam-tls"
+    }
+
+    rule {
+      host = "cam.mainsail.stevevaradi.me"
+      http {
+        path {
+          path      = "/"
+          path_type = "Prefix"
+          backend {
+            service {
+              name = kubernetes_service_v1.mainsail_external.metadata[0].name
+              port { name = "cam" }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
 
 resource "kubernetes_service_v1" "ollama_external" {
   metadata {
