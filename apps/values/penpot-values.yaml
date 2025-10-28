@@ -1,3 +1,7 @@
+global:
+  imagePullSecrets:
+    - name: registry-pass
+
 serviceAccount:
   enabled: true
   name: "penpot"
@@ -30,9 +34,15 @@ config:
     every: 5
     timeout: "3h"
 
-backend.image.repository: harbor.stevevaradi.me/hub/penpotapp/backend
-frontend.image.repository: harbor.stevevaradi.me/hub/penpotapp/frontend
-exporter.image.repository: harbor.stevevaradi.me/hub/penpotapp/exporter
+backend:
+  image:
+    repository: harbor.stevevaradi.me/hub/penpotapp/backend
+frontend:
+  image:
+    repository: harbor.stevevaradi.me/hub/penpotapp/frontend
+exporter:
+  image:
+    repository: harbor.stevevaradi.me/hub/penpotapp/exporter
 
 persistence:
   assets:
