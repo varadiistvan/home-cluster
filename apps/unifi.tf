@@ -68,7 +68,7 @@ resource "helm_release" "unifi" {
   name       = "unifi"
   namespace  = kubernetes_namespace.apps.id
   chart      = "unifi"
-  version    = "1.14.0"
+  version    = "1.14.1"
   repository = "oci://ghcr.io/mkilchhofer/unifi-chart"
   values     = [file("${path.module}/values/unifi-values.yaml")]
   timeout    = 600
