@@ -34,7 +34,7 @@ resource "helm_release" "cnpg_operator" {
   namespace  = kubernetes_namespace.apps.id
   repository = "https://cloudnative-pg.github.io/charts"
   chart      = "cloudnative-pg"
-  version    = "0.26.0"
+  version    = "0.26.1"
   values = [
     <<-YAML
       image:
