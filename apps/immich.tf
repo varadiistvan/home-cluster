@@ -57,7 +57,7 @@ resource "helm_release" "immich" {
   name       = "immich"
   namespace  = kubernetes_namespace.apps.metadata[0].name
   chart      = "immich"
-  version    = "0.9.3"
+  version    = "0.10.1"
   repository = "https://immich-app.github.io/immich-charts"
   values     = [file("${path.module}/values/immich-values.yaml")]
   depends_on = [kubernetes_namespace.apps, helm_release.redis, kubernetes_persistent_volume_claim.immich_pvc]
