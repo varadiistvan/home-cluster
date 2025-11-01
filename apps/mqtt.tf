@@ -74,7 +74,7 @@ resource "helm_release" "z2m" {
   namespace  = kubernetes_namespace.apps.id
   chart      = "zigbee2mqtt"
   repository = "https://charts.zigbee2mqtt.io/"
-  version    = "2.6.1"
+  version    = "2.6.3"
 
   values = [file("${path.module}/values/z2m-values.yaml")]
 
