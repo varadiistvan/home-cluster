@@ -1,14 +1,21 @@
+resource "random_password" "immich_passwords" {
+  length  = 16
+  special = true
+}
+
 resource "kubernetes_secret" "immich_password" {
   metadata {
     name      = "postgres-immich"
     namespace = kubernetes_namespace.apps.metadata[0].name
+    labels = {
+      "cnpg.io/reload" = "true"
+    }
   }
 
   data = {
     username = "immich"
-    password = "testies"
+    password = random_password.immich_passwords.result
   }
-
 }
 
 
@@ -33,6 +40,8 @@ resource "kubectl_manifest" "immich_db" {
         - name: vectors
         - name: vector
         - name: vchord
+          version: 0.4.3
+      
   YAML
 
 }
@@ -62,40 +71,42 @@ resource "helm_release" "immich" {
   values     = [file("${path.module}/values/immich-values.yaml")]
   depends_on = [kubernetes_namespace.apps, helm_release.redis, kubernetes_persistent_volume_claim.immich_pvc]
 
-  set = [{
-    name  = "env.REDIS_HOSTNAME"
-    value = "${helm_release.redis["immich"].name}-master"
-    },
-
+  set = [
     {
-      name  = "env.REDIS_PASSWORD"
-      value = random_password.redis_passwords["immich"].result
+      name  = "valkey.enabled"
+      value = "false"
     },
-
     {
-      name  = "env.DB_HOSTNAME"
+      name  = "controllers.main.containers.main.env.REDIS_HOSTNAME"
+      value = "${helm_release.redis["immich"].name}-master"
+    },
+    {
+      name  = "controllers.main.containers.main.env.DB_HOSTNAME"
       value = "pg-cnpg-rw"
     },
-
     {
-      name  = "env.DB_USERNAME"
+      name  = "controllers.main.containers.main.env.DB_USERNAME"
       value = "immich"
     },
-
     {
-      name  = "env.DB_DATABASE_NAME"
+      name  = "controllers.main.containers.main.env.DB_DATABASE_NAME"
       value = "immich"
     },
-
-    {
-      name  = "env.DB_PASSWORD"
-      value = kubernetes_secret.immich_password.data.password
-    },
-
     {
       name  = "immich.persistence.library.existingClaim"
       value = kubernetes_persistent_volume_claim.immich_pvc.metadata[0].name
+    }
+  ]
+
+  set_sensitive = [
+    {
+      name  = "controllers.main.containers.main.env.DB_PASSWORD"
+      value = kubernetes_secret.immich_password.data.password
     },
+    {
+      name  = "controllers.main.containers.main.env.REDIS_PASSWORD"
+      value = random_password.redis_passwords["immich"].result
+    }
   ]
 
   lifecycle {

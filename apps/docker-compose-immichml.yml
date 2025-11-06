@@ -3,12 +3,12 @@ name: immich_remote_ml
 services:
   immich-machine-learning:
     container_name: immich_machine_learning
-    # For hardware acceleration, add one of -[armnn, cuda, openvino] to the image tag.
+    # For hardware acceleration, add one of -[armnn, cuda, rocm, openvino, rknn] to the image tag.
     # Example tag: ${IMMICH_VERSION:-release}-cuda
-    image: ghcr.io/immich-app/immich-machine-learning:v1.137.3
-    # extends:
-    #   file: hwaccel.ml.yml
-    #   service: # set to one of [armnn, cuda, openvino, openvino-wsl] for accelerated inference - use the `-wsl` version for WSL2 where applicable
+    image: harbor.stevevaradi.me/ghcr/immich-app/immich-machine-learning:v2.0.0-rocm
+    extends:
+      file: hwaccel.ml.yml
+      service: rocm # set to one of [armnn, cuda, rocm, openvino, openvino-wsl, rknn] for accelerated inference - use the `-wsl` version for WSL2 where applicable
     volumes:
       - model-cache:/cache
     restart: always
