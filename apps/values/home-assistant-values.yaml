@@ -78,6 +78,10 @@ initContainers:
       runAsNonRoot: false
       runAsUser: 0
       seLinuxOptions: {}
+      capabilities:
+        add:
+          - NET_RAW
+          - NET_ADMIN
       seccompProfile:
         type: RuntimeDefault
     volumeMounts:

@@ -35,12 +35,18 @@ config:
     timeout: "3h"
 
 backend:
+  nodeSelector:
+    kubernetes.io/arch: amd64
   image:
     repository: harbor.stevevaradi.me/hub/penpotapp/backend
 frontend:
+  nodeSelector:
+    kubernetes.io/arch: amd64
   image:
     repository: harbor.stevevaradi.me/hub/penpotapp/frontend
 exporter:
+  nodeSelector:
+    kubernetes.io/arch: amd64
   image:
     repository: harbor.stevevaradi.me/hub/penpotapp/exporter
 

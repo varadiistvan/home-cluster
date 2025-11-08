@@ -1,7 +1,6 @@
 mealie:
   repository:
     image: harbor.stevevaradi.me/ghcr/mealie-recipes/mealie
-    tag: v2.8.0
 
   db:
     existingSecret:

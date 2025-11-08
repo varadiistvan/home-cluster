@@ -7,7 +7,6 @@ image:
 
 secretesMigratorContainer:
   repository: harbor.stevevaradi.me/hub/mikefarah/yq
-  tag: 4.45.1
   pullPolicy: IfNotPresent
   imagePullSecrets: {}
   securityContext:

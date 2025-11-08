@@ -2,7 +2,7 @@ replicaCount: 1
 image:
   repository: harbor.stevevaradi.me/hub/copyparty/ac
   pullPolicy: IfNotPresent
-  tag: 1.19.16
+  tag: 1.19.20
 
 imagePullSecrets:
   - name: registry-pass
@@ -59,7 +59,7 @@ volumes: []
 volumeMounts: []
 storage:
   storageClass: "iscsi-csi"
-  size: "460Gi"
+  size: "480Gi"
   accessModes: [ReadWriteOnce]
 
 existingConfigMap: ""

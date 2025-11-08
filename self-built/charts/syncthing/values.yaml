@@ -1,7 +1,6 @@
 image:
   repository: syncthing/syncthing
   # Uses chart appVersion when left empty
-  tag: ""
   pullPolicy: IfNotPresent
 
 imagePullSecrets: []
