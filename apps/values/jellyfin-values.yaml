@@ -37,14 +37,10 @@ persistence:
   config:
     enabled: true
     accessMode: ReadWriteOnce
-    size: 5Gi
+    size: 25Gi
     storageClass: iscsi-csi
   media:
     enabled: false
-
-resources:
-  limits:
-    gpu.intel.com/i915: 1
 
 # affinity:
 #   nodeAffinity:

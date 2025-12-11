@@ -6,7 +6,8 @@ global:
 diagnosticMode:
   enabled: false
 
-image.repository: bitnamilegacy/redis
+image:
+  repository: bitnamilegacy/redis
 
 architecture: standalone
 auth:
@@ -28,12 +29,14 @@ master:
 
 metrics:
   enabled: true
-  image.repository: bitnamilegacy/redis-exporter
+  image:
+    repository: bitnamilegacy/redis-exporter
   prometheusRule:
     enabled: true
 
 volumePermissions:
   enabled: true
-  image.repository: bitnamilegacy/os-shell
+  image:
+    repository: bitnamilegacy/os-shell
 
 kubectl.image.repository: bitnamilegacy/kubectl
