@@ -24,6 +24,16 @@ resource "kubernetes_secret" "mqtt_users" {
     DOCKER_VERNEMQ_USER_homeassistant : random_password.ha_pass.result
     DOCKER_VERNEMQ_USER_zigbee2mqtt : random_password.z2m_pass.result
     DOCKER_VERNEMQ_USER_findmy : random_password.findmy_pass.result
+  }
+}
+
+resource "kubernetes_secret" "z2m_secret" {
+  metadata {
+    name      = "z2m-secret"
+    namespace = kubernetes_namespace.apps.id
+  }
+
+  data = {
     "secret.yaml" : <<-YAML
       password: ${random_password.z2m_pass.result}
     YAML
@@ -81,7 +91,7 @@ resource "helm_release" "z2m" {
   set = [
     {
       name  = "statefulset.secrets.name"
-      value = kubernetes_secret.mqtt_users.metadata[0].name
+      value = kubernetes_secret.z2m_secret.metadata[0].name
     },
     {
       name  = "zigbee2mqtt.mqtt.password"
