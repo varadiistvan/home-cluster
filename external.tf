@@ -464,3 +464,91 @@ resource "kubernetes_ingress_v1" "nas" {
     }
   }
 }
+
+resource "kubernetes_service_v1" "voron_external" {
+  metadata {
+    name      = "voron-external"
+    namespace = kubernetes_namespace.external.id
+  }
+  spec {
+    port {
+      name        = "web"
+      port        = 80
+      target_port = 80
+      protocol    = "TCP"
+    }
+  }
+}
+
+resource "kubernetes_manifest" "voron_endpoint_slice" {
+  manifest = {
+    apiVersion = "discovery.k8s.io/v1"
+    kind       = "EndpointSlice"
+    metadata = {
+      name      = "voron-external-1"
+      namespace = kubernetes_namespace.external.id
+      labels = {
+        "kubernetes.io/service-name" = kubernetes_service_v1.voron_external.metadata[0].name
+      }
+    }
+    addressType = "IPv4"
+    ports = [
+      {
+        name     = "web"
+        protocol = "TCP"
+        port     = 80
+      }
+    ]
+    endpoints = [
+      {
+        addresses  = ["192.168.0.91"]
+        conditions = { ready = true }
+      }
+    ]
+  }
+}
+
+resource "kubernetes_ingress_v1" "voron" {
+  metadata {
+    name      = "voron"
+    namespace = kubernetes_namespace.external.id
+    annotations = {
+      "cert-manager.io/cluster-issuer"                      = "letsencrypt"
+      "nginx.ingress.kubernetes.io/whitelist-source-range"  = "192.168.0.0/24,10.192.1.0/24"
+      "nginx.ingress.kubernetes.io/proxy-body-size"         = "0"
+      "nginx.ingress.kubernetes.io/proxy-read-timeout"      = "600"
+      "nginx.ingress.kubernetes.io/proxy-send-timeout"      = "600"
+      "nginx.ingress.kubernetes.io/proxy-request-buffering" = "off"
+      "nginx.ingress.kubernetes.io/backend-protocol"        = "HTTP"
+    }
+  }
+
+  spec {
+    ingress_class_name = "nginx"
+
+    tls {
+      hosts       = ["voron.stevevaradi.me"]
+      secret_name = "voron-tls"
+    }
+
+    rule {
+      host = "voron.stevevaradi.me"
+      http {
+        # voron web
+        path {
+          path      = "/"
+          path_type = "Prefix"
+          backend {
+            service {
+              name = kubernetes_service_v1.voron_external.metadata[0].name
+              port {
+                name = "web"
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
