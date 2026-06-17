@@ -4,8 +4,8 @@ creation_rules:
       - age1qqj970fl5nksjr5wzk0t5ycgyhytngljsy3yctdm9ejs028023wqqhkxw8
       # Steve laptop
       - age1e5evkld5436wn3jexc49j4g272eq0avhspsldjzs0natc3hy4unqkrlqdk
-      # Flux key
-      - age12zqa60ukzjga8x5w4mklw07eyj03d3x0qw2sprnqf34sas67g93queu45p
+      # Flux
+      - age1frw660yfg3n6m2z7e39d2x0l3yw2k7lj5xx789pzuyt6x4amlvxqnnd7pc
   - path_regex: ^.*-secret(\.enc)?.yaml$
     encrypted_regex: ^(data|stringData)$
     age: *age-keys
