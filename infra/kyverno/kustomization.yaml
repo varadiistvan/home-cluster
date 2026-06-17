@@ -2,11 +2,10 @@ apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
 - helmrelease.yaml
-- barman-helmrelease.yaml
 configMapGenerator:
-- name: cnpg-values
-  namespace: storage
+- name: kyverno-values
+  namespace: kyverno
   files:
-  - values.yaml=cnpg-values.yaml
+  - values.yaml=kyverno-values.yaml
 configurations:
 - ../../common/kustomizeconfig.yaml

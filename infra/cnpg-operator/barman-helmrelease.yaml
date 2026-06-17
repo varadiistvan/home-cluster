@@ -1,0 +1,32 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: plugin-barman-cloud
+  namespace: storage
+spec:
+  interval: 30m
+  timeout: 10m
+  install:
+    crds: Create
+    remediation:
+      retries: -1
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  targetNamespace: storage
+  storageNamespace: storage
+  chart:
+    spec:
+      chart: plugin-barman-cloud
+      # renovate: datasource=helm depName=plugin-barman-cloud registryUrl=https://cloudnative-pg.github.io/charts
+      version: 0.7.x
+      sourceRef:
+        kind: HelmRepository
+        name: cnpg
+        namespace: flux-system
+  dependsOn:
+    - name: cnpg
+    - name: cert-manager
+      namespace: system

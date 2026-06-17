@@ -1,0 +1,12 @@
+admissionController:
+  replicas: 3
+  priorityClassName: system-cluster-critical
+
+backgroundController:
+  enabled: true
+
+cleanupController:
+  enabled: true
+
+reportsController:
+  enabled: true

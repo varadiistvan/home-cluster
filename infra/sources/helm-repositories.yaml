@@ -267,3 +267,22 @@ spec:
   interval: 1h
   url: oci://ghcr.io/mkilchhofer/unifi-chart
   type: oci
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: home-operations
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: oci://ghcr.io/home-operations/charts
+  type: oci
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: kyverno
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://kyverno.github.io/kyverno/

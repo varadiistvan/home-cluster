@@ -5,3 +5,6 @@ resources:
   - cilium-lb.yaml
   - intel-device-plugin.yaml
   - nfd-rules.yaml
+  - talos-upgrade.yaml
+  - kubernetes-upgrade.yaml
+  - kyverno-timezone-policy.yaml

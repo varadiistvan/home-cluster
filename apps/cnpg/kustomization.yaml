@@ -8,5 +8,8 @@ resources:
 - planka-password-storage-secret.enc.yaml
 - postgres-immich-storage-secret.enc.yaml
 - postgres-penpot-storage-secret.enc.yaml
+- barman-minio-secret.enc.yaml
+- barman-objectstore.yaml
+- barman-scheduled-backup.yaml
 configurations:
 - ../../common/kustomizeconfig.yaml
