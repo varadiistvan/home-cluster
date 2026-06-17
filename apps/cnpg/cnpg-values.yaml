@@ -1,4 +1,0 @@
-image:
-  repository: ghcr.io/cloudnative-pg/cloudnative-pg
-imagePullSecrets:
-- name: registry-pass
