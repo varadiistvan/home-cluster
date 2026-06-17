@@ -11,5 +11,6 @@ resources:
   - ingress-nginx
   - intel-device-plugins
   - iscsi-provisioner
+  - mongodb-operator
   - nfd
   - reloader

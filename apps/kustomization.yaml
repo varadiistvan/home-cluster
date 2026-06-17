@@ -17,7 +17,6 @@ resources:
   - immich
   - jellyfin
   - mealie
-  - mongodb-operator
   - mqtt
   - obico
   - penpot
