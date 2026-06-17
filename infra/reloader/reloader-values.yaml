@@ -40,7 +40,7 @@ reloader:
     gomaxprocsOverride: ''
     gomemlimitOverride: ''
   podMonitor:
-    enabled: true
+    enabled: false
     namespace: monitoring
   podDisruptionBudget:
     enabled: true

@@ -48,7 +48,7 @@ hubble:
     prometheus:
       enabled: true
       serviceMonitor:
-        enabled: true
+        enabled: false
   ui:
     enabled: true
     backend:
@@ -70,7 +70,7 @@ hubble:
     - http
     - policy
 serviceMonitor:
-  enabled: true
+  enabled: false
 ipam:
   operator:
     clusterPoolIPv4PodCIDRList: 10.42.0.0/16
@@ -81,7 +81,7 @@ k8sServicePort: 7445
 prometheus:
   enabled: true
   serviceMonitor:
-    enabled: true
+    enabled: false
 operator:
   image:
     repository: quay.io/cilium/operator
@@ -91,7 +91,7 @@ operator:
   prometheus:
     enabled: true
     serviceMonitor:
-      enabled: true
+      enabled: false
   dashboards:
     enabled: true
     namespace: monitoring

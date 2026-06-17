@@ -24,3 +24,6 @@ spec:
   valuesFrom:
   - kind: ConfigMap
     name: reloader-values
+  - kind: ConfigMap
+    name: reloader-monitoring-values
+    optional: true

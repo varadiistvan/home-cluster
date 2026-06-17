@@ -24,3 +24,6 @@ spec:
   valuesFrom:
   - kind: ConfigMap
     name: cilium-values
+  - kind: ConfigMap
+    name: cilium-monitoring-values
+    optional: true

@@ -3,5 +3,7 @@ kind: Kustomization
 resources:
   - cert-manager-issuers.yaml
   - cilium-lb.yaml
+  - cilium-monitoring-values.yaml
   - intel-device-plugin.yaml
   - nfd-rules.yaml
+  - reloader-monitoring-values.yaml
