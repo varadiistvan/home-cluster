@@ -56,7 +56,7 @@ persistence:
     accessModes:
     - ReadWriteOnce
 ingress:
-  enabled: true
+  enabled: false
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
     nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.1/24, 10.192.1.1/24

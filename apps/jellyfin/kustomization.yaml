@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
 - helmrelease-jellyseerr.yaml
 - helmrelease.yaml
+- httproute.yaml
 configMapGenerator:
 - name: jellyseer-values
   namespace: media

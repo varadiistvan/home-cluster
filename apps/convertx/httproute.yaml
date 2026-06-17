@@ -1,0 +1,17 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: convertx-convertx
+  namespace: convertx
+spec:
+  parentRefs:
+    - name: cilium-gateway-local
+      namespace: network
+      sectionName: https-convertx
+  hostnames:
+    - convertx.stevevaradi.me
+  rules:
+    - backendRefs:
+        - name: convertx-convertx
+          port: 3000

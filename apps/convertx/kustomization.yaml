@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
 - convertx-jwt-secret.enc.yaml
 - helmrelease.yaml
+- httproute.yaml
 configMapGenerator:
 - name: convertx-values
   namespace: convertx

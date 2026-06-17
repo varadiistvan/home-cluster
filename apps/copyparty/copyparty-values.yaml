@@ -21,7 +21,7 @@ service:
   ssdp: 1900
   mdns: 5353
 ingress:
-  enabled: true
+  enabled: false
   className: nginx
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt

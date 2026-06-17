@@ -3,7 +3,7 @@ mealie:
     image: ghcr.io/mealie-recipes/mealie
   db:
     existingSecret:
-      enabled: true
+      enabled: false
       name: mealie-postgres
   env:
     ALLOW_SIGNUP: 'false'

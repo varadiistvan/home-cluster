@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
   - cert-manager-issuers.yaml
   - cilium-lb.yaml
+  - gateway.yaml
   - intel-device-plugin.yaml
   - nfd-rules.yaml
   - talos-upgrade.yaml

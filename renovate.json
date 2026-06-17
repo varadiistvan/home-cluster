@@ -2,13 +2,46 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
   "ignorePaths": ["**/self-built/images/csi-driver-iscsi/**"],
-  "regexManagers": [
+  "customManagers": [
     {
-      "fileMatch": ["(^|/)kustomization\\.yaml$"],
-      "matchStrings": [
-        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)\\s+- https://github\\.com/[^/]+/[^/]+/releases/download/(?<currentValue>[^/]+)/"
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/\\.yaml$/"
       ],
-      "versioningTemplate": "semver"
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+versioning=(?<versioning>[^\\s]+))?\\s+-\\s+https://github\\.com/[^/]+/[^/]+/releases/download/(?<currentValue>[^/]+)/"
+      ],
+      "description": "Update GitHub release download URLs in Kustomization files"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/\\.yaml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+versioning=(?<versioning>[^\\s]+))?\\n\\s+version:\\s+(?<currentValue>\\S+)"
+      ],
+      "description": "Update version fields with renovate comment"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/\\.yaml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+versioning=(?<versioning>[^\\s]+))?\\n\\s+tag:\\s+(?<currentValue>\\S+)"
+      ],
+      "description": "Update tag fields with renovate comment"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/\\.yaml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+versioning=(?<versioning>[^\\s]+))?\\n\\s+value: \"(?<currentValue>[^\"]+)\""
+      ],
+      "description": "Update env var values with renovate comment"
     }
   ],
   "packageRules": [

@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
 - copyparty-config-secret.enc.yaml
 - helmrelease.yaml
+- httproute.yaml
 configMapGenerator:
 - name: copyparty-values
   namespace: copyparty

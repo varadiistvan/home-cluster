@@ -8,7 +8,7 @@ endless_wiki:
     host: wiki.stevevaradi.me
     path: /
     class: '-'
-    enabled: true
+    enabled: false
     tls:
       enabled: true
       secretName: wiki-tls

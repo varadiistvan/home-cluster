@@ -1,0 +1,264 @@
+---
+apiVersion: cilium.io/v2alpha1
+kind: CiliumGatewayClassConfig
+metadata:
+  name: cilium-local
+  namespace: network
+spec:
+  service:
+    loadBalancerSourceRanges:
+      - 192.168.0.0/24
+      - 10.192.1.0/24
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: GatewayClass
+metadata:
+  name: cilium-local
+spec:
+  controllerName: io.cilium/gateway-controller
+  parametersRef:
+    group: cilium.io
+    kind: CiliumGatewayClassConfig
+    name: cilium-local
+    namespace: network
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: Gateway
+metadata:
+  name: cilium-gateway-local
+  namespace: network
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+spec:
+  gatewayClassName: cilium-local
+  addresses:
+    - type: IPAddress
+      value: 192.168.0.155
+  listeners:
+    - name: http
+      protocol: HTTP
+      port: 80
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-convertx
+      protocol: HTTPS
+      port: 443
+      hostname: convertx.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: convertx-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-copyparty
+      protocol: HTTPS
+      port: 443
+      hostname: copyparty.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: copyparty-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-cyberchef
+      protocol: HTTPS
+      port: 443
+      hostname: cyberchef.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: cyberchef-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-wiki
+      protocol: HTTPS
+      port: 443
+      hostname: wiki.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: wiki-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-ha
+      protocol: HTTPS
+      port: 443
+      hostname: ha.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: ha-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-immich
+      protocol: HTTPS
+      port: 443
+      hostname: immich.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: immich-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-jellyfin
+      protocol: HTTPS
+      port: 443
+      hostname: jellyfin.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: jellyfin-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-jellyseer
+      protocol: HTTPS
+      port: 443
+      hostname: jellyseer.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: jellyseer-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-mealie
+      protocol: HTTPS
+      port: 443
+      hostname: mealie.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: mealie-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-obico
+      protocol: HTTPS
+      port: 443
+      hostname: obico.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: obico-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-penpot
+      protocol: HTTPS
+      port: 443
+      hostname: penpot.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: penpot-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-planka
+      protocol: HTTPS
+      port: 443
+      hostname: planka.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: planka-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-redisinsight
+      protocol: HTTPS
+      port: 443
+      hostname: redisinsight.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: redisinsight-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-siyuan
+      protocol: HTTPS
+      port: 443
+      hostname: siyuan.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: siyuan-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-stirling-pdf
+      protocol: HTTPS
+      port: 443
+      hostname: stirling-pdf.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: stirling-pdf-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-syncthing
+      protocol: HTTPS
+      port: 443
+      hostname: syncthing.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: syncthing-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-z2m
+      protocol: HTTPS
+      port: 443
+      hostname: z2m.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: z2m-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+---
+# Redirect all HTTP to HTTPS
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: http-redirect
+  namespace: network
+spec:
+  parentRefs:
+    - name: cilium-gateway-local
+      sectionName: http
+  rules:
+    - filters:
+        - type: RequestRedirect
+          requestRedirect:
+            scheme: https
+            statusCode: 301

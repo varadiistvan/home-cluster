@@ -2,7 +2,7 @@ image:
   repository: docker.io/jellyfin/jellyfin
   tag: "10.10.7"
 ingress:
-  enabled: true
+  enabled: false
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
   hosts:

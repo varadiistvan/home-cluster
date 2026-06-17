@@ -29,7 +29,7 @@ convertx:
       nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.1/24, 10.192.1.1/24
     host: convertx.stevevaradi.me
     path: /
-    enabled: true
+    enabled: false
     tls:
       enabled: true
   nodeSelector: {}

@@ -1,0 +1,17 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: z2m-frontend
+  namespace: home
+spec:
+  parentRefs:
+    - name: cilium-gateway-local
+      namespace: network
+      sectionName: https-z2m
+  hostnames:
+    - z2m.stevevaradi.me
+  rules:
+    - backendRefs:
+        - name: z2m-zigbee2mqtt
+          port: 8080

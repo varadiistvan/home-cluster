@@ -10,7 +10,7 @@ envsFrom: []
 serviceAccount:
   create: true
 securityContext:
-  enabled: true
+  enabled: false
   fsGroup: 1000
 containerSecurityContext: {}
 priorityClassName: ''
