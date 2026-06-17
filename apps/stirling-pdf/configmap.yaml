@@ -1,0 +1,10 @@
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: stirling-pdf-config
+  namespace: stirling-pdf
+data:
+  custom_settings.yml: |
+    system:
+      maxDPI: 4000

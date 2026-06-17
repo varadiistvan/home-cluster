@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- helmrelease.yaml
+- mealie-postgres-secret.enc.yaml
+configMapGenerator:
+- name: mealie-values
+  namespace: mealie
+  files:
+  - values.yaml=mealie-values.yaml
+configurations:
+- ../../common/kustomizeconfig.yaml

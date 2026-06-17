@@ -1,3 +1,9 @@
-.terraform
 .env
 .idea
+backup/
+# plaintext sops sources — only *-secret.enc.yaml gets committed
+*-secret.yaml
+# talhelper output
+talos/clusterconfig/
+talos/talosconfig
+flux.agekey

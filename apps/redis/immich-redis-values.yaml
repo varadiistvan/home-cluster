@@ -1,0 +1,34 @@
+global:
+  imageRegistry: docker.io
+  security:
+    allowInsecureImages: true
+diagnosticMode:
+  enabled: false
+image:
+  repository: bitnamilegacy/redis
+architecture: standalone
+auth:
+  enabled: true
+  sentinel: true
+  existingSecret: immich-redis-auth
+  existingSecretPasswordKey: password
+master:
+  resourcesPreset: small
+  resources: {}
+  persistence:
+    enabled: true
+    storageClass: nfs-csi
+    accessModes:
+    - ReadWriteOnce
+    size: 8Gi
+metrics:
+  enabled: true
+  image:
+    repository: bitnamilegacy/redis-exporter
+  prometheusRule:
+    enabled: true
+volumePermissions:
+  enabled: true
+  image:
+    repository: bitnamilegacy/os-shell
+kubectl.image.repository: bitnamilegacy/kubectl

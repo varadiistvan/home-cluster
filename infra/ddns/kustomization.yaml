@@ -1,0 +1,18 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- ddns-dabitches-secret.enc.yaml
+- ddns-secret.enc.yaml
+- helmrelease-dabitches.yaml
+- helmrelease.yaml
+configMapGenerator:
+- name: ddns-dabitches-values
+  namespace: network
+  files:
+  - values.yaml=ddns-dabitches-values.yaml
+- name: ddns-values
+  namespace: network
+  files:
+  - values.yaml=ddns-values.yaml
+configurations:
+- ../../common/kustomizeconfig.yaml

@@ -1,0 +1,42 @@
+controller:
+  kind: DaemonSet
+  config:
+    enable-real-ip: 'true'
+    use-proxy-protocol: 'true'
+    proxy-real-ip-cidr: 192.168.0.151/32
+  affinity:
+    podAntiAffinity:
+      preferredDuringSchedulingIgnoredDuringExecution:
+      - weight: 1
+        podAffinityTerm:
+          topologyKey: kubernetes.io/hostname
+          labelSelector:
+            matchLabels:
+              app.kubernetes.io/name: ingress-nginx
+              app.kubernetes.io/instance: waxen-chinchilla
+  ingressClassResource:
+    default: true
+  metrics:
+    enabled: true
+    service:
+      annotations:
+        prometheus.io/scrape: 'true'
+        prometheus.io/port: '10254'
+  resources:
+    requests:
+      cpu: 50m
+      memory: 128Mi
+  service:
+    type: LoadBalancer
+    externalTrafficPolicy: Local
+  watchIngressWithoutClass: true
+global:
+  image:
+    registry: registry.k8s.io
+tcp:
+  '5432': storage/pg-cnpg-rw:5432
+  '8883': home/vernemq:8883
+  '22000': syncthing/syncthing-listeners:22000
+udp:
+  '21027': syncthing/syncthing-discovery:21027
+  '22000': syncthing/syncthing-listeners-udp:22000

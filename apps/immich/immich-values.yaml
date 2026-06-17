@@ -1,0 +1,49 @@
+immich:
+  metrics:
+    enabled: false
+  persistence:
+    library:
+      existingClaim: immich-pvc
+  configuration: {}
+server:
+  image:
+    repository: ghcr.io/immich-app/immich-server
+  ingress:
+    main:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+        nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.1/24, 10.192.1.1/24
+      hosts:
+      - host: immich.stevevaradi.me
+        paths:
+        - path: /
+          pathType: Prefix
+      tls:
+      - secretName: immich-tls
+        hosts:
+        - immich.stevevaradi.me
+machine-learning:
+  enabled: true
+  image:
+    repository: ghcr.io/immich-app/immich-machine-learning
+  env:
+    TRANSFORMERS_CACHE: /cache
+  persistence:
+    cache:
+      enabled: true
+      size: 10Gi
+      type: persistentVolumeClaim
+      accessMode: ReadWriteMany
+      storageClass: nfs-csi
+valkey:
+  enabled: false
+controllers:
+  main:
+    containers:
+      main:
+        env:
+          REDIS_HOSTNAME: immich-redis-master.media.svc.cluster.local
+          DB_HOSTNAME: pg-cnpg-rw.storage.svc.cluster.local
+          DB_USERNAME: immich
+          DB_DATABASE_NAME: immich

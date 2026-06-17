@@ -1,0 +1,26 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: renovate
+  namespace: automation
+spec:
+  interval: 30m
+  timeout: 10m
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: renovate
+      version: 44.15.1
+      sourceRef:
+        kind: HelmRepository
+        name: ghcr-renovatebot
+        namespace: flux-system
+  valuesFrom:
+  - kind: ConfigMap
+    name: renovate-values

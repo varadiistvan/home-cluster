@@ -1,0 +1,12 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- helmrelease.yaml
+- storage-class-retain.yaml
+configMapGenerator:
+- name: nfs-provisioner-values
+  namespace: storage
+  files:
+  - values.yaml=nfs-provisioner-values.yaml
+configurations:
+- ../../common/kustomizeconfig.yaml

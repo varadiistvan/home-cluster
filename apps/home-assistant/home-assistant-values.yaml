@@ -1,0 +1,212 @@
+replicaCount: 1
+image:
+  repository: ghcr.io/home-assistant/home-assistant
+imagePullSecrets:
+- name: registry-pass
+serviceAccount:
+  create: true
+podAnnotations: {}
+env:
+- name: TZ
+  value: Europe/Amsterdam
+envFrom: []
+hostPort:
+  enabled: false
+hostNetwork: true
+dnsPolicy: ClusterFirstWithHostNet
+service:
+  type: ClusterIP
+  port: 8080
+ingress:
+  enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.1/24, 10.192.1.1/24
+  hosts:
+  - host: ha.stevevaradi.me
+    paths:
+    - path: /
+      pathType: Prefix
+  tls:
+  - secretName: ha-tls
+    hosts:
+    - ha.stevevaradi.me
+resources: {}
+nodeSelector:
+  kubernetes.io/arch: arm64
+tolerations: []
+affinity: {}
+initContainers:
+- name: init-chmod-data
+  image: docker.io/bitnamilegacy/os-shell:12-debian-12-r35
+  imagePullPolicy: IfNotPresent
+  resources:
+    limits:
+      cpu: 150m
+      ephemeral-storage: 2Gi
+      memory: 192Mi
+    requests:
+      cpu: 100m
+      ephemeral-storage: 50Mi
+      memory: 128Mi
+  command:
+  - /bin/sh
+  - -ec
+  - |
+    chown -R 1001:1001 /config
+  securityContext:
+    runAsGroup: 0
+    runAsNonRoot: false
+    runAsUser: 0
+    seLinuxOptions: {}
+    capabilities:
+      add:
+      - NET_RAW
+      - NET_ADMIN
+    seccompProfile:
+      type: RuntimeDefault
+  volumeMounts:
+  - name: home-assistant
+    mountPath: /config
+- name: init-hacs
+  image: bash
+  command:
+  - bash
+  - -c
+  - '[ -d /config/custom_components/hacs ] || (cd /config && wget -O - https://get.hacs.xyz | bash -) || true'
+  volumeMounts:
+  - mountPath: /config
+    name: home-assistant
+configuration:
+  enabled: true
+  forceInit: false
+  trusted_proxies:
+  - 0.0.0.0/0
+  templateConfig: |
+    default_config:
+
+    {{- if .Values.ingress.enabled }}
+    http:
+      use_x_forwarded_for: true
+      trusted_proxies:
+        {{- range .Values.configuration.trusted_proxies }}
+        - {{ . }}
+        {{- end }}
+    {{- end}}
+    # Load frontend themes from the themes folder
+    frontend:
+      themes: !include_dir_merge_named themes
+
+    automation: !include automations.yaml
+    script: !include scripts.yaml
+    scene: !include scenes.yaml
+  initScript: |
+    #!/bin/bash
+    set -e
+
+    # Check if the configuration file exists
+    if [ ! -f /config/configuration.yaml ]; then
+      echo "Configuration file not found, creating a new one"
+      cp /config-templates/configuration.yaml /config/configuration.yaml
+    fi
+
+    # Check if the force init is enabled
+    forceInit="{{ .Values.configuration.forceInit }}"
+    if [ "$forceInit" = "true" ]; then
+      echo "Force init is enabled, overwriting the configuration file"
+      current_time=$(date +%Y%m%d_%H%M%S)
+      echo "Backup the current configuration file to configuration.yaml.$current_time"
+      cp /config/configuration.yaml /config/configuration.yaml.$current_time
+      echo "The current configuration file will be merged with the default configuration file with this content:"
+      cat /config-templates/configuration.yaml
+      if [[ ! -s /config/configuration.yaml ]]; then
+        # If /config/configuration.yaml is empty, use the content of /config-templates/configuration.yaml
+        cat /config-templates/configuration.yaml > /config/configuration.yaml
+      else
+        # Perform the merge operation if /config/configuration.yaml is not empty
+        yq eval-all --inplace 'select(fileIndex == 0) *d select(fileIndex == 1)' /config/configuration.yaml /config-templates/configuration.yaml
+      fi
+    fi
+
+    # Check if the automations file exists
+    if [ ! -f /config/automations.yaml ]; then
+      echo "Automations file not found, creating a new one"
+      touch /config/automations.yaml
+      echo "[]" >> /config/automations.yaml
+    fi
+
+    # Check if the scripts file exists
+    if [ ! -f /config/scripts.yaml ]; then
+      echo "Scripts file not found, creating a new one"
+      touch /config/scripts.yaml
+    fi
+
+    # Check if the scenes file exists
+    if [ ! -f /config/scenes.yaml ]; then
+      echo "Scenes file not found, creating a new one"
+      touch /config/scenes.yaml
+    fi
+  initContainer:
+    name: setup-config
+    image: docker.io/mikefarah/yq:4
+    securityContext:
+      runAsUser: 0
+    command:
+    - /bin/sh
+    - -c
+    args:
+    - /bin/sh /mnt/init/init.sh
+    volumeMounts:
+    - name: init-volume
+      mountPath: /mnt/init/init.sh
+      subPath: init.sh
+    - name: config-volume
+      mountPath: /config-templates
+persistence:
+  enabled: true
+  accessMode: ReadWriteOnce
+  size: 8Gi
+  storageClass: iscsi-csi
+additionalVolumes:
+- name: dbus
+  hostPath:
+    path: /var/run/dbus
+    type: Directory
+- name: bluetooth-dev
+  hostPath:
+    path: /dev
+    type: Directory
+additionalMounts:
+- mountPath: /var/run/dbus
+  name: dbus
+- mountPath: /dev
+  name: bluetooth-dev
+additionalPorts: []
+additionalServices: []
+serviceMonitor:
+  enabled: true
+  scrapeInterval: 30s
+  labels: {}
+addons:
+  codeserver:
+    enabled: false
+    resources: {}
+    image:
+      repository: ghcr.io/coder/code-server
+      pullPolicy: IfNotPresent
+    ingress:
+      enabled: true
+      annotations:
+        cert-manager.io/cluster-issuer: letsencrypt
+        nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.1/24, 10.192.1.1/24
+      hosts:
+      - host: code.ha.stevevaradi.me
+        paths:
+        - path: /
+          pathType: ImplementationSpecific
+      tls:
+      - secretName: hacode-tls
+        hosts:
+        - code.ha.stevevaradi.me
+    additionalMounts: []
+statefulSetAnnotations: {}

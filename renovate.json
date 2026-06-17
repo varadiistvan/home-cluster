@@ -1,5 +1,21 @@
 {
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
-  "ignorePaths": ["**/self-built/images/csi-driver-iscsi/**"]
+  "ignorePaths": ["**/self-built/images/csi-driver-iscsi/**"],
+  "regexManagers": [
+    {
+      "fileMatch": ["(^|/)kustomization\\.yaml$"],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)\\s+- https://github\\.com/[^/]+/[^/]+/releases/download/(?<currentValue>[^/]+)/"
+      ],
+      "versioningTemplate": "semver"
+    }
+  ],
+  "packageRules": [
+    {
+      "matchPackageNames": ["prometheus-operator/prometheus-operator"],
+      "groupName": "prometheus-operator",
+      "commitMessageTopic": "prometheus-operator CRDs"
+    }
+  ]
 }

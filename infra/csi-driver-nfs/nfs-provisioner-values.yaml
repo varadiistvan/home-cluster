@@ -1,0 +1,28 @@
+storageClass:
+  create: true
+  name: nfs-csi
+  annotations:
+    storageclass.kubernetes.io/is-default-class: 'true'
+  parameters:
+    server: 192.168.0.151
+    share: /pvcs
+    subDir: /${pvc.metadata.namespace}-${pvc.metadata.name}
+    mountPermissions: '777'
+  reclaimPolicy: Delete
+  volumeBindingMode: Immediate
+  mountOptions:
+  - nfsvers=4
+image:
+  baseRepo: registry.k8s.io
+  csiProvisioner:
+    repository: /sig-storage/csi-provisioner
+  csiResizer:
+    repository: /sig-storage/csi-resizer
+  csiSnapshotter:
+    repository: /sig-storage/csi-snapshotter
+  livenessProbe:
+    repository: /sig-storage/livenessprobe
+  nodeDriverRegistrar:
+    repository: /sig-storage/csi-node-driver-registrar
+  externalSnapshotter:
+    repository: /sig-storage/snapshot-controller

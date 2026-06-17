@@ -1,0 +1,29 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - registry-pass-automation-secret.enc.yaml
+  - registry-pass-copyparty-secret.enc.yaml
+  - registry-pass-home-secret.enc.yaml
+  - registry-pass-media-secret.enc.yaml
+  - registry-pass-penpot-secret.enc.yaml
+  - registry-pass-planka-secret.enc.yaml
+  - registry-pass-syncthing-secret.enc.yaml
+  - cnpg
+  - convertx
+  - copyparty
+  - cyberchef
+  - endless-wiki
+  - home-assistant
+  - immich
+  - jellyfin
+  - mealie
+  - mqtt
+  - obico
+  - penpot
+  - planka
+  - redis
+  - renovate
+  - siyuan
+  - stirling-pdf
+  - syncthing
+  - unifi

@@ -1,0 +1,46 @@
+replicaCount: 1
+image:
+  repository: docker.io/apkdv/siyuan-unlock
+  pullPolicy: IfNotPresent
+  tag: v3.3.5
+timezone: Europe/Amsterdam
+uid: 1000
+gid: 1000
+authCode: XXXX
+service:
+  type: ClusterIP
+  port: 6806
+ingress:
+  enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.1/24, 10.192.1.1/24
+  hosts:
+  - host: siyuan.stevevaradi.me
+    paths:
+    - path: /
+      pathType: ImplementationSpecific
+  tls:
+  - secretName: siyuan-tls
+    hosts:
+    - siyuan.stevevaradi.me
+resources:
+  limits:
+    cpu: 100m
+    memory: 128Mi
+  requests:
+    cpu: 100m
+    memory: 128Mi
+autoscaling:
+  enabled: false
+  minReplicas: 1
+  maxReplicas: 100
+  targetCPUUtilizationPercentage: 80
+persistence:
+  enabled: true
+  storageClass: nfs-csi
+  accessModes:
+  - ReadWriteOnce
+  size: 5Gi
+volumes: []
+volumeMounts: []

@@ -1,0 +1,48 @@
+global:
+  imageRegistry: ghcr.io
+  imagePullSecrets:
+  - name: registry-pass
+kubernetes:
+  host: https://kubernetes.default
+image:
+  name: stakater/reloader
+  pullPolicy: IfNotPresent
+reloader:
+  autoReloadAll: true
+  ignoreJobs: true
+  ignoreCronJobs: true
+  reloadOnCreate: false
+  reloadOnDelete: false
+  syncAfterRestart: false
+  reloadStrategy: default
+  enableHA: true
+  enablePProf: false
+  pprofAddr: :6060
+  enableMetricsByNamespace: true
+  deployment:
+    replicas: 3
+    revisionHistoryLimit: 2
+    nodeSelector: null
+    securityContext:
+      runAsNonRoot: true
+      runAsUser: 65534
+      seccompProfile:
+        type: RuntimeDefault
+    resources:
+      limits:
+        cpu: 100m
+        memory: 512Mi
+      requests:
+        cpu: 10m
+        memory: 128Mi
+    imagePullSecrets:
+    - name: registry-pass
+    gomaxprocsOverride: ''
+    gomemlimitOverride: ''
+  podMonitor:
+    enabled: true
+    namespace: monitoring
+  podDisruptionBudget:
+    enabled: true
+    maxUnavailable: 1
+  webhookUrl: ''

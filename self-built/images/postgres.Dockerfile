@@ -1,7 +1,7 @@
 # FROM tensorchord/pgvecto-rs:pg16-v0.4.0 AS pgvecto
-FROM harbor.stevevaradi.me/hub/tensorchord/vchord-postgres:pg16-v0.4.3 AS vchord
-FROM harbor.stevevaradi.me/hub/tensorchord/pgvecto-rs:pg16-v0.4.0 AS pgvecto
-FROM harbor.stevevaradi.me/ghcr/cloudnative-pg/postgresql:16-standard-bookworm
+FROM docker.io/tensorchord/vchord-postgres:pg16-v0.4.3 AS vchord
+FROM docker.io/tensorchord/pgvecto-rs:pg16-v0.4.0 AS pgvecto
+FROM ghcr.io/cloudnative-pg/postgresql:16-standard-bookworm
 
 USER root
 # pgvecto.rs (vectors)

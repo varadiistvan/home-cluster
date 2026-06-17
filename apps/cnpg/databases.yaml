@@ -1,0 +1,57 @@
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: immich-db
+  namespace: storage
+spec:
+  cluster:
+    name: pg-cnpg
+  name: immich
+  owner: immich
+  databaseReclaimPolicy: retain
+  extensions:
+    - name: cube
+    - name: earthdistance
+    - name: vectors
+    - name: vector
+    - name: vchord
+      version: 0.4.3
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: mealie-db
+  namespace: storage
+spec:
+  cluster:
+    name: pg-cnpg
+  name: mealie
+  owner: mealie
+  extensions: []
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: penpot-db
+  namespace: storage
+spec:
+  cluster:
+    name: pg-cnpg
+  name: penpot
+  owner: penpot
+  databaseReclaimPolicy: retain
+  extensions: []
+---
+apiVersion: postgresql.cnpg.io/v1
+kind: Database
+metadata:
+  name: planka-db
+  namespace: storage
+spec:
+  cluster:
+    name: pg-cnpg
+  name: planka
+  owner: planka
+  databaseReclaimPolicy: delete
+  extensions: []

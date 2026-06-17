@@ -1,0 +1,26 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: nfd
+  namespace: system
+spec:
+  interval: 30m
+  timeout: 10m
+  install:
+    remediation:
+      retries: -1
+  upgrade:
+    remediation:
+      retries: 3
+  chart:
+    spec:
+      chart: node-feature-discovery
+      version: 0.17.4
+      sourceRef:
+        kind: HelmRepository
+        name: nfd
+        namespace: flux-system
+  valuesFrom:
+  - kind: ConfigMap
+    name: nfd-values
