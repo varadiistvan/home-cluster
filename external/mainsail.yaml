@@ -1,0 +1,111 @@
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: mainsail-external
+  namespace: external
+spec:
+  ports:
+    - name: web
+      port: 80
+      targetPort: 80
+      protocol: TCP
+    - name: cam
+      port: 8899
+      targetPort: 8899
+      protocol: TCP
+---
+apiVersion: discovery.k8s.io/v1
+kind: EndpointSlice
+metadata:
+  name: mainsail-external-1
+  namespace: external
+  labels:
+    kubernetes.io/service-name: mainsail-external
+addressType: IPv4
+ports:
+  - name: web
+    protocol: TCP
+    port: 80
+  - name: cam
+    protocol: TCP
+    port: 8899
+endpoints:
+  - addresses:
+      - 192.168.0.160
+    conditions:
+      ready: true
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mainsail
+  namespace: external
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/whitelist-source-range: "192.168.0.0/24,10.192.1.0/24"
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+    nginx.ingress.kubernetes.io/backend-protocol: HTTP
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - mainsail.stevevaradi.me
+      secretName: mainsail-tls
+  rules:
+    - host: mainsail.stevevaradi.me
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mainsail-external
+                port:
+                  name: web
+          - path: /stream
+            pathType: Exact
+            backend:
+              service:
+                name: mainsail-external
+                port:
+                  name: cam
+          - path: /snapshot
+            pathType: Exact
+            backend:
+              service:
+                name: mainsail-external
+                port:
+                  name: cam
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: mainsail-cam
+  namespace: external
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/proxy-body-size: "0"
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
+    nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
+spec:
+  ingressClassName: nginx
+  tls:
+    - hosts:
+        - cam.mainsail.stevevaradi.me
+      secretName: mainsail-cam-tls
+  rules:
+    - host: cam.mainsail.stevevaradi.me
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: mainsail-external
+                port:
+                  name: cam

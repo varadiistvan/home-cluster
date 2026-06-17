@@ -1,0 +1,27 @@
+---
+apiVersion: mongodbcommunity.mongodb.com/v1
+kind: MongoDBCommunity
+metadata:
+  name: unifi-mongodb
+  namespace: home
+spec:
+  members: 1
+  type: ReplicaSet
+  featureCompatibilityVersion: "7.0"
+  version: "7.0.23-ubi9"
+  security:
+    authentication:
+      modes: ["SCRAM"]
+  users:
+    - name: unifi
+      db: admin
+      passwordSecretRef:
+        name: unifi-mongodb
+      roles:
+        - name: clusterAdmin
+          db: admin
+        - name: userAdminAnyDatabase
+          db: admin
+      scramCredentialsSecretName: unifi-scram
+  additionalMongodConfig:
+    storage.wiredTiger.engineConfig.journalCompressor: zlib

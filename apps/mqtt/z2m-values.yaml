@@ -1,0 +1,131 @@
+fullnameOverride: null
+customLabels: {}
+image:
+  repository: docker.io/koenkk/zigbee2mqtt
+  pullPolicy: IfNotPresent
+  imagePullSecrets: {}
+secretesMigratorContainer:
+  repository: docker.io/mikefarah/yq
+  pullPolicy: IfNotPresent
+  imagePullSecrets: {}
+  securityContext:
+    runAsUser: 0
+service:
+  annotations: {}
+  type: ClusterIP
+  port: 8080
+configmap:
+  annotations: {}
+statefulset:
+  annotations: {}
+  podAnnotations: {}
+  storage:
+    enabled: true
+    size: 10Gi
+    storageClassName: iscsi-csi
+    matchLabels: {}
+    matchExpressions: {}
+    annotations: {}
+  secrets:
+    name: z2m-secret
+  dnsPolicy: ClusterFirst
+  resources:
+    requests:
+      memory: 600Mi
+      cpu: 200m
+    limits:
+      memory: 600Mi
+      cpu: 200m
+  command: {}
+  tolerations: {}
+  nodeSelector: {}
+  affinity: {}
+  lifecycle: {}
+  podSecurityContext:
+    seccompProfile:
+      type: RuntimeDefault
+  securityContext:
+    privileged: true
+    capabilities:
+      add:
+      - SYS_ADMIN
+  livenessProbe:
+    failureThreshold: 5
+    httpGet:
+      path: /
+      port: web
+    initialDelaySeconds: 60
+    timeoutSeconds: 10
+    periodSeconds: 30
+  volumeMounts: []
+  volumes: []
+zigbee2mqtt:
+  homeassistant:
+    enabled: true
+    discovery_topic: homeassistant
+    status_topic: homeassistant/status
+    legacy_entity_attributes: true
+    legacy_triggers: false
+  permit_join: false
+  blocklist: []
+  availability:
+    active:
+      timeout: 10
+    passive:
+      timeout: 1500
+  timezone: UTC
+  external_converters: []
+  mqtt:
+    server: mqtt://vernemq:1883
+    user: zigbee2mqtt
+    password: '!secret.yaml password'
+  serial:
+    port: tcp://192.168.0.150:6638
+    disable_led: false
+    adapter: ezsp
+    baudrate: 115200
+    rtscts: false
+  ota:
+    ikea_ota_use_test_url: false
+    update_check_interval: 1440
+    disable_automatic_update_check: false
+  frontend:
+    enabled: true
+    port: 8080
+    host: ''
+    auth_token: null
+    url: http://z2m-zigbee2mqtt:8080
+  advanced:
+    channel: 15
+    log_output:
+    - console
+    log_level: info
+    timestamp_format: YYYY-MM-DD HH:mm:ss
+    cache_state: true
+    cache_state_persistent: true
+    cache_state_send_on_startup: true
+    last_seen: disable
+    elapsed: false
+    report: true
+    legacy_api: false
+    adapter_concurrent: null
+    transmit_power: 20
+    adapter_delay: 0
+ingress:
+  enabled: false
+  ingressClassName: contour
+  labels: {}
+  pathType: Prefix
+  annotations: {}
+  hosts:
+  - host: chart-example.local
+    paths:
+    - path: /
+      pathType: ImplementationSpecific
+    - path: /api
+      pathType: ImplementationSpecific
+  tls:
+  - secretName: some-tls-secret
+    hosts:
+    - yourdomain.com
+extraResources: []

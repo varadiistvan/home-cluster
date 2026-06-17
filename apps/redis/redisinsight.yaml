@@ -1,0 +1,124 @@
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: redisinsight-pvc
+  namespace: storage
+  labels:
+    app: redisinsight
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 4Gi
+  storageClassName: nfs-csi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: redisinsight-service
+  namespace: storage
+  labels:
+    app: redisinsight
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 80
+      targetPort: 5540
+      protocol: TCP
+  selector:
+    app: redisinsight
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: redisinsight
+  namespace: storage
+  labels:
+    app: redisinsight
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: redisinsight
+  strategy:
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
+  template:
+    metadata:
+      labels:
+        app: redisinsight
+    spec:
+      securityContext:
+        fsGroup: 1000
+      initContainers:
+        - name: init
+          image: busybox
+          command: ["/bin/sh", "-c", "chown -R 1000:1000 /data"]
+          volumeMounts:
+            - name: db
+              mountPath: /data
+      containers:
+        - name: redisinsight
+          image: redis/redisinsight:2.70
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: SERVER_TLS
+              value: "false"
+          ports:
+            - name: http
+              containerPort: 5540
+              protocol: TCP
+          volumeMounts:
+            - name: db
+              mountPath: /data
+          resources:
+            requests:
+              cpu: 50m
+              memory: 256Mi
+            limits:
+              cpu: 200m
+              memory: 512Mi
+          livenessProbe:
+            httpGet:
+              path: /api/health
+              port: http
+            initialDelaySeconds: 60
+            periodSeconds: 5
+            timeoutSeconds: 3
+            failureThreshold: 3
+      volumes:
+        - name: db
+          persistentVolumeClaim:
+            claimName: redisinsight-pvc
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: redisinsight
+  namespace: storage
+  labels:
+    app: redisinsight
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/whitelist-source-range: "192.168.0.0/24,10.192.1.0/24"
+spec:
+  tls:
+    - hosts:
+        - redisinsight.stevevaradi.me
+      secretName: redisinsight-ingress-secret
+  rules:
+    - host: redisinsight.stevevaradi.me
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: redisinsight-service
+                port:
+                  name: http

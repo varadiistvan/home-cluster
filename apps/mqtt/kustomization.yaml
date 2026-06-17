@@ -1,0 +1,20 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- certificate.yaml
+- helmrelease-vernemq.yaml
+- helmrelease-z2m.yaml
+- ingress-z2m.yaml
+- mqtt-users-secret.enc.yaml
+- z2m-secret.enc.yaml
+configMapGenerator:
+- name: vernemq-values
+  namespace: home
+  files:
+  - values.yaml=vernemq-values.yaml
+- name: z2m-values
+  namespace: home
+  files:
+  - values.yaml=z2m-values.yaml
+configurations:
+- ../../common/kustomizeconfig.yaml

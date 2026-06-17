@@ -1,0 +1,14 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: endless-cert
+  namespace: scratch
+spec:
+  secretName: endless-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
+  commonName: wiki.stevevaradi.me
+  dnsNames:
+    - wiki.stevevaradi.me

@@ -1,0 +1,90 @@
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: system
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: network
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: storage
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: monitoring
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: automation
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: media
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: home
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: mealie
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: siyuan
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: penpot
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: planka
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: syncthing
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: copyparty
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: cyberchef
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: stirling-pdf
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: convertx
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: scratch
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: external

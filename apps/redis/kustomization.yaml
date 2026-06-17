@@ -1,0 +1,31 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+- helmrelease-immich.yaml
+- helmrelease-overleaf.yaml
+- helmrelease-penpot.yaml
+- helmrelease-renovate.yaml
+- immich-redis-auth-secret.enc.yaml
+- overleaf-redis-auth-secret.enc.yaml
+- penpot-redis-auth-secret.enc.yaml
+- redisinsight.yaml
+- renovate-redis-auth-secret.enc.yaml
+configMapGenerator:
+- name: immich-redis-values
+  namespace: media
+  files:
+  - values.yaml=immich-redis-values.yaml
+- name: overleaf-redis-values
+  namespace: storage
+  files:
+  - values.yaml=overleaf-redis-values.yaml
+- name: penpot-redis-values
+  namespace: penpot
+  files:
+  - values.yaml=penpot-redis-values.yaml
+- name: renovate-redis-values
+  namespace: automation
+  files:
+  - values.yaml=renovate-redis-values.yaml
+configurations:
+- ../../common/kustomizeconfig.yaml

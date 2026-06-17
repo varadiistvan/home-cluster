@@ -1,0 +1,141 @@
+image:
+  repository: quay.io/cilium/cilium
+certgen:
+  image:
+    repository: quay.io/cilium/certgen
+envoy:
+  image:
+    repository: quay.io/cilium/cilium-envoy
+nodeinit:
+  image:
+    repository: quay.io/cilium/startup-script
+preflight:
+  image:
+    repository: quay.io/cilium/cilium
+clustermesh:
+  apiserver:
+    image:
+      repository: quay.io/cilium/clustermesh-apiserver
+authentication:
+  mutual:
+    spire:
+      install:
+        initImage:
+          repository: docker.io/library/busybox
+        agent:
+          image:
+            repository: ghcr.io/spiffe/spire-agent
+        server:
+          image:
+            repository: ghcr.io/spiffe/spire-server
+hubble:
+  tls:
+    enabled: true
+    auto:
+      enabled: true
+      method: certmanager
+      certValidityDuration: 365
+      certManagerIssuerRef:
+        group: cert-manager.io
+        kind: ClusterIssuer
+        name: ca-issuer
+  relay:
+    image:
+      repository: quay.io/cilium/hubble-relay
+    enabled: true
+    pprof:
+      enabled: true
+    prometheus:
+      enabled: true
+      serviceMonitor:
+        enabled: true
+  ui:
+    enabled: true
+    backend:
+      image:
+        repository: quay.io/cilium/hubble-ui-backend
+    frontend:
+      image:
+        repository: quay.io/cilium/hubble-ui
+  metrics:
+    dashboards:
+      enabled: true
+      namespace: monitoring
+    enabled:
+    - dns:query;ignoreAAAA
+    - drop
+    - tcp
+    - flow
+    - icmp
+    - http
+    - policy
+serviceMonitor:
+  enabled: true
+ipam:
+  operator:
+    clusterPoolIPv4PodCIDRList: 10.42.0.0/16
+routingMode: tunnel
+tunnelProtocol: vxlan
+k8sServiceHost: localhost
+k8sServicePort: 7445
+prometheus:
+  enabled: true
+  serviceMonitor:
+    enabled: true
+operator:
+  image:
+    repository: quay.io/cilium/operator
+  replicas: 1
+  pprof:
+    enabled: true
+  prometheus:
+    enabled: true
+    serviceMonitor:
+      enabled: true
+  dashboards:
+    enabled: true
+    namespace: monitoring
+logOptions:
+  format: json
+logSystemLoad: true
+bpf:
+  masquerade: true
+  mapDynamicSizeRatio: 0.0025
+  events:
+    policyVerdict:
+      enabled: true
+l2announcements:
+  enabled: true
+  leaseDuration: 3s
+  renewDeadline: 1s
+  retryPeriod: 200ms
+k8sClientRateLimit:
+  qps: 30
+  burst: 60
+kubeProxyReplacement: true
+gatewayAPI:
+  enabled: true
+  enableAppProtocol: true
+  enableAlpn: true
+securityContext:
+  capabilities:
+    ciliumAgent:
+    - CHOWN
+    - KILL
+    - NET_ADMIN
+    - NET_RAW
+    - IPC_LOCK
+    - SYS_ADMIN
+    - SYS_RESOURCE
+    - DAC_OVERRIDE
+    - FOWNER
+    - SETGID
+    - SETUID
+    cleanCiliumState:
+    - NET_ADMIN
+    - SYS_ADMIN
+    - SYS_RESOURCE
+cgroup:
+  autoMount:
+    enabled: false
+  hostRoot: /sys/fs/cgroup

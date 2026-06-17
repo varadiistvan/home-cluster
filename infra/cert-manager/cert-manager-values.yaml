@@ -1,0 +1,4 @@
+clusterResourceNamespace: system
+crds:
+  enabled: true
+  keep: true

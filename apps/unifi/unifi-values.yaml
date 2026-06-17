@@ -1,0 +1,88 @@
+image:
+  repository: ghcr.io/jacobalberty/unifi-docker
+  pullPolicy: IfNotPresent
+securityContext: {}
+podSecurityContext: {}
+unifiedService:
+  enabled: true
+  type: LoadBalancer
+  nodePort: {}
+  annotations: {}
+  labels: {}
+  loadBalancerIP: 192.168.0.153
+ingress:
+  enabled: true
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
+    nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.0/24,10.192.1.0/24
+  path: /
+  hosts:
+  - unifi.stevevaradi.me
+  tls:
+  - secretName: unifi-tls
+    hosts:
+    - unifi.stevevaradi.me
+timezone: Europe/Amsterdam
+bindPrivilegedPorts: true
+runAsRoot: false
+UID: 999
+GID: 999
+customCert:
+  enabled: true
+  isChain: false
+  certName: tls.crt
+  keyName: tls.key
+  certSecret: unifi-tls
+logging:
+  promtail:
+    enabled: false
+    image:
+      repository: grafana/promtail
+      pullPolicy: IfNotPresent
+    loki:
+      url: http://loki.logs.svc.cluster.local:3100/loki/api/v1/push
+mongodb:
+  enabled: false
+  dbUri: mongodb://mongo/unifi
+  statDbUri: mongodb://mongo/unifi_stat
+  databaseName: unifi
+persistence:
+  enabled: true
+  storageClass: ''
+  existingClaim: ''
+  accessMode: ReadWriteOnce
+  size: 5Gi
+  skipuninstall: true
+extraVolumes: []
+extraVolumeMounts: []
+extraJvmOpts: []
+jvmInitHeapSize: ''
+jvmMaxHeapSize: 1024M
+extraConfigFiles: {}
+resources: {}
+livenessProbe:
+  enabled: true
+  initialDelaySeconds: 0
+  periodSeconds: 10
+  timeoutSeconds: 1
+  failureThreshold: 3
+  successThreshold: 1
+readinessProbe:
+  enabled: true
+  initialDelaySeconds: 0
+  periodSeconds: 10
+  timeoutSeconds: 1
+  failureThreshold: 3
+  successThreshold: 1
+startupProbe:
+  enabled: true
+  periodSeconds: 5
+  timeoutSeconds: 1
+  failureThreshold: 60
+nodeSelector: {}
+priorityClassName: ''
+tolerations: []
+affinity: {}
+podAnnotations: {}
+deploymentAnnotations: {}

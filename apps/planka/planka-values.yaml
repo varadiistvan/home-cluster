@@ -1,0 +1,62 @@
+replicaCount: 1
+image:
+  repository: ghcr.io/plankanban/planka
+imagePullSecrets:
+- name: registry-pass
+existingSecretkeySecret: planka-appkey
+existingAdminCredsSecret: planka-admin
+admin_email: varadiista.1@gmail.com
+admin_name: Steve
+postgresql:
+  enabled: false
+baseUrl: https://planka.stevevaradi.me
+serviceAccount:
+  create: true
+podAnnotations: {}
+podSecurityContext: {}
+deploymentAnnotations: {}
+securityContext: {}
+service:
+  annotations: {}
+  type: ClusterIP
+  port: 1337
+  containerPort: 1337
+ingress:
+  enabled: true
+  className: nginx
+  labels: {}
+  annotations:
+    cert-manager.io/cluster-issuer: letsencrypt
+    nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.1/24, 10.192.1.1/24
+  hosts:
+  - host: planka.stevevaradi.me
+    paths:
+    - path: /
+      pathType: ImplementationSpecific
+  tls:
+  - secretName: planka-tls
+    hosts:
+    - planka.stevevaradi.me
+resources: {}
+nodeSelector: {}
+tolerations: []
+affinity: {}
+existingDburlSecret: planka-dburi
+persistence:
+  enabled: true
+  storageClass: iscsi-csi
+  accessMode: ReadWriteOnce
+  size: 10Gi
+oidc:
+  enabled: false
+  clientId: ''
+  clientSecret: ''
+  existingSecret: ''
+  issuerUrl: ''
+  scopes: []
+  admin:
+    ignoreRoles: false
+    rolesAttribute: groups
+    roles: []
+extraEnv: []
+extraMounts: []

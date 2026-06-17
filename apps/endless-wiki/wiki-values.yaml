@@ -1,0 +1,23 @@
+endless_wiki:
+  repository:
+    image: docker.io/xanderstrike/endless-wiki
+    tag: latest
+  ingress:
+    annotations:
+      cert-manager.io/cluster-issuer: letsencrypt
+    host: wiki.stevevaradi.me
+    path: /
+    class: '-'
+    enabled: true
+    tls:
+      enabled: true
+      secretName: wiki-tls
+  environment:
+    OLLAMA_HOST: http://ollama.stevevaradi.me:11434
+    OLLAMA_MODEL: gemma3:1b
+  replicas: 1
+  nodeSelector: {}
+  resources: {}
+  imagePullPolicy: IfNotPresent
+  serviceAccount: ''
+pullSecrets: []

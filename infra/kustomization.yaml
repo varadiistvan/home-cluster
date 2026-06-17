@@ -1,0 +1,14 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+resources:
+  - namespaces.yaml
+  - cert-manager
+  - cilium
+  - csi-driver-nfs
+  - ddns
+  - gateway-api
+  - ingress-nginx
+  - intel-device-plugins
+  - iscsi-provisioner
+  - nfd
+  - reloader

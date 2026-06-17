@@ -1,0 +1,228 @@
+# talhelper config — `talhelper genconfig` writes machine configs to ./clusterconfig (gitignored)
+# Secrets: `talhelper gensecret > talsecret.sops.yaml && sops -e -i talsecret.sops.yaml`
+---
+clusterName: home
+# talhelper-validated; renovate can bump these
+talosVersion: v1.13.4
+kubernetesVersion: v1.34.1
+# Shared VIP for the API server, held by whichever control plane is alive.
+# 192.168.0.155 assumed free — verify before cutover (.150 is the zigbee coordinator!).
+endpoint: https://192.168.0.155:6443
+
+# Match the old k3s CIDRs so nothing downstream notices
+clusterPodNets:
+  - 10.42.0.0/16
+clusterSvcNets:
+  - 10.43.0.0/16
+
+allowSchedulingOnControlPlanes: true
+
+cniConfig:
+  name: none # Cilium comes via Flux/helm
+
+patches:
+  # Pull public upstream image names through Harbor's proxy-cache projects.
+  - |-
+    ---
+    apiVersion: v1alpha1
+    kind: RegistryMirrorConfig
+    name: docker.io
+    endpoints:
+      - url: https://harbor.stevevaradi.me/v2/hub
+        overridePath: true
+    ---
+    apiVersion: v1alpha1
+    kind: RegistryMirrorConfig
+    name: ghcr.io
+    endpoints:
+      - url: https://harbor.stevevaradi.me/v2/ghcr
+        overridePath: true
+    ---
+    apiVersion: v1alpha1
+    kind: RegistryMirrorConfig
+    name: quay.io
+    endpoints:
+      - url: https://harbor.stevevaradi.me/v2/quay
+        overridePath: true
+    ---
+    apiVersion: v1alpha1
+    kind: RegistryMirrorConfig
+    name: registry.k8s.io
+    endpoints:
+      - url: https://harbor.stevevaradi.me/v2/k8s-reg
+        overridePath: true
+  - |-
+    cluster:
+      proxy:
+        disabled: true # Cilium kubeProxyReplacement
+  - |-
+    machine:
+      time:
+        servers:
+          - pool.ntp.org
+  - |-
+    machine:
+      features:
+        kubePrism:
+          enabled: true
+          port: 7445
+  - |-
+    machine:
+      features:
+        hostDNS:
+          enabled: true
+          forwardKubeDNSToHost: false
+  - |-
+    machine:
+      sysctls:
+        net.ipv6.conf.all.disable_ipv6: "1"
+        net.ipv6.conf.default.disable_ipv6: "1"
+  - |-
+    cluster:
+      apiServer:
+        certSANs:
+          - 192.168.0.155
+  - |-
+    machine:
+      nodeLabels:
+        node.kubernetes.io/exclude-from-external-load-balancers:
+          $$patch: delete
+  - |-
+    machine:
+      network:
+        nameservers:
+          - 192.168.0.151
+
+nodes:
+  # Intel N100 minipc
+  - hostname: mini2
+    ipAddress: 192.168.0.143
+    controlPlane: true
+    installDiskSelector:
+      model: FORESEE* # internal 512GB SATA, was Debian root; USB SSD must never match
+    networkInterfaces:
+      - deviceSelector:
+          physical: true
+        dhcp: false
+        addresses:
+          - 192.168.0.143/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.0.1
+        vip:
+          ip: 192.168.0.155
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/iscsi-tools
+            - siderolabs/util-linux-tools
+            - siderolabs/intel-ucode
+            - siderolabs/i915
+
+  # Linux VM on the M4 Mac mini
+  - hostname: macm1
+    ipAddress: 192.168.0.146
+    controlPlane: true
+    installDisk: /dev/vda # verify; depends on hypervisor disk bus
+    networkInterfaces:
+      - deviceSelector:
+          physical: true
+        dhcp: false
+        addresses:
+          - 192.168.0.146/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.0.1
+        vip:
+          ip: 192.168.0.155
+    schematic:
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/iscsi-tools
+            - siderolabs/util-linux-tools
+            - siderolabs/qemu-guest-agent
+
+  # Orange Pi 5 Max (RK3588)
+  - hostname: p2
+    ipAddress: 192.168.0.140
+    controlPlane: true
+    installDisk: /dev/nvme0n1
+    networkInterfaces:
+      - deviceSelector:
+          physical: true
+        dhcp: false
+        addresses:
+          - 192.168.0.140/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.0.1
+        vip:
+          ip: 192.168.0.155
+    schematic:
+      overlay:
+        image: siderolabs/sbc-rockchip
+        name: orangepi-5-max
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/iscsi-tools
+            - siderolabs/util-linux-tools
+
+  # Raspberry Pi 5 #1
+  - hostname: p1
+    ipAddress: 192.168.0.139
+    controlPlane: true
+    installDisk: /dev/nvme0n1
+    networkInterfaces:
+      - deviceSelector:
+          physical: true
+        dhcp: false
+        addresses:
+          - 192.168.0.139/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.0.1
+        vip:
+          ip: 192.168.0.155
+    schematic:
+      overlay:
+        image: siderolabs/sbc-raspberrypi
+        name: rpi_5
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/iscsi-tools
+            - siderolabs/util-linux-tools
+
+  # Raspberry Pi 5 #2
+  - hostname: p3
+    ipAddress: 192.168.0.141
+    controlPlane: true
+    installDisk: /dev/nvme0n1
+    networkInterfaces:
+      - deviceSelector:
+          physical: true
+        dhcp: false
+        addresses:
+          - 192.168.0.141/24
+        routes:
+          - network: 0.0.0.0/0
+            gateway: 192.168.0.1
+        vip:
+          ip: 192.168.0.155
+    schematic:
+      overlay:
+        image: siderolabs/sbc-raspberrypi
+        name: rpi_5
+      customization:
+        systemExtensions:
+          officialExtensions:
+            - siderolabs/iscsi-tools
+            - siderolabs/util-linux-tools
+
+# rpi schematic id: ea157f0b3d7f19380e597fc45a65a85f792ff8af0a24caebea099536fe7f9ccb
+# opi schematic id: 5258e9d6736ebc13ab95e887892a8ad4fe04e1b0b032b38c3a10a1624005bd62
+# minipc schematic id: 9ba0b24a91c2b56085dceb616daaf013f0453bcf2f2036814be062733e583806
+# mac mini schematic id: 88d1f7a5c4f1d3aba7df787c448c1d3d008ed29cfb34af53fa0df4336a56040b

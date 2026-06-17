@@ -1,0 +1,57 @@
+imagePullSecrets:
+- name: registry-pass
+operator:
+  name: mongodb-kubernetes-operator
+  operatorImageName: mongodb-kubernetes-operator
+  deploymentName: mongodb-kubernetes-operator
+  watchNamespace: '*'
+  resources:
+    limits:
+      cpu: 1100m
+      memory: 1Gi
+    requests:
+      cpu: 500m
+      memory: 200Mi
+  priorityClassName: ''
+  extraEnvs: []
+  podSecurityContext:
+    runAsNonRoot: true
+    runAsUser: 2000
+  securityContext: {}
+  podLabels: {}
+database:
+  name: mongodb-database
+agent:
+  name: mongodb-agent-ubi
+versionUpgradeHook:
+  name: mongodb-kubernetes-operator-version-upgrade-post-start-hook
+readinessProbe:
+  name: mongodb-kubernetes-readinessprobe
+mongodb:
+  name: mongodb-community-server
+  repo: docker.io/mongodb
+  imageType: ubi9
+registry:
+  agent: quay.io/mongodb
+  versionUpgradeHook: quay.io/mongodb
+  readinessProbe: quay.io/mongodb
+  operator: quay.io/mongodb
+  pullPolicy: IfNotPresent
+community-operator-crds:
+  enabled: true
+createResource: false
+resource:
+  name: mongodb-replica-set
+  version: 4.4.0
+  members: 3
+  tls:
+    enabled: false
+    useX509: false
+    sampleX509User: false
+    useCertManager: true
+    certificateKeySecretRef: tls-certificate
+    caCertificateSecretRef: tls-ca-key-pair
+    certManager:
+      certDuration: 8760h
+      renewCertBefore: 720h
+  users: []

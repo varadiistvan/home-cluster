@@ -1,0 +1,25 @@
+creation_rules:
+  - path_regex: '.*terraform(\.enc)?\.tfstate$'
+    age: &age-keys # Steve PC
+      - age1qqj970fl5nksjr5wzk0t5ycgyhytngljsy3yctdm9ejs028023wqqhkxw8
+      # Steve laptop
+      - age1e5evkld5436wn3jexc49j4g272eq0avhspsldjzs0natc3hy4unqkrlqdk
+      # Flux key
+      - age12zqa60ukzjga8x5w4mklw07eyj03d3x0qw2sprnqf34sas67g93queu45p
+  - path_regex: ^.*-secret(\.enc)?.yaml$
+    encrypted_regex: ^(data|stringData)$
+    age: *age-keys
+  - path_regex: talos/talsecret\.sops\.yaml$
+    age: *age-keys
+  - path_regex: ^.*env(\.enc)?\.bin$
+    age: *age-keys
+  - path_regex: ^.*secret\.yaml(\.enc)?\.bin$
+    age: *age-keys
+
+stores:
+  json:
+    indent: 2
+  json_binary:
+    indent: 2
+  yaml:
+    indent: 2

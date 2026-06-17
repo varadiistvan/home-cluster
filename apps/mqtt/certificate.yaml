@@ -1,0 +1,14 @@
+---
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: mqtt-cert
+  namespace: home
+spec:
+  secretName: mqtt-tls
+  issuerRef:
+    kind: ClusterIssuer
+    name: letsencrypt
+  commonName: mqtt.stevevaradi.me
+  dnsNames:
+    - mqtt.stevevaradi.me
