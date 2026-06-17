@@ -82,10 +82,8 @@ prometheus:
       replacement: melodic-sky
       targetLabel: cluster
   prometheusSpec:
-    podMonitorSelector:
-      matchLabels: null
-    serviceMonitorSelector:
-      matchLabels: null
+    podMonitorSelector: {}
+    serviceMonitorSelector: {}
     additionalScrapeConfigs:
     - job_name: scaphandre
       scrape_interval: 30s
