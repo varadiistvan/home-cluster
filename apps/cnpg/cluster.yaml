@@ -53,6 +53,12 @@ spec:
         login: true
         passwordSecret:
           name: planka-password
+  plugins:
+    - name: barman-cloud.cloudnative-pg.io
+      isWALArchiver: true
+      parameters:
+        barmanObjectName: minio-store
+
   monitoring:
     enablePodMonitor: true
   topologySpreadConstraints:

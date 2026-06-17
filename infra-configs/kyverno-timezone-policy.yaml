@@ -1,0 +1,38 @@
+---
+apiVersion: kyverno.io/v1
+kind: ClusterPolicy
+metadata:
+  name: set-timezone
+  annotations:
+    policies.kyverno.io/title: Set Default Timezone
+    pod-policies.kyverno.io/autogen-controllers: none
+spec:
+  background: false
+  rules:
+    - name: inject-tz-env
+      match:
+        any:
+          - resources:
+              kinds:
+                - Pod
+                - Deployment
+                - DaemonSet
+                - StatefulSet
+                - Job
+              namespaces:
+                - "!flux-system"
+                - "!kube-system"
+                - "!kyverno"
+                - "!system-upgrade"
+      mutate:
+        foreach:
+          - list: "request.object.spec.template.spec.containers || request.object.spec.containers"
+            patchStrategicMerge:
+              env:
+                - name: TZ
+                  value: "Europe/Amsterdam"
+          - list: "request.object.spec.template.spec.initContainers || request.object.spec.initContainers || []"
+            patchStrategicMerge:
+              env:
+                - name: TZ
+                  value: "Europe/Amsterdam"

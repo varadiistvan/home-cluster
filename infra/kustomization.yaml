@@ -15,3 +15,5 @@ resources:
   - mongodb-operator
   - nfd
   - reloader
+  - tuppr
+  - kyverno
