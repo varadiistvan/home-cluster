@@ -4,6 +4,7 @@ resources:
 - convertx-jwt-secret.enc.yaml
 - helmrelease.yaml
 - httproute.yaml
+- security-policy.yaml
 configMapGenerator:
 - name: convertx-values
   namespace: convertx

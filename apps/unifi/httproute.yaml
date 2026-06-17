@@ -1,6 +1,4 @@
 ---
-# unifi web UI uses HTTPS on 8443; a BackendTLSPolicy is needed if cert validation
-# is required. For now the Gateway terminates TLS client-side; backend is HTTPS.
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
@@ -10,10 +8,10 @@ spec:
   parentRefs:
     - name: cilium-gateway-local
       namespace: network
-      sectionName: https
+      sectionName: https-unifi
   hostnames:
     - unifi.stevevaradi.me
   rules:
     - backendRefs:
         - name: unifi
-          port: 8080
+          port: 8443

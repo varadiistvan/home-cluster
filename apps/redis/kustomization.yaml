@@ -10,6 +10,7 @@ resources:
 - penpot-redis-auth-secret.enc.yaml
 - redisinsight.yaml
 - httproute-redisinsight.yaml
+- security-policy.yaml
 - renovate-redis-auth-secret.enc.yaml
 configMapGenerator:
 - name: immich-redis-values

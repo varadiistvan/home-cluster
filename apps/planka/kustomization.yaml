@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
 - helmrelease.yaml
 - httproute.yaml
+- security-policy.yaml
 - planka-admin-secret.enc.yaml
 - planka-appkey-secret.enc.yaml
 - planka-dburi-secret.enc.yaml

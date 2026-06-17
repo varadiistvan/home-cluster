@@ -5,6 +5,9 @@ resources:
 - ip-pool.yaml
 - mongodb.yaml
 - unifi-mongodb-secret.enc.yaml
+- httproute.yaml
+- backend-tls.yaml
+- security-policy.yaml
 configMapGenerator:
 - name: unifi-values
   namespace: home

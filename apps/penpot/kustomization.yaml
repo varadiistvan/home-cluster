@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
 - helmrelease.yaml
 - httproute.yaml
+- security-policy.yaml
 - penpot-api-key-secret.enc.yaml
 - penpot-redis-uri-secret.enc.yaml
 - postgres-penpot-secret.enc.yaml

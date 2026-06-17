@@ -4,6 +4,7 @@ resources:
 - configmap.yaml
 - helmrelease.yaml
 - httproute.yaml
+- security-policy.yaml
 configMapGenerator:
 - name: stirling-pdf-values
   namespace: stirling-pdf

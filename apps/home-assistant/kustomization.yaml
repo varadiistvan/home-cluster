@@ -3,6 +3,7 @@ kind: Kustomization
 resources:
 - helmrelease.yaml
 - httproute.yaml
+- security-policy.yaml
 configMapGenerator:
 - name: home-assistant-values
   namespace: home

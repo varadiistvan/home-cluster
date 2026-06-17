@@ -1,26 +1,34 @@
 ---
-apiVersion: cilium.io/v2alpha1
-kind: CiliumGatewayClassConfig
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: EnvoyProxy
 metadata:
-  name: cilium-local
-  namespace: network
+  name: local
+  namespace: envoy-gateway-system
 spec:
-  service:
-    loadBalancerSourceRanges:
-      - 192.168.0.0/24
-      - 10.192.1.0/24
+  provider:
+    type: Kubernetes
+    kubernetes:
+      envoyService:
+        patch:
+          type: StrategicMerge
+          value:
+            spec:
+              loadBalancerSourceRanges:
+                - "192.168.0.0/24"
+                - "10.192.1.0/24"
+      envoyDaemonSet: {}
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: GatewayClass
 metadata:
-  name: cilium-local
+  name: envoy
 spec:
-  controllerName: io.cilium/gateway-controller
+  controllerName: gateway.envoyproxy.io/gatewayclass-controller
   parametersRef:
-    group: cilium.io
-    kind: CiliumGatewayClassConfig
-    name: cilium-local
-    namespace: network
+    group: gateway.envoyproxy.io
+    kind: EnvoyProxy
+    name: local
+    namespace: envoy-gateway-system
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: Gateway
@@ -30,7 +38,7 @@ metadata:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
 spec:
-  gatewayClassName: cilium-local
+  gatewayClassName: envoy
   addresses:
     - type: IPAddress
       value: 192.168.0.155
@@ -245,6 +253,30 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
+
+    - name: https-unifi
+      protocol: HTTPS
+      port: 443
+      hostname: unifi.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: unifi-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: ClientTrafficPolicy
+metadata:
+  name: proxy-protocol
+  namespace: network
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: Gateway
+      name: cilium-gateway-local
+  enableProxyProtocol: true
 ---
 # Redirect all HTTP to HTTPS
 apiVersion: gateway.networking.k8s.io/v1

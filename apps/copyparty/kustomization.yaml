@@ -4,6 +4,7 @@ resources:
 - copyparty-config-secret.enc.yaml
 - helmrelease.yaml
 - httproute.yaml
+- security-policy.yaml
 configMapGenerator:
 - name: copyparty-values
   namespace: copyparty

@@ -6,6 +6,7 @@ resources:
 - helmrelease-z2m.yaml
 - ingress-z2m.yaml
 - httproute-z2m.yaml
+- security-policy.yaml
 - mqtt-users-secret.enc.yaml
 - z2m-secret.enc.yaml
 configMapGenerator:

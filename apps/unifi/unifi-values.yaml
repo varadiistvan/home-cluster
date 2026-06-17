@@ -11,18 +11,7 @@ unifiedService:
   labels: {}
   loadBalancerIP: 192.168.0.153
 ingress:
-  enabled: true
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
-    nginx.ingress.kubernetes.io/backend-protocol: HTTPS
-    nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.0/24,10.192.1.0/24
-  path: /
-  hosts:
-  - unifi.stevevaradi.me
-  tls:
-  - secretName: unifi-tls
-    hosts:
-    - unifi.stevevaradi.me
+  enabled: false
 timezone: Europe/Amsterdam
 bindPrivilegedPorts: true
 runAsRoot: false

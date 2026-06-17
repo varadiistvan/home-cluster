@@ -5,6 +5,7 @@ resources:
   - monitoring-crds
   - cert-manager
   - cilium
+  - envoy-gateway
   - cnpg-operator
   - csi-driver-nfs
   - ddns

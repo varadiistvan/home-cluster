@@ -1,0 +1,31 @@
+---
+# cert-manager issues this cert in home namespace so the Unifi pod can mount it
+# (Gateway listener cert lands in network namespace; Unifi needs it locally for HTTPS)
+apiVersion: cert-manager.io/v1
+kind: Certificate
+metadata:
+  name: unifi-tls
+  namespace: home
+spec:
+  secretName: unifi-tls
+  issuerRef:
+    name: letsencrypt
+    kind: ClusterIssuer
+  dnsNames:
+    - unifi.stevevaradi.me
+---
+# Tells Envoy Gateway to use TLS when connecting to the unifi backend on 8443
+apiVersion: gateway.networking.k8s.io/v1
+kind: BackendTLSPolicy
+metadata:
+  name: unifi-backend-tls
+  namespace: home
+spec:
+  targetRefs:
+    - group: ""
+      kind: Service
+      name: unifi
+      sectionName: https-gui
+  validation:
+    wellKnownCACertificates: System
+    hostname: unifi.stevevaradi.me
