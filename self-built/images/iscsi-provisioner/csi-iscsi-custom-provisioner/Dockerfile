@@ -1,5 +1,5 @@
 # Stage 1: Build the Go binary in a dedicated build environment.
-FROM --platform=$BUILDPLATFORM golang:1.25-alpine AS builder
+FROM --platform=$BUILDPLATFORM golang:1.26-alpine AS builder
 
 # Set the working directory inside the container.
 WORKDIR /app
