@@ -1,8 +1,0 @@
-apiVersion: v2
-name: syncthing
-description: Syncthing on Kubernetes (StatefulSet + Services; optional Gateway API routes)
-type: application
-version: 0.1.0
-# renovate: datasource=docker depName=syncthing/syncthing
-appVersion: "2.1.1"
-kubeVersion: ">=1.25.0-0"
