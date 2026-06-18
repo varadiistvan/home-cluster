@@ -9,7 +9,7 @@
         "/\\.yaml$/"
       ],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+versioning=(?<versioning>[^\\s]+))?\\s+-\\s+https://github\\.com/[^/]+/[^/]+/releases/download/(?<currentValue>[^/]+)/"
+        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+registryUrl=(?<registryUrl>[^\\s]+))?(?:\\s+versioning=(?<versioning>[^\\s]+))?\\s+-\\s+https://github\\.com/[^/]+/[^/]+/releases/download/(?<currentValue>[^/]+)/"
       ],
       "description": "Update GitHub release download URLs in Kustomization files"
     },
@@ -19,7 +19,7 @@
         "/\\.yaml$/"
       ],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+versioning=(?<versioning>[^\\s]+))?\\n\\s+version:\\s+(?<currentValue>\\S+)"
+        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+registryUrl=(?<registryUrl>[^\\s]+))?(?:\\s+versioning=(?<versioning>[^\\s]+))?\\n\\s+version:\\s+(?<currentValue>\\S+)"
       ],
       "description": "Update version fields with renovate comment"
     },
@@ -29,7 +29,7 @@
         "/\\.yaml$/"
       ],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+versioning=(?<versioning>[^\\s]+))?\\n\\s+tag:\\s+(?<currentValue>\\S+)"
+        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+registryUrl=(?<registryUrl>[^\\s]+))?(?:\\s+versioning=(?<versioning>[^\\s]+))?\\n\\s+tag:\\s+(?<currentValue>\\S+)"
       ],
       "description": "Update tag fields with renovate comment"
     },
@@ -39,7 +39,7 @@
         "/\\.yaml$/"
       ],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+versioning=(?<versioning>[^\\s]+))?\\n\\s+value: \"(?<currentValue>[^\"]+)\""
+        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+registryUrl=(?<registryUrl>[^\\s]+))?(?:\\s+versioning=(?<versioning>[^\\s]+))?\\n\\s+value: \"(?<currentValue>[^\"]+)\""
       ],
       "description": "Update env var values with renovate comment"
     }

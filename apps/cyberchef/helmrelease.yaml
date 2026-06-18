@@ -16,6 +16,7 @@ spec:
   chart:
     spec:
       chart: cyberchef
+      # renovate: datasource=helm depName=cyberchef registryUrl=https://charts.obeone.cloud
       version: 1.3.4
       sourceRef:
         kind: HelmRepository

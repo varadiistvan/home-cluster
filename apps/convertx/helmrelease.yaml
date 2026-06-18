@@ -16,6 +16,7 @@ spec:
   chart:
     spec:
       chart: convertx
+      # renovate: datasource=helm depName=convertx registryUrl=oci://harbor.stevevaradi.me/stevevaradi
       version: 0.1.0
       sourceRef:
         kind: HelmRepository

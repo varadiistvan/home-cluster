@@ -16,6 +16,7 @@ spec:
   chart:
     spec:
       chart: immich
+      # renovate: datasource=helm depName=immich registryUrl=https://immich-app.github.io/immich-charts
       version: 0.10.1
       sourceRef:
         kind: HelmRepository

@@ -16,6 +16,7 @@ spec:
   chart:
     spec:
       chart: endless-wiki
+      # renovate: datasource=helm depName=endless-wiki registryUrl=oci://harbor.stevevaradi.me/stevevaradi
       version: 0.1.6
       sourceRef:
         kind: HelmRepository

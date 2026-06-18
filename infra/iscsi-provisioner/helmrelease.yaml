@@ -16,6 +16,7 @@ spec:
   chart:
     spec:
       chart: csi-iscsi-provisioner-chart
+      # renovate: datasource=helm depName=csi-iscsi-provisioner-chart registryUrl=oci://harbor.stevevaradi.me/stevevaradi
       version: 0.11.1
       sourceRef:
         kind: HelmRepository

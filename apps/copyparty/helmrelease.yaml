@@ -16,6 +16,7 @@ spec:
   chart:
     spec:
       chart: copyparty
+      # renovate: datasource=helm depName=copyparty registryUrl=oci://ghcr.io/danielr1996
       version: 0.5.1
       sourceRef:
         kind: HelmRepository

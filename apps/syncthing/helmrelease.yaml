@@ -16,6 +16,7 @@ spec:
   chart:
     spec:
       chart: syncthing
+      # renovate: datasource=helm depName=syncthing registryUrl=oci://harbor.stevevaradi.me/stevevaradi
       version: 0.1.0
       sourceRef:
         kind: HelmRepository

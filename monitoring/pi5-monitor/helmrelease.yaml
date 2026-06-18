@@ -16,6 +16,7 @@ spec:
   chart:
     spec:
       chart: pi5-monitor
+      # renovate: datasource=helm depName=pi5-monitor registryUrl=oci://harbor.stevevaradi.me/stevevaradi
       version: 0.1.5
       sourceRef:
         kind: HelmRepository

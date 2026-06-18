@@ -16,6 +16,7 @@ spec:
   chart:
     spec:
       chart: mealie
+      # renovate: datasource=helm depName=mealie registryUrl=oci://harbor.stevevaradi.me/stevevaradi
       version: 0.1.1
       sourceRef:
         kind: HelmRepository

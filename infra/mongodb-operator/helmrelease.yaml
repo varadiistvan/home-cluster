@@ -16,6 +16,7 @@ spec:
   chart:
     spec:
       chart: community-operator
+      # renovate: datasource=helm depName=community-operator registryUrl=https://mongodb.github.io/helm-charts
       version: 0.13.0
       sourceRef:
         kind: HelmRepository

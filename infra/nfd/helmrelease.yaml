@@ -16,6 +16,7 @@ spec:
   chart:
     spec:
       chart: node-feature-discovery
+      # renovate: datasource=helm depName=node-feature-discovery registryUrl=https://kubernetes-sigs.github.io/node-feature-discovery/charts
       version: 0.17.4
       sourceRef:
         kind: HelmRepository

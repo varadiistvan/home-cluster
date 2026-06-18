@@ -16,6 +16,7 @@ spec:
   chart:
     spec:
       chart: obico
+      # renovate: datasource=helm depName=obico registryUrl=https://charts.gabe565.com
       version: 0.6.0
       sourceRef:
         kind: HelmRepository
