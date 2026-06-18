@@ -5,7 +5,9 @@ image:
   registry: docker.io
   repository: stirlingtools/stirling-pdf
 rootPath: null
-envs: []
+envs:
+  - name: _JAVA_OPTIONS
+    value: "-Djava.io.tmpdir=/tmp/stirling-pdf"
 envsFrom: []
 serviceAccount:
   create: true
