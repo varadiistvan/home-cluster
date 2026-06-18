@@ -15,9 +15,6 @@ spec:
     crds: CreateReplace
     remediation:
       retries: 3
-  dependsOn:
-    - name: talos-operator
-      namespace: system-upgrade
   chart:
     spec:
       chart: tuppr
