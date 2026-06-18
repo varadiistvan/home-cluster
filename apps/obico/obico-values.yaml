@@ -10,6 +10,7 @@ server:
     DEFAULT_FROM_EMAIL: varadiista.1@gmail.com
     SITE_IS_PUBLIC: 'True'
     ACCOUNT_ALLOW_SIGN_UP: 'True'
+    SITE_FULL_URL: 'https://obico.stevevaradi.me'
   persistence:
     data:
       enabled: true
