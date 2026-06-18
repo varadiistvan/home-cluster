@@ -92,6 +92,16 @@ patches:
       network:
         nameservers:
           - 192.168.0.151
+  - |-
+    machine:
+      features:
+        kubernetesTalosAPIAccess:
+          enabled: true
+          allowedRoles:
+            - os:reader
+            - os:admin
+          allowedKubernetesNamespaces:
+            - system-upgrade
 
 nodes:
   # Intel N100 minipc

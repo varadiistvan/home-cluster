@@ -16,5 +16,6 @@ resources:
   - mongodb-operator
   - nfd
   - reloader
+  - talos-operator
   - tuppr
   - kyverno
