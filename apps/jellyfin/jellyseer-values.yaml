@@ -1,7 +1,5 @@
 imagePullSecrets:
 - name: registry-pass
-strategy:
-  type: Recreate
 serviceAccount:
   create: true
   automount: true
