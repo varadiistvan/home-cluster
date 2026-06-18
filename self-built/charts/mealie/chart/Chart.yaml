@@ -10,10 +10,10 @@ name: mealie
 apiVersion: v2
 
 # Version of the chart (required)
-version: 0.1.1
+version: 0.1.2
 
 # Version of the application (required).
 # This should be the main application version.
 # renovate: datasource=docker depName=ghcr.io/mealie-recipes/mealie
-appVersion: v2.8.0
+appVersion: v3.19.2
 description: A Helm chart for mealie
