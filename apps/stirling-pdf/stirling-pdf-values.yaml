@@ -55,3 +55,22 @@ deployment:
     readOnly: true
   - name: stirling-temp
     mountPath: /tmp/stirling-pdf
+probes:
+  liveness:
+    enabled: true
+    initialDelaySeconds: 180
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 6
+  livenessHttpGetConfig:
+    scheme: HTTP
+  readiness:
+    enabled: true
+    initialDelaySeconds: 60
+    periodSeconds: 10
+    timeoutSeconds: 5
+    successThreshold: 1
+    failureThreshold: 3
+  readinessHttpGetConfig:
+    scheme: HTTP

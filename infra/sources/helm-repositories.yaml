@@ -286,13 +286,3 @@ spec:
   interval: 1h
   url: oci://registry-1.docker.io/envoyproxy
   type: oci
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: HelmRepository
-metadata:
-  name: siderolabs
-  namespace: flux-system
-spec:
-  interval: 1h
-  url: oci://ghcr.io/siderolabs/charts
-  type: oci
