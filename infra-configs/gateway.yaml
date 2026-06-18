@@ -265,6 +265,116 @@ spec:
       allowedRoutes:
         namespaces:
           from: All
+    - name: https-voron
+      protocol: HTTPS
+      port: 443
+      hostname: voron.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: voron-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-voron-cam
+      protocol: HTTPS
+      port: 443
+      hostname: cam.voron.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: voron-cam-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-mainsail
+      protocol: HTTPS
+      port: 443
+      hostname: mainsail.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: mainsail-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-mainsail-cam
+      protocol: HTTPS
+      port: 443
+      hostname: cam.mainsail.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: mainsail-cam-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-nas
+      protocol: HTTPS
+      port: 443
+      hostname: nas.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: nas-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-minio
+      protocol: HTTPS
+      port: 443
+      hostname: minio.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: minio-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-minio-api
+      protocol: HTTPS
+      port: 443
+      hostname: api.minio.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: minio-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-ollama
+      protocol: HTTPS
+      port: 443
+      hostname: ollama.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: ollama-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-dabitches
+      protocol: HTTPS
+      port: 443
+      hostname: dabitches.com
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: dabitches-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+    - name: https-www-dabitches
+      protocol: HTTPS
+      port: 443
+      hostname: www.dabitches.com
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: dabitches-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: ClientTrafficPolicy

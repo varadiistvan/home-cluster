@@ -36,44 +36,74 @@ endpoints:
     conditions:
       ready: true
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: minio
   namespace: external
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
-    nginx.ingress.kubernetes.io/whitelist-source-range: "192.168.0.0/24,10.192.1.0/24"
-    nginx.ingress.kubernetes.io/proxy-body-size: "0"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
-    nginx.ingress.kubernetes.io/backend-protocol: HTTP
 spec:
-  ingressClassName: nginx
-  tls:
-    - hosts:
-        - minio.stevevaradi.me
-        - api.minio.stevevaradi.me
-      secretName: minio-tls
+  parentRefs:
+    - name: cilium-gateway-local
+      namespace: network
+      sectionName: https-minio
+  hostnames:
+    - minio.stevevaradi.me
   rules:
-    - host: minio.stevevaradi.me
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: minio-external
-                port:
-                  name: web
-    - host: api.minio.stevevaradi.me
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: minio-external
-                port:
-                  name: s3
+    - backendRefs:
+        - name: minio-external
+          port: 9001
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
+metadata:
+  name: minio-api
+  namespace: external
+spec:
+  parentRefs:
+    - name: cilium-gateway-local
+      namespace: network
+      sectionName: https-minio-api
+  hostnames:
+    - api.minio.stevevaradi.me
+  rules:
+    - backendRefs:
+        - name: minio-external
+          port: 9000
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: lan-only-minio
+  namespace: external
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: minio
+  authorization:
+    defaultAction: Deny
+    rules:
+      - action: Allow
+        principal:
+          clientCIDRs:
+            - 192.168.0.0/24
+            - 10.192.1.0/24
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: lan-only-minio-api
+  namespace: external
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: minio-api
+  authorization:
+    defaultAction: Deny
+    rules:
+      - action: Allow
+        principal:
+          clientCIDRs:
+            - 192.168.0.0/24
+            - 10.192.1.0/24

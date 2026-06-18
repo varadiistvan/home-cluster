@@ -10,6 +10,10 @@ spec:
       port: 80
       targetPort: 80
       protocol: TCP
+    - name: cam
+      port: 8899
+      targetPort: 8899
+      protocol: TCP
 ---
 apiVersion: discovery.k8s.io/v1
 kind: EndpointSlice
@@ -23,82 +27,78 @@ ports:
   - name: web
     protocol: TCP
     port: 80
+  - name: cam
+    protocol: TCP
+    port: 8899
 endpoints:
   - addresses:
       - 192.168.0.91
     conditions:
       ready: true
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: voron
   namespace: external
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
-    nginx.ingress.kubernetes.io/whitelist-source-range: "192.168.0.0/24,10.192.1.0/24"
-    nginx.ingress.kubernetes.io/proxy-body-size: "0"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
-    nginx.ingress.kubernetes.io/backend-protocol: HTTP
 spec:
-  ingressClassName: nginx
-  tls:
-    - hosts:
-        - voron.stevevaradi.me
-      secretName: voron-tls
+  parentRefs:
+    - name: cilium-gateway-local
+      namespace: network
+      sectionName: https-voron
+  hostnames:
+    - voron.stevevaradi.me
   rules:
-    - host: voron.stevevaradi.me
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: voron-external
-                port:
-                  name: web
-          - path: /stream
-            pathType: Exact
-            backend:
-              service:
-                name: voron-external
-                port:
-                  name: cam
-          - path: /snapshot
-            pathType: Exact
-            backend:
-              service:
-                name: voron-external
-                port:
-                  name: cam
+    - matches:
+        - path:
+            type: Exact
+            value: /stream
+        - path:
+            type: Exact
+            value: /snapshot
+      backendRefs:
+        - name: voron-external
+          port: 8899
+    - matches:
+        - path:
+            type: PathPrefix
+            value: /
+      backendRefs:
+        - name: voron-external
+          port: 80
 ---
-apiVersion: networking.k8s.io/v1
-kind: Ingress
+apiVersion: gateway.networking.k8s.io/v1
+kind: HTTPRoute
 metadata:
   name: voron-cam
   namespace: external
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
-    nginx.ingress.kubernetes.io/proxy-body-size: "0"
-    nginx.ingress.kubernetes.io/proxy-read-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-send-timeout: "600"
-    nginx.ingress.kubernetes.io/proxy-request-buffering: "off"
 spec:
-  ingressClassName: nginx
-  tls:
-    - hosts:
-        - cam.voron.stevevaradi.me
-      secretName: voron-cam-tls
+  parentRefs:
+    - name: cilium-gateway-local
+      namespace: network
+      sectionName: https-voron-cam
+  hostnames:
+    - cam.voron.stevevaradi.me
   rules:
-    - host: cam.voron.stevevaradi.me
-      http:
-        paths:
-          - path: /
-            pathType: Prefix
-            backend:
-              service:
-                name: voron-external
-                port:
-                  name: cam
+    - backendRefs:
+        - name: voron-external
+          port: 8899
+---
+apiVersion: gateway.envoyproxy.io/v1alpha1
+kind: SecurityPolicy
+metadata:
+  name: lan-only-voron
+  namespace: external
+spec:
+  targetRefs:
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: voron
+  authorization:
+    defaultAction: Deny
+    rules:
+      - action: Allow
+        principal:
+          clientCIDRs:
+            - 192.168.0.0/24
+            - 10.192.1.0/24
