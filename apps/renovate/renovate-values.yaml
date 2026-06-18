@@ -2,9 +2,9 @@ image:
   registry: ghcr.io
   useFull: false
 imagePullSecrets:
-- name: registry-pass
+  - name: registry-pass
 cronjob:
-  schedule: 0 */3 * * *
+  schedule: 0 */1 * * *
   timeZone: Europe/Amsterdam
   suspend: false
   concurrencyPolicy: Forbid
