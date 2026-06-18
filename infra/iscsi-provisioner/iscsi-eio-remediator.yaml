@@ -58,12 +58,14 @@ spec:
         app.kubernetes.io/instance: iscsi-provisioner
     spec:
       serviceAccountName: iscsi-eio-remediator
+      imagePullSecrets:
+        - name: registry-pass
       hostNetwork: true
       dnsPolicy: ClusterFirstWithHostNet
       containers:
         - name: remediator
-          # renovate: datasource=docker depName=bitnami/kubectl
-          image: docker.io/bitnami/kubectl:1.33.4
+          # renovate: datasource=docker depName=harbor.stevevaradi.me/stevevaradi/iscsi-eio-remediator
+          image: harbor.stevevaradi.me/stevevaradi/iscsi-eio-remediator:v0.1.0
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -144,7 +146,7 @@ data:
     KUBELET_ROOT="/host/var/lib/kubelet"
 
     log() {
-      printf '%s %s\n' "$(date -Iseconds)" "$*"
+      printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"
     }
 
     now_seconds() {
