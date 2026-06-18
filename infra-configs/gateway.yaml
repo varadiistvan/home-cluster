@@ -242,6 +242,18 @@ spec:
         namespaces:
           from: All
 
+    - name: https-bytestash
+      protocol: HTTPS
+      port: 443
+      hostname: bytestash.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: bytestash-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
     - name: https-syncthing
       protocol: HTTPS
       port: 443

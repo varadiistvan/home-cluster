@@ -1,19 +1,19 @@
 imagePullSecrets:
-- name: registry-pass
+  - name: registry-pass
 serviceAccount:
   create: true
   automount: true
   annotations: {}
-  name: ''
+  name: ""
 service:
   type: ClusterIP
-  port: 80
+  port: 5055
 config:
   persistence:
     size: 15Gi
     annotations: {}
     accessModes:
-    - ReadWriteOnce
+      - ReadWriteOnce
     storageClass: iscsi-csi
 ingress:
   enabled: false
@@ -22,14 +22,14 @@ ingress:
     cert-manager.io/cluster-issuer: letsencrypt
     nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.1/24, 10.192.1.1/24
   hosts:
-  - host: jellyseer.stevevaradi.me
-    paths:
-    - path: /
-      pathType: ImplementationSpecific
+    - host: jellyseer.stevevaradi.me
+      paths:
+        - path: /
+          pathType: ImplementationSpecific
   tls:
-  - secretName: jellyseer-tls
-    hosts:
-    - jellyseer.stevevaradi.me
+    - secretName: jellyseer-tls
+      hosts:
+        - jellyseer.stevevaradi.me
 resources: {}
 volumes: []
 volumeMounts: []

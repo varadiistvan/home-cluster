@@ -9,6 +9,7 @@ resources:
   - registry-pass-planka-secret.enc.yaml
   - registry-pass-syncthing-secret.enc.yaml
   - bentopdf
+  - bytestash
   - cnpg
   - convertx
   - copyparty

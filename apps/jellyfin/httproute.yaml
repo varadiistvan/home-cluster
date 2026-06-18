@@ -30,5 +30,5 @@ spec:
     - jellyseer.stevevaradi.me
   rules:
     - backendRefs:
-        - name: jellyseer
-          port: 80
+        - name: jellyseer-seerr-chart
+          port: 5055

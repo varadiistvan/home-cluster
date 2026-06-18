@@ -1,0 +1,93 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bytestash
+  namespace: bytestash
+  labels:
+    app.kubernetes.io/name: bytestash
+    app.kubernetes.io/instance: bytestash
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: bytestash
+      app.kubernetes.io/instance: bytestash
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bytestash
+        app.kubernetes.io/instance: bytestash
+      annotations:
+        iscsi.stevevaradi.me/eio-remediate: "true"
+    spec:
+      containers:
+        - name: bytestash
+          # renovate: datasource=docker depName=ghcr.io/jordan-dalby/bytestash
+          image: ghcr.io/jordan-dalby/bytestash:1.5.11
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 5000
+          env:
+            - name: BASE_PATH
+              value: ""
+            - name: ALLOWED_HOSTS
+              value: bytestash.stevevaradi.me
+            - name: TOKEN_EXPIRY
+              value: 24h
+            - name: ALLOW_NEW_ACCOUNTS
+              value: "true"
+            - name: DEBUG
+              value: "false"
+            - name: DISABLE_ACCOUNTS
+              value: "false"
+            - name: DISABLE_INTERNAL_ACCOUNTS
+              value: "false"
+            - name: ALLOW_PASSWORD_CHANGES
+              value: "true"
+            - name: OIDC_ENABLED
+              value: "false"
+            - name: ADMIN_USERNAMES
+              value: admin
+          envFrom:
+            - secretRef:
+                name: bytestash
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: data
+              mountPath: /data/snippets
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: bytestash-data
