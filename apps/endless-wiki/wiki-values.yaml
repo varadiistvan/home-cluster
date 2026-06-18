@@ -1,7 +1,7 @@
 endless_wiki:
   repository:
     image: docker.io/xanderstrike/endless-wiki
-    tag: '{{ .Chart.AppVersion }}'
+    tag: latest
   ingress:
     annotations:
       cert-manager.io/cluster-issuer: letsencrypt

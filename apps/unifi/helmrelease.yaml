@@ -16,7 +16,7 @@ spec:
   chart:
     spec:
       chart: unifi
-      # renovate: datasource=helm depName=unifi registryUrl=oci://ghcr.io/mkilchhofer/unifi-chart
+      # renovate: datasource=docker depName=ghcr.io/mkilchhofer/unifi-chart/unifi
       version: 1.14.1
       sourceRef:
         kind: HelmRepository
