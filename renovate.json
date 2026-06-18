@@ -56,9 +56,26 @@
   ],
   "packageRules": [
     {
-      "matchPackageNames": ["prometheus-operator/prometheus-operator"],
-      "groupName": "prometheus-operator",
-      "commitMessageTopic": "prometheus-operator CRDs"
+      "matchFileNames": ["infra/**", "monitoring/**", "clusters/**"],
+      "addLabels": ["infrastructure"]
+    },
+    {
+      "matchFileNames": ["apps/**"],
+      "addLabels": ["apps"]
+    },
+    {
+      "matchFileNames": ["self-built/**"],
+      "addLabels": ["self-built"]
+    },
+    {
+      "matchPackageNames": ["kube-prometheus-stack"],
+      "postUpgradeTasks": {
+        "commands": [
+          "python3 -c \"import urllib.request,json,re; d=json.loads(urllib.request.urlopen('https://artifacthub.io/api/v1/packages/helm/prometheus-community/kube-prometheus-stack/{{newVersion}}').read()); ver=d.get('app_version'); f='infra/monitoring-crds/kustomization.yaml'; c=open(f).read(); open(f,'w').write(re.sub(r'download/v[0-9.]+/stripped',f'download/{ver}/stripped',c)) if ver else None\""
+        ],
+        "fileFilters": ["infra/monitoring-crds/kustomization.yaml"],
+        "executionMode": "update"
+      }
     },
     {
       "matchManagers": ["regex"],

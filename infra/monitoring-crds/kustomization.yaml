@@ -1,5 +1,5 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  # renovate: datasource=github-releases depName=prometheus-operator/prometheus-operator
+  # managed by kube-prometheus-stack postUpgradeTasks — do not add a renovate: comment here
   - https://github.com/prometheus-operator/prometheus-operator/releases/download/v0.83.0/stripped-down-crds.yaml

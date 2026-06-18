@@ -6,30 +6,30 @@ grafana:
       cert-manager.io/cluster-issuer: letsencrypt
       nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.1/24, 10.192.1.1/24
     hosts:
-    - grafana.stevevaradi.me
-    paths:
-    - /
-    tls:
-    - secretName: grafana-tls
-      hosts:
       - grafana.stevevaradi.me
+    paths:
+      - /
+    tls:
+      - secretName: grafana-tls
+        hosts:
+          - grafana.stevevaradi.me
 kubelet:
   serviceMonitor:
     cAdvisorRelabelings:
-    - action: replace
-      replacement: melodic-sky
-      targetLabel: cluster
-    - targetLabel: metrics_path
-      sourceLabels:
-      - __metrics_path__
-    - targetLabel: instance
-      sourceLabels:
-      - node
+      - action: replace
+        replacement: melodic-sky
+        targetLabel: cluster
+      - targetLabel: metrics_path
+        sourceLabels:
+          - __metrics_path__
+      - targetLabel: instance
+        sourceLabels:
+          - node
     metricRelabelings:
-    - action: replace
-      sourceLabels:
-      - node
-      targetLabel: instance
+      - action: replace
+        sourceLabels:
+          - node
+        targetLabel: instance
 defaultRules:
   additionalRuleLabels:
     cluster: melodic-sky
@@ -37,31 +37,31 @@ kube-state-metrics:
   prometheus:
     monitor:
       relabelings:
-      - action: replace
-        replacement: melodic-sky
-        targetLabel: cluster
-      - targetLabel: instance
-        sourceLabels:
-        - __meta_kubernetes_pod_node_name
+        - action: replace
+          replacement: melodic-sky
+          targetLabel: cluster
+        - targetLabel: instance
+          sourceLabels:
+            - __meta_kubernetes_pod_node_name
 prometheus-node-exporter:
   prometheus:
     monitor:
       relabelings:
-      - action: replace
-        replacement: melodic-sky
-        targetLabel: cluster
-      - targetLabel: instance
-        sourceLabels:
-        - __meta_kubernetes_pod_node_name
+        - action: replace
+          replacement: melodic-sky
+          targetLabel: cluster
+        - targetLabel: instance
+          sourceLabels:
+            - __meta_kubernetes_pod_node_name
 nodeExporter:
   serviceMonitor:
     relabelings:
-    - action: replace
-      regex: (.*)
-      replacement: $1
-      sourceLabels:
-      - __meta_kubernetes_pod_node_name
-      targetLabel: kubernetes_node
+      - action: replace
+        regex: (.*)
+        replacement: $1
+        sourceLabels:
+          - __meta_kubernetes_pod_node_name
+        targetLabel: kubernetes_node
 prometheus:
   ingress:
     enabled: true
@@ -69,47 +69,47 @@ prometheus:
       cert-manager.io/cluster-issuer: letsencrypt
       nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.1/24, 10.192.1.1/24
     hosts:
-    - prometheus.stevevaradi.me
-    paths:
-    - /
-    tls:
-    - secretName: prometheus-tls
-      hosts:
       - prometheus.stevevaradi.me
+    paths:
+      - /
+    tls:
+      - secretName: prometheus-tls
+        hosts:
+          - prometheus.stevevaradi.me
   monitor:
     relabelings:
-    - action: replace
-      replacement: melodic-sky
-      targetLabel: cluster
+      - action: replace
+        replacement: melodic-sky
+        targetLabel: cluster
   prometheusSpec:
     podMonitorSelector: {}
     serviceMonitorSelector: {}
     additionalScrapeConfigs:
-    - job_name: scaphandre
-      scrape_interval: 30s
-      metrics_path: /metrics
-      static_configs:
-      - targets:
-        - 192.168.0.151:8181
-      relabel_configs:
-      - source_labels:
-        - __address__
-        regex: 192.168.0.151:8181
-        action: replace
-        target_label: node
-        replacement: nas
-      - source_labels:
-        - __address__
-        regex: 192.168.0.109:8181
-        action: replace
-        target_label: node
-        replacement: homepc
+      - job_name: scaphandre
+        scrape_interval: 30s
+        metrics_path: /metrics
+        static_configs:
+          - targets:
+              - 192.168.0.151:8181
+        relabel_configs:
+          - source_labels:
+              - __address__
+            regex: 192.168.0.151:8181
+            action: replace
+            target_label: node
+            replacement: nas
+          - source_labels:
+              - __address__
+            regex: 192.168.0.109:8181
+            action: replace
+            target_label: node
+            replacement: homepc
   storageSpec:
     volumeClaimTemplate:
       spec:
         storageClassName: nfs-csi
         accessModes:
-        - ReadWriteOnce
+          - ReadWriteOnce
         resources:
           requests:
             storage: 100Gi
@@ -120,13 +120,13 @@ prometheus:
         spec:
           storageClassName: local-path
           accessModes:
-          - ReadWriteOnce
+            - ReadWriteOnce
           resources:
             requests:
               storage: 10Gi
 crds:
   upgradeJob:
-    enabled: true
+    enabled: false
     forceConflicts: true
   image:
     busybox:
