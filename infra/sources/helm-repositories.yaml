@@ -243,11 +243,11 @@ spec:
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
-  name: ghcr-fallenbagel
+  name: ghcr-seerr-team
   namespace: flux-system
 spec:
   interval: 1h
-  url: oci://ghcr.io/fallenbagel
+  url: oci://ghcr.io/seerr-team/seerr
   type: oci
 ---
 apiVersion: source.toolkit.fluxcd.io/v1

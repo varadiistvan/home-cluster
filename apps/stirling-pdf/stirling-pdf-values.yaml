@@ -24,12 +24,6 @@ persistence:
   labels: {}
   path: /tmp
   storageClass: nfs-csi-retain
-volumePermissions:
-  image:
-    registry: docker.io
-    repository: bitnami/minideb
-    tag: buster
-    pullPolicy: Always
 ingress:
   enabled: true
   pathType: ImplementationSpecific
@@ -50,8 +44,12 @@ deployment:
       items:
       - key: custom_settings.yml
         path: custom_settings.yml
+  - name: stirling-temp
+    emptyDir: {}
   extraVolumeMounts:
   - name: stirling-pdf-config
     mountPath: /configs/custom_settings.yml
     subPath: custom_settings.yml
     readOnly: true
+  - name: stirling-temp
+    mountPath: /tmp/stirling-pdf

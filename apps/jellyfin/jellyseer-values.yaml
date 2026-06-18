@@ -1,7 +1,3 @@
-image:
-  registry: ghcr.io
-  repository: fallenbagel/jellyseerr
-  pullPolicy: IfNotPresent
 imagePullSecrets:
 - name: registry-pass
 strategy:
