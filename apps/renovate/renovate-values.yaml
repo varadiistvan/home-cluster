@@ -86,6 +86,13 @@ renovate:
           "matchDatasources": ["docker"],
           "matchPackagePatterns": ["^harbor\\.stevevaradi\\.me/hub/library/"],
           "registryUrls": ["https://index.docker.io"]
+        },
+
+        {
+          "matchManagers": ["flux"],
+          "matchDatasources": ["helm"],
+          "matchPackageNames": ["pi5-monitor"],
+          "enabled": false
         }
       ],
 
