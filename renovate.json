@@ -42,6 +42,16 @@
         "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+registryUrl=(?<registryUrl>[^\\s]+))?(?:\\s+versioning=(?<versioning>[^\\s]+))?\\n\\s+value: \"(?<currentValue>[^\"]+)\""
       ],
       "description": "Update env var values with renovate comment"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/(^|/)Chart\\.yaml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+registryUrl=(?<registryUrl>[^\\s]+))?(?:\\s+versioning=(?<versioning>[^\\s]+))?\\nappVersion:\\s+[\"']?(?<currentValue>[^\"'\\s#]+)[\"']?"
+      ],
+      "description": "Update appVersion in Chart.yaml and track upstream image"
     }
   ],
   "packageRules": [
@@ -49,6 +59,19 @@
       "matchPackageNames": ["prometheus-operator/prometheus-operator"],
       "groupName": "prometheus-operator",
       "commitMessageTopic": "prometheus-operator CRDs"
+    },
+    {
+      "matchManagers": ["regex"],
+      "matchFileNames": ["**/Chart.yaml"],
+      "automerge": true,
+      "automergeType": "branch",
+      "postUpgradeTasks": {
+        "commands": [
+          "python3 -c \"import re; f=open('{{packageFile}}'); c=f.read(); f.close(); m=re.search(r'^version: (\\d+)\\.(\\d+)\\.(\\d+)', c, re.M); c2=(c[:m.start()]+'version: '+m.group(1)+'.'+m.group(2)+'.'+str(int(m.group(3))+1)+c[m.end():]) if m else c; open('{{packageFile}}','w').write(c2)\""
+        ],
+        "fileFilters": ["**/Chart.yaml"],
+        "executionMode": "update"
+      }
     }
   ]
 }

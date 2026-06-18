@@ -3,5 +3,6 @@ name: syncthing
 description: Syncthing on Kubernetes (StatefulSet + Services; optional Gateway API routes)
 type: application
 version: 0.1.0
-appVersion: "2.0.10" # <- example; bump as you like
+# renovate: datasource=docker depName=syncthing/syncthing
+appVersion: "2.0.10"
 kubeVersion: ">=1.25.0-0"

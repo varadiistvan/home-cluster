@@ -43,7 +43,9 @@ renovate:
 
       "binarySource": "install",
 
-      "enabledManagers": ["flux", "dockerfile", "docker-compose", "kubernetes", "helmv3", "terraform", "gomod", "cargo", "github-actions", "npm", "gradle", "gradle-wrapper"],
+      "enabledManagers": ["flux", "dockerfile", "docker-compose", "kubernetes", "helmv3", "terraform", "gomod", "cargo", "github-actions", "npm", "gradle", "gradle-wrapper", "regex"],
+
+      "allowedPostUpgradeCommands": ["^python3 -c .*"],
 
       "npm": {
         "postUpdateOptions": ["npmDedupe"],
