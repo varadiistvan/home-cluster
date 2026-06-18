@@ -115,3 +115,8 @@ apiVersion: v1
 kind: Namespace
 metadata:
   name: kyverno
+---
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: bentopdf

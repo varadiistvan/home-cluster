@@ -2,7 +2,7 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: syncthing-syncthing-gui
+  name: syncthing-gui
   namespace: syncthing
 spec:
   parentRefs:
@@ -13,5 +13,5 @@ spec:
     - syncthing.stevevaradi.me
   rules:
     - backendRefs:
-        - name: syncthing-syncthing-gui
+        - name: syncthing-gui
           port: 8384

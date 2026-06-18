@@ -1,0 +1,28 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bentopdf
+  namespace: bentopdf
+  labels:
+    app.kubernetes.io/name: bentopdf
+    app.kubernetes.io/instance: bentopdf
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: bentopdf
+      app.kubernetes.io/instance: bentopdf
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: bentopdf
+        app.kubernetes.io/instance: bentopdf
+    spec:
+      containers:
+        - name: bentopdf
+          # renovate: datasource=docker depName=bentopdf/bentopdf
+          image: bentopdf/bentopdf:edge
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80

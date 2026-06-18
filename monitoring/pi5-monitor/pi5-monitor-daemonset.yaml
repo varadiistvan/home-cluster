@@ -1,0 +1,51 @@
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: pi5-monitor
+  namespace: monitoring
+  labels:
+    app.kubernetes.io/name: pi5-monitor
+    app.kubernetes.io/instance: pi5-monitor
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: pi5-monitor
+      app.kubernetes.io/instance: pi5-monitor
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: pi5-monitor
+        app.kubernetes.io/instance: pi5-monitor
+    spec:
+      imagePullSecrets:
+        - name: registry-pass
+      affinity:
+        nodeAffinity:
+          requiredDuringSchedulingIgnoredDuringExecution:
+            nodeSelectorTerms:
+              - matchExpressions:
+                  - key: kubernetes.io/arch
+                    operator: In
+                    values:
+                      - arm64
+                      - arm
+                  - key: kubernetes.io/hostname
+                    operator: NotIn
+                    values:
+                      - macm1
+      containers:
+        - name: pi5-monitor
+          # renovate: datasource=docker depName=harbor.stevevaradi.me/stevevaradi/pi-power
+          image: harbor.stevevaradi.me/stevevaradi/pi-power:0.1.1
+          imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 9101
+          securityContext:
+            privileged: true
+          resources:
+            limits:
+              cpu: 500m
+              memory: 128Mi
+            requests:
+              cpu: 100m
+              memory: 64Mi

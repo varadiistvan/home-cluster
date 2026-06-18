@@ -1,0 +1,43 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: syncthing-init
+  namespace: syncthing
+  labels:
+    app.kubernetes.io/name: syncthing
+    app.kubernetes.io/instance: syncthing
+data:
+  configure.sh: |
+    #!/bin/sh
+    set -eu
+    (set -o pipefail 2>/dev/null) || true
+
+    apk add --no-cache xmlstarlet >/dev/null
+    command -v xml >/dev/null || { echo "xmlstarlet not installed"; exit 1; }
+
+    CONF="${CONF_DIR:-/var/syncthing}/config.xml"
+    [ -f "$CONF" ] || { echo "config.xml not found at $CONF"; exit 0; }
+
+    # GUI address & TLS
+    xml ed -L \
+      -u '/configuration/gui/address' -v "${GUI_ADDRESS:-0.0.0.0:8384}" \
+      "$CONF"
+    if [ "${GUI_TLS:-false}" = "true" ]; then
+      xml ed -L -u '/configuration/gui/@tls' -v "true" "$CONF"
+    else
+      xml ed -L -u '/configuration/gui/@tls' -v "false" "$CONF"
+    fi
+
+    # Options toggles
+    xml ed -L \
+      -u '/configuration/options/globalAnnounceEnabled' -v "${GLOBAL_ANNOUNCE:-false}" \
+      -u '/configuration/options/localAnnounceEnabled'  -v "${LOCAL_ANNOUNCE:-true}" \
+      -u '/configuration/options/stunKeepaliveStartS'   -v "${STUN_KEEPALIVE_STARTS:-0}" \
+      "$CONF"
+
+    # Replace listenAddress entries (defaults: tcp+quic on 22000)
+    xml ed -L -d '/configuration/options/listenAddress' "$CONF"
+    xml ed -L -s '/configuration/options' -t elem -n listenAddress -v 'tcp://0.0.0.0:22000' "$CONF"
+    xml ed -L -s '/configuration/options' -t elem -n listenAddress -v 'quic://0.0.0.0:22000' "$CONF"
+
+    echo "Syncthing config tweaked."

@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: syncthing
+  namespace: syncthing
+  labels:
+    app.kubernetes.io/name: syncthing
+    app.kubernetes.io/instance: syncthing
+spec:
+  serviceName: syncthing
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: syncthing
+      app.kubernetes.io/instance: syncthing
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: syncthing
+        app.kubernetes.io/instance: syncthing
+    spec:
+      imagePullSecrets:
+        - name: registry-pass
+      securityContext:
+        fsGroup: 1000
+        runAsGroup: 1000
+        runAsUser: 1000
+      initContainers:
+        - name: fix-perms
+          image: alpine:3.20
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              install -d -o 1000 -g 1000 -m 0750 "/var/syncthing"
+              chown -R 1000:1000 "/var/syncthing"
+          volumeMounts:
+            - name: data
+              mountPath: /var/syncthing
+        - name: gen-config
+          # renovate: datasource=docker depName=syncthing/syncthing
+          image: syncthing/syncthing:2.1.1
+          imagePullPolicy: IfNotPresent
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              if [ ! -f "/var/syncthing/config.xml" ]; then
+                syncthing generate --home="/var/syncthing"
+              fi
+          volumeMounts:
+            - name: data
+              mountPath: /var/syncthing
+        - name: tweak-config
+          image: alpine:3.20
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          command: ["/bin/sh", "/init/configure.sh"]
+          env:
+            - name: CONF_DIR
+              value: "/var/syncthing"
+            - name: GUI_ADDRESS
+              value: "0.0.0.0:8384"
+            - name: GUI_TLS
+              value: "false"
+            - name: GLOBAL_ANNOUNCE
+              value: "false"
+            - name: LOCAL_ANNOUNCE
+              value: "true"
+            - name: STUN_KEEPALIVE_STARTS
+              value: "0"
+          volumeMounts:
+            - name: init
+              mountPath: /init
+            - name: data
+              mountPath: /var/syncthing
+      containers:
+        - name: syncthing
+          # renovate: datasource=docker depName=syncthing/syncthing
+          image: syncthing/syncthing:2.1.1
+          imagePullPolicy: IfNotPresent
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: false
+            capabilities:
+              drop: ["ALL"]
+          env:
+            - name: TZ
+              value: "Europe/Amsterdam"
+            - name: STHOMEDIR
+              value: "/var/syncthing"
+            - name: PUID
+              value: "1000"
+            - name: PGID
+              value: "1000"
+          command: ["/bin/sh", "-c"]
+          args:
+            - |
+              set -e
+              FLAGS=""
+              FLAGS="$FLAGS --no-port-probing"
+              exec syncthing serve --home="/var/syncthing" $FLAGS
+          ports:
+            - { name: gui,    containerPort: 8384, protocol: TCP }
+            - { name: st-tcp, containerPort: 22000, protocol: TCP }
+            - { name: st-udp, containerPort: 22000, protocol: UDP }
+            - { name: disco,  containerPort: 21027, protocol: UDP }
+          volumeMounts:
+            - name: data
+              mountPath: /var/syncthing
+          readinessProbe:
+            tcpSocket: { port: 8384 }
+            initialDelaySeconds: 5
+            periodSeconds: 10
+          livenessProbe:
+            tcpSocket: { port: 8384 }
+            initialDelaySeconds: 30
+            periodSeconds: 30
+      volumes:
+        - name: init
+          configMap:
+            name: syncthing-init
+        - name: data
+          emptyDir: {}

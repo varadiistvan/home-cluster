@@ -230,6 +230,18 @@ spec:
         namespaces:
           from: All
 
+    - name: https-bentopdf
+      protocol: HTTPS
+      port: 443
+      hostname: bentopdf.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: bentopdf-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
     - name: https-syncthing
       protocol: HTTPS
       port: 443

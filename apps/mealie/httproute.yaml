@@ -2,7 +2,7 @@
 apiVersion: gateway.networking.k8s.io/v1
 kind: HTTPRoute
 metadata:
-  name: mealie-mealie
+  name: mealie
   namespace: mealie
 spec:
   parentRefs:
@@ -13,5 +13,5 @@ spec:
     - mealie.stevevaradi.me
   rules:
     - backendRefs:
-        - name: mealie-mealie
+        - name: mealie
           port: 9000

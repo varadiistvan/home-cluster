@@ -8,6 +8,7 @@ resources:
   - registry-pass-penpot-secret.enc.yaml
   - registry-pass-planka-secret.enc.yaml
   - registry-pass-syncthing-secret.enc.yaml
+  - bentopdf
   - cnpg
   - convertx
   - copyparty

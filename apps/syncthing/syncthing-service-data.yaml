@@ -1,0 +1,27 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: syncthing-data
+  namespace: syncthing
+  labels:
+    app.kubernetes.io/name: syncthing
+    app.kubernetes.io/instance: syncthing
+spec:
+  type: LoadBalancer
+  externalTrafficPolicy: Cluster
+  selector:
+    app.kubernetes.io/name: syncthing
+    app.kubernetes.io/instance: syncthing
+  ports:
+    - name: st-tcp
+      port: 22000
+      targetPort: st-tcp
+      protocol: TCP
+    - name: st-udp
+      port: 22000
+      targetPort: st-udp
+      protocol: UDP
+    - name: disco
+      port: 21027
+      targetPort: disco
+      protocol: UDP

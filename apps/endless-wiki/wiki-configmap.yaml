@@ -1,0 +1,12 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: wiki
+  namespace: scratch
+  labels:
+    app.kubernetes.io/name: wiki
+    app.kubernetes.io/instance: wiki
+data:
+  OLLAMA_HOST: "http://ollama.stevevaradi.me:11434"
+  OLLAMA_MODEL: "gemma3:1b"
+  PORT: "8080"

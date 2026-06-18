@@ -1,0 +1,14 @@
+apiVersion: storage.k8s.io/v1
+kind: StorageClass
+metadata:
+  name: iscsi-csi
+  labels:
+    app.kubernetes.io/name: iscsi-csi
+    app.kubernetes.io/instance: iscsi-provisioner
+provisioner: iscsi.stevevaradi.me
+allowVolumeExpansion: true
+reclaimPolicy: Delete
+parameters:
+  iscsiServerAddress: "192.168.0.151"
+  allowedCIDR: "192.168.0.128/27"
+  fsType: ext4
