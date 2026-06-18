@@ -14,5 +14,6 @@ version: 0.1.0
 
 # Version of the application (required).
 # This should be the main application version.
-appVersion: pr-317
+# renovate: datasource=docker depName=ghcr.io/c4illin/convertx
+appVersion: v0.17.0
 description: A Helm chart for convertx

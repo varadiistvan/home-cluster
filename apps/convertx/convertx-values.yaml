@@ -14,7 +14,7 @@ convertx:
     WEBROOT: null
   repository:
     image: ghcr.io/c4illin/convertx
-    tag: main
+    tag: '{{ .Chart.AppVersion }}'
   persistence:
     data:
       storageClass: iscsi-csi

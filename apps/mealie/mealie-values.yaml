@@ -1,6 +1,7 @@
 mealie:
   repository:
     image: ghcr.io/mealie-recipes/mealie
+    tag: '{{ .Chart.AppVersion }}'
   db:
     existingSecret:
       enabled: false
