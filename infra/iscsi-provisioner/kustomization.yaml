@@ -10,3 +10,4 @@ resources:
 - iscsi-csi-configmap.yaml
 - iscsi-csi-daemonset.yaml
 - iscsi-csi-deployment.yaml
+- iscsi-eio-remediator.yaml

@@ -60,7 +60,7 @@ spec:
               mountPath: /registration
         - name: iscsi-plugin
           # renovate: datasource=docker depName=harbor.stevevaradi.me/stevevaradi/csi-driver-iscsi
-          image: harbor.stevevaradi.me/stevevaradi/csi-driver-iscsi:v2.13.0
+          image: harbor.stevevaradi.me/stevevaradi/csi-driver-iscsi:v2.14.0
           imagePullPolicy: Always
           args:
             - "--endpoint=$(CSI_ENDPOINT)"

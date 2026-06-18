@@ -1,0 +1,256 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: iscsi-eio-remediator
+  namespace: storage
+  labels:
+    app.kubernetes.io/name: iscsi-eio-remediator
+    app.kubernetes.io/instance: iscsi-provisioner
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: iscsi-eio-remediator
+  labels:
+    app.kubernetes.io/name: iscsi-eio-remediator
+    app.kubernetes.io/instance: iscsi-provisioner
+rules:
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "delete"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create", "patch"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: iscsi-eio-remediator
+  labels:
+    app.kubernetes.io/name: iscsi-eio-remediator
+    app.kubernetes.io/instance: iscsi-provisioner
+subjects:
+  - kind: ServiceAccount
+    name: iscsi-eio-remediator
+    namespace: storage
+roleRef:
+  kind: ClusterRole
+  name: iscsi-eio-remediator
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: DaemonSet
+metadata:
+  name: iscsi-eio-remediator
+  namespace: storage
+  labels:
+    app.kubernetes.io/name: iscsi-eio-remediator
+    app.kubernetes.io/instance: iscsi-provisioner
+spec:
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: iscsi-eio-remediator
+      app.kubernetes.io/instance: iscsi-provisioner
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: iscsi-eio-remediator
+        app.kubernetes.io/instance: iscsi-provisioner
+    spec:
+      serviceAccountName: iscsi-eio-remediator
+      hostNetwork: true
+      dnsPolicy: ClusterFirstWithHostNet
+      containers:
+        - name: remediator
+          # renovate: datasource=docker depName=bitnami/kubectl
+          image: docker.io/bitnami/kubectl:1.33.4
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - /scripts/remediate-iscsi-eio.sh
+          env:
+            - name: NODE_NAME
+              valueFrom:
+                fieldRef:
+                  fieldPath: spec.nodeName
+            - name: HOME
+              value: /tmp
+            - name: TMPDIR
+              value: /tmp
+            - name: ENABLE_ANNOTATION
+              value: iscsi.stevevaradi.me/eio-remediate
+            - name: SCAN_INTERVAL_SECONDS
+              value: "30"
+            - name: PROBE_TIMEOUT_SECONDS
+              value: "5"
+            - name: DELETE_COOLDOWN_SECONDS
+              value: "300"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsUser: 0
+            runAsGroup: 0
+          resources:
+            requests:
+              cpu: 5m
+              memory: 32Mi
+            limits:
+              cpu: 100m
+              memory: 128Mi
+          volumeMounts:
+            - name: kubelet-dir
+              mountPath: /host/var/lib/kubelet
+              readOnly: true
+              mountPropagation: HostToContainer
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: state
+              mountPath: /state
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: kubelet-dir
+          hostPath:
+            path: /var/lib/kubelet
+            type: Directory
+        - name: scripts
+          configMap:
+            name: iscsi-eio-remediator
+            defaultMode: 0755
+        - name: state
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: iscsi-eio-remediator
+  namespace: storage
+  labels:
+    app.kubernetes.io/name: iscsi-eio-remediator
+    app.kubernetes.io/instance: iscsi-provisioner
+data:
+  remediate-iscsi-eio.sh: |
+    #!/bin/sh
+    set -eu
+
+    : "${NODE_NAME:?NODE_NAME is required}"
+    ENABLE_ANNOTATION="${ENABLE_ANNOTATION:-iscsi.stevevaradi.me/eio-remediate}"
+    SCAN_INTERVAL_SECONDS="${SCAN_INTERVAL_SECONDS:-30}"
+    PROBE_TIMEOUT_SECONDS="${PROBE_TIMEOUT_SECONDS:-5}"
+    DELETE_COOLDOWN_SECONDS="${DELETE_COOLDOWN_SECONDS:-300}"
+    KUBELET_ROOT="/host/var/lib/kubelet"
+
+    log() {
+      printf '%s %s\n' "$(date -Iseconds)" "$*"
+    }
+
+    now_seconds() {
+      date +%s
+    }
+
+    pod_info_for_uid() {
+      pod_uid="$1"
+      template='{{range .items}}{{if eq .metadata.uid "'$pod_uid'"}}{{.metadata.namespace}} {{.metadata.name}} {{with .metadata.annotations}}{{index . "'$ENABLE_ANNOTATION'"}}{{end}}{{"\n"}}{{end}}{{end}}'
+      kubectl get pods -A --field-selector "spec.nodeName=${NODE_NAME}" -o "go-template=${template}" 2>/dev/null || true
+    }
+
+    recently_deleted() {
+      key="$1"
+      state_file="/state/${key}"
+      [ -f "$state_file" ] || return 1
+
+      last="$(cat "$state_file" 2>/dev/null || echo 0)"
+      now="$(now_seconds)"
+      [ $((now - last)) -lt "$DELETE_COOLDOWN_SECONDS" ]
+    }
+
+    remember_delete() {
+      key="$1"
+      now_seconds > "/state/${key}"
+    }
+
+    probe_mount() {
+      mount_path="$1"
+      err_file="$2"
+
+      rm -f "$err_file"
+      if timeout "$PROBE_TIMEOUT_SECONDS" sh -c 'cd "$1" && ls -A . >/dev/null' sh "$mount_path" 2>"$err_file"; then
+        return 0
+      fi
+
+      if grep -qi 'input/output error' "$err_file"; then
+        return 2
+      fi
+      if grep -qi 'stale file handle' "$err_file"; then
+        return 2
+      fi
+
+      return 1
+    }
+
+    remediate_mount() {
+      mount_path="$1"
+      pod_uid="$(printf '%s\n' "$mount_path" | sed -n 's#^.*/pods/\([^/]*\)/volumes/kubernetes.io~csi/.*#\1#p')"
+      volume_name="$(printf '%s\n' "$mount_path" | sed -n 's#^.*/volumes/kubernetes.io~csi/\([^/]*\)/mount$#\1#p')"
+
+      if [ -z "$pod_uid" ] || [ -z "$volume_name" ]; then
+        log "could not parse pod UID or volume from ${mount_path}"
+        return
+      fi
+
+      info="$(pod_info_for_uid "$pod_uid")"
+      if [ -z "$info" ]; then
+        log "pod ${pod_uid} on ${NODE_NAME} no longer exists; skipping ${mount_path}"
+        return
+      fi
+
+      set -- $info
+      namespace="$1"
+      pod_name="$2"
+      enabled="${3:-}"
+
+      if [ "$enabled" != "true" ]; then
+        log "pod ${namespace}/${pod_name} has unhealthy iSCSI mount ${volume_name}, but ${ENABLE_ANNOTATION}=true is not set"
+        return
+      fi
+
+      cooldown_key="$(printf '%s-%s' "$namespace" "$pod_name" | tr -c 'A-Za-z0-9_.-' '_')"
+      if recently_deleted "$cooldown_key"; then
+        log "recently deleted ${namespace}/${pod_name}; cooldown active"
+        return
+      fi
+
+      log "deleting pod ${namespace}/${pod_name}: iSCSI mount ${volume_name} returned EIO"
+      kubectl -n "$namespace" create event "iscsi-eio-${pod_name}-$(now_seconds)" \
+        --for "pod/${pod_name}" \
+        --reason "IscsiMountEIO" \
+        --type "Warning" \
+        --message "iSCSI CSI mount ${volume_name} returned EIO on node ${NODE_NAME}; deleting pod to force remount" >/dev/null 2>&1 || true
+      if kubectl -n "$namespace" delete pod "$pod_name" --wait=false; then
+        remember_delete "$cooldown_key"
+      fi
+    }
+
+    log "starting iSCSI EIO remediator on ${NODE_NAME}"
+    while true; do
+      find "$KUBELET_ROOT/pods" -path '*/volumes/kubernetes.io~csi/*/mount' -type d 2>/dev/null | while read -r mount_path; do
+        err_file="/state/probe.err"
+        set +e
+        probe_mount "$mount_path" "$err_file"
+        rc="$?"
+        set -e
+        if [ "$rc" -eq 0 ]; then
+          continue
+        fi
+
+        if [ "$rc" -eq 2 ]; then
+          remediate_mount "$mount_path"
+        else
+          log "probe failed for ${mount_path}: $(cat "$err_file" 2>/dev/null || true)"
+        fi
+      done
+      sleep "$SCAN_INTERVAL_SECONDS"
+    done

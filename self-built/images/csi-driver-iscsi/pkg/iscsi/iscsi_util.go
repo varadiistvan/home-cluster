@@ -20,7 +20,7 @@ import (
 	"errors"
 	"fmt"
 	"os"
-	"os/exec"
+	osexec "os/exec"
 	"strings"
 	"syscall"
 	"time"
@@ -30,6 +30,7 @@ import (
 	"google.golang.org/grpc/status"
 	klog "k8s.io/klog/v2"
 
+	utilexec "k8s.io/utils/exec"
 	"k8s.io/utils/mount"
 )
 
@@ -40,13 +41,33 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 		return "", fmt.Errorf("connector is nil")
 	}
 
-	devicePath, err := (*b.connector).Connect()
+	connectAndPersist := func() (string, error) {
+		devicePath, err := (*b.connector).Connect()
+		if err != nil {
+			return "", err
+		}
+		if devicePath == "" {
+			return "", fmt.Errorf("connect reported success, but no path returned")
+		}
+
+		iscsiInfoPath := getIscsiInfoPath(b.VolName)
+		if err := os.MkdirAll(stateDir(), 0o750); err != nil {
+			klog.Errorf("failed to create iscsi state directory: %v", err)
+			return "", fmt.Errorf("unable to create persistence directory")
+		}
+		if err := iscsiLib.PersistConnector(b.connector, iscsiInfoPath); err != nil {
+			klog.Errorf("failed to persist connection info: %v, failing the publish request because persistence files are required for reliable Unpublish", err)
+			return "", fmt.Errorf("unable to create persistence file for connection")
+		}
+
+		return devicePath, nil
+	}
+
+	devicePath, err := connectAndPersist()
 	if err != nil {
 		return "", err
 	}
-	if devicePath == "" {
-		return "", fmt.Errorf("connect reported success, but no path returned")
-	}
+
 	// Mount device
 	mntPath := b.targetPath
 	notMnt, err := b.mounter.IsLikelyNotMountPoint(mntPath)
@@ -54,21 +75,39 @@ func (util *ISCSIUtil) AttachDisk(b iscsiDiskMounter) (string, error) {
 		return "", fmt.Errorf("heuristic determination of mount point failed:%v", err)
 	}
 	if !notMnt {
-		klog.Infof("iscsi: %s already mounted", mntPath)
-		return "", nil
-	}
-
-	if err := os.MkdirAll(mntPath, 0o750); err != nil {
+		if err := probeMountPath(mntPath, b.readOnly); err != nil {
+			if !isIOError(err) {
+				return "", fmt.Errorf("mounted path health check failed: %w", err)
+			}
+			klog.Warningf("iscsi: %s is mounted but returned I/O error, detaching stale session and remounting", mntPath)
+			unmounter := iscsiDiskUnmounter{
+				iscsiDisk: &iscsiDisk{VolName: b.VolName},
+				mounter:   mount.New(""),
+				exec:      utilexec.New(),
+			}
+			if err := util.DetachDisk(unmounter, mntPath); err != nil {
+				return "", fmt.Errorf("failed to detach stale mount after I/O error: %w", err)
+			}
+			devicePath, err = connectAndPersist()
+			if err != nil {
+				return "", err
+			}
+		} else {
+			klog.Infof("iscsi: %s already mounted", mntPath)
+			return "", nil
+		}
+	} else if err := os.MkdirAll(mntPath, 0o750); err != nil {
 		klog.Errorf("iscsi: failed to mkdir %s, error", mntPath)
 		return "", err
 	}
 
-	// Persist iscsi disk config to json file for DetachDisk path
-	iscsiInfoPath := getIscsiInfoPath(b.VolName)
-	err = iscsiLib.PersistConnector(b.connector, iscsiInfoPath)
-	if err != nil {
-		klog.Errorf("failed to persist connection info: %v, disconnecting volume and failing the publish request because persistence files are required for reliable Unpublish", err)
-		return "", fmt.Errorf("unable to create persistence file for connection")
+	notMnt, err = b.mounter.IsLikelyNotMountPoint(mntPath)
+	if err != nil && !os.IsNotExist(err) {
+		return "", fmt.Errorf("heuristic determination of mount point failed:%v", err)
+	}
+	if !notMnt {
+		klog.Infof("iscsi: %s already mounted", mntPath)
+		return "", nil
 	}
 
 	var options []string
@@ -111,7 +150,7 @@ func (util *ISCSIUtil) DetachDisk(c iscsiDiskUnmounter, targetPath string) error
 			errors.Is(err, syscall.EINVAL) || errors.Is(err, syscall.ENOENT) {
 			klog.Infof("Unmount skipped: %s not mounted", targetPath)
 		} else if errors.Is(err, syscall.EBUSY) || strings.Contains(err.Error(), "device or resource busy") {
-			_ = exec.Command("umount", "-l", targetPath).Run()
+			_ = osexec.Command("umount", "-l", targetPath).Run()
 		} else {
 			klog.Errorf("iscsi detach disk: failed to unmount: %s\nError: %v", targetPath, err)
 			return err
@@ -165,10 +204,32 @@ func getIscsiInfoPath(volumeID string) string {
 	return fmt.Sprintf("%s/iscsi-%s.json", stateDir(), volumeID)
 }
 
+func probeMountPath(targetPath string, readOnly bool) error {
+	if readOnly {
+		if _, err := os.ReadDir(targetPath); err != nil {
+			return err
+		}
+		return nil
+	}
+
+	probePath := fmt.Sprintf("%s/.iscsi-csi-healthcheck", targetPath)
+	if err := os.Mkdir(probePath, 0o700); err != nil && !errors.Is(err, os.ErrExist) {
+		return err
+	}
+	if err := os.Remove(probePath); err != nil && !errors.Is(err, os.ErrNotExist) {
+		return err
+	}
+	return nil
+}
+
+func isIOError(err error) bool {
+	return errors.Is(err, syscall.EIO) || strings.Contains(strings.ToLower(err.Error()), "input/output error")
+}
+
 func bestEffortLogoutByIQN(iqn string) error {
 	// Enumerate all node records for this IQN and logout/delete.
 	// iscsiadm -m node -T <iqn> prints entries for each portal.
-	cmd := exec.Command("iscsiadm", "-m", "node", "-T", iqn)
+	cmd := osexec.Command("iscsiadm", "-m", "node", "-T", iqn)
 	out, err := cmd.CombinedOutput()
 	if err != nil && !strings.Contains(string(out), "No records found") {
 		return err
@@ -181,9 +242,9 @@ func bestEffortLogoutByIQN(iqn string) error {
 			continue
 		}
 		portal := strings.Split(fields[0], ",")[0]
-		_ = exec.Command("iscsiadm", "-m", "node", "-T", iqn, "-p", portal, "-u").Run()
+		_ = osexec.Command("iscsiadm", "-m", "node", "-T", iqn, "-p", portal, "-u").Run()
 	}
 	// Delete the node db entry for IQN
-	_ = exec.Command("iscsiadm", "-m", "node", "-T", iqn, "-o", "delete").Run()
+	_ = osexec.Command("iscsiadm", "-m", "node", "-T", iqn, "-o", "delete").Run()
 	return nil
 }
