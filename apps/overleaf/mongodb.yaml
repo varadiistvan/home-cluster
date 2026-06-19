@@ -1,0 +1,49 @@
+---
+apiVersion: mongodbcommunity.mongodb.com/v1
+kind: MongoDBCommunity
+metadata:
+  name: overleaf-mongodb
+  namespace: storage
+spec:
+  members: 1
+  type: ReplicaSet
+  featureCompatibilityVersion: "7.0"
+  version: "7.0.23"
+  security:
+    authentication:
+      modes:
+        - SCRAM
+  users:
+    - name: overleaf
+      db: admin
+      passwordSecretRef:
+        name: overleaf-mongodb
+      roles:
+        - name: readWrite
+          db: sharelatex
+        - name: dbAdmin
+          db: sharelatex
+      scramCredentialsSecretName: overleaf-scram
+  additionalMongodConfig:
+    storage.wiredTiger.engineConfig.journalCompressor: zlib
+  statefulSet:
+    spec:
+      volumeClaimTemplates:
+        - metadata:
+            name: data-volume
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            storageClassName: iscsi-csi
+            resources:
+              requests:
+                storage: 20Gi
+        - metadata:
+            name: logs-volume
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            storageClassName: nfs-csi
+            resources:
+              requests:
+                storage: 2Gi

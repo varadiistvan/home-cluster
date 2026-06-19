@@ -1,0 +1,46 @@
+\documentclass{article}
+\usepackage[english,dutch]{babel}
+\usepackage{amsmath,amssymb,mathtools}
+\usepackage{booktabs}
+\usepackage{csquotes}
+\usepackage{fontspec}
+\usepackage{graphicx}
+\usepackage{hyperref}
+\usepackage{minted}
+\usepackage{pgfplots}
+\usepackage{siunitx}
+\usepackage{xcolor}
+
+\pgfplotsset{compat=1.18}
+\setmainfont{Latin Modern Roman}
+
+\begin{document}
+\section{Smoke test}
+
+This document verifies the packages that commonly break Overleaf projects.
+
+\[
+  \int_0^1 x^2\,dx = \frac{1}{3}
+\]
+
+\begin{tabular}{lr}
+\toprule
+Package & Value \\
+\midrule
+siunitx & \SI{42}{\meter\per\second} \\
+\bottomrule
+\end{tabular}
+
+\textcolor{blue}{\enquote{A quoted note with color support.}}
+
+\begin{minted}{python}
+print("minted works")
+\end{minted}
+
+\begin{tikzpicture}
+\begin{axis}[width=6cm,height=4cm]
+\addplot coordinates {(0,0) (1,1) (2,4)};
+\end{axis}
+\end{tikzpicture}
+
+\end{document}

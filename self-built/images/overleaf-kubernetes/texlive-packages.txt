@@ -1,0 +1,47 @@
+# Keep the default Docker build on scheme-full for fewer editor surprises.
+# This list documents packages and collections that have caused missing-package
+# failures before, and lets the build fail early if one disappears upstream.
+collection-fontsrecommended
+collection-latexextra
+collection-latexrecommended
+collection-luatex
+collection-mathscience
+collection-pictures
+collection-publishers
+algorithmicx
+algorithms
+amsmath
+apacite
+babel
+babel-dutch
+biber
+biblatex
+booktabs
+caption
+csquotes
+dirtytalk
+enumitem
+float
+fontspec
+footmisc
+framed
+graphics
+hyperref
+latexmk
+lipsum
+mathtools
+minted
+mnsymbol
+moresize
+pdfpages
+pgf
+pgfplots
+ragged2e
+siunitx
+soul
+tcolorbox
+titlesec
+tocloft
+todonotes
+wrapfig
+xcolor

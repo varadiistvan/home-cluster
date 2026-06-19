@@ -21,6 +21,7 @@ resources:
   - mealie
   - mqtt
   - obico
+  - overleaf
   - penpot
   - planka
   - redis

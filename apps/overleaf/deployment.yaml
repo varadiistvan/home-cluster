@@ -1,0 +1,113 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: overleaf
+  namespace: storage
+  labels:
+    app.kubernetes.io/name: overleaf
+    app.kubernetes.io/instance: overleaf
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: overleaf
+      app.kubernetes.io/instance: overleaf
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: overleaf
+        app.kubernetes.io/instance: overleaf
+      annotations:
+        iscsi.stevevaradi.me/eio-remediate: "true"
+    spec:
+      terminationGracePeriodSeconds: 90
+      imagePullSecrets:
+        - name: registry-pass
+      containers:
+        - name: overleaf
+          # renovate: datasource=docker depName=harbor.stevevaradi.me/stevevaradi/overleaf-kubernetes
+          image: harbor.stevevaradi.me/stevevaradi/overleaf-kubernetes:v0.1.0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 80
+          env:
+            - name: OVERLEAF_APP_NAME
+              value: Overleaf Community Edition
+            - name: OVERLEAF_SITE_URL
+              value: https://overleaf.stevevaradi.me
+            - name: OVERLEAF_NAV_TITLE
+              value: Overleaf
+            - name: OVERLEAF_MONGO_URL
+              value: mongodb://overleaf:$(MONGO_PASSWORD)@overleaf-mongodb-svc.storage.svc.cluster.local:27017/sharelatex?authSource=admin&replicaSet=overleaf-mongodb
+            - name: MONGO_URL
+              value: mongodb://overleaf:$(MONGO_PASSWORD)@overleaf-mongodb-svc.storage.svc.cluster.local:27017/sharelatex?authSource=admin&replicaSet=overleaf-mongodb
+            - name: MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: overleaf-mongodb
+                  key: password
+            - name: OVERLEAF_REDIS_HOST
+              value: overleaf-redis-master.storage.svc.cluster.local
+            - name: REDIS_HOST
+              value: overleaf-redis-master.storage.svc.cluster.local
+            - name: OVERLEAF_REDIS_PORT
+              value: "6379"
+            - name: REDIS_PORT
+              value: "6379"
+            - name: ENABLED_LINKED_FILE_TYPES
+              value: project_file,project_output_file
+            - name: ENABLE_CONVERSIONS
+              value: "true"
+            - name: EMAIL_CONFIRMATION_DISABLED
+              value: "true"
+            - name: ENABLE_CRON_RESOURCE_DELETION
+              value: "true"
+            - name: SANDBOXED_COMPILES
+              value: "false"
+            - name: SANDBOXED_COMPILES_SIBLING_CONTAINERS
+              value: "false"
+            - name: DOCKER_RUNNER
+              value: "false"
+          envFrom:
+            - secretRef:
+                name: overleaf
+          startupProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 60
+          readinessProbe:
+            httpGet:
+              path: /
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /
+              port: http
+            initialDelaySeconds: 300
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 4
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              cpu: "4"
+              memory: 8Gi
+          volumeMounts:
+            - name: data
+              mountPath: /var/lib/overleaf
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: overleaf-data
