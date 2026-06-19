@@ -17,11 +17,11 @@ spec:
     spec:
       chart: kube-prometheus-stack
       # renovate: datasource=helm depName=kube-prometheus-stack registryUrl=https://prometheus-community.github.io/helm-charts
-      version: 86.3.1
+      version: 86.x.x
       sourceRef:
         kind: HelmRepository
         name: prometheus-community
         namespace: flux-system
   valuesFrom:
-  - kind: ConfigMap
-    name: misty-show-values
+    - kind: ConfigMap
+      name: misty-show-values
