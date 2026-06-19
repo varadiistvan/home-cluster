@@ -41,15 +41,15 @@ spec:
               value: https://overleaf.stevevaradi.me
             - name: OVERLEAF_NAV_TITLE
               value: Overleaf
-            - name: OVERLEAF_MONGO_URL
-              value: mongodb://overleaf:$(MONGO_PASSWORD)@overleaf-mongodb-svc.storage.svc.cluster.local:27017/sharelatex?authSource=admin&replicaSet=overleaf-mongodb
-            - name: MONGO_URL
-              value: mongodb://overleaf:$(MONGO_PASSWORD)@overleaf-mongodb-svc.storage.svc.cluster.local:27017/sharelatex?authSource=admin&replicaSet=overleaf-mongodb
             - name: MONGO_PASSWORD
               valueFrom:
                 secretKeyRef:
                   name: overleaf-mongodb
                   key: password
+            - name: OVERLEAF_MONGO_URL
+              value: mongodb://overleaf:$(MONGO_PASSWORD)@overleaf-mongodb-svc.storage.svc.cluster.local:27017/sharelatex?authSource=admin&replicaSet=overleaf-mongodb
+            - name: MONGO_URL
+              value: mongodb://overleaf:$(MONGO_PASSWORD)@overleaf-mongodb-svc.storage.svc.cluster.local:27017/sharelatex?authSource=admin&replicaSet=overleaf-mongodb
             - name: OVERLEAF_REDIS_HOST
               value: overleaf-redis-master.storage.svc.cluster.local
             - name: REDIS_HOST

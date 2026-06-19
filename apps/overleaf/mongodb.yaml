@@ -23,6 +23,8 @@ spec:
           db: sharelatex
         - name: dbAdmin
           db: sharelatex
+        - name: clusterMonitor
+          db: admin
       scramCredentialsSecretName: overleaf-scram
   additionalMongodConfig:
     storage.wiredTiger.engineConfig.journalCompressor: zlib

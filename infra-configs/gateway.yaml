@@ -170,6 +170,18 @@ spec:
         namespaces:
           from: All
 
+    - name: https-overleaf
+      protocol: HTTPS
+      port: 443
+      hostname: overleaf.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: overleaf-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
     - name: https-penpot
       protocol: HTTPS
       port: 443
