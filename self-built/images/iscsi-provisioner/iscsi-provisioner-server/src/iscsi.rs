@@ -4,9 +4,12 @@ use std::io::Write;
 use std::os::unix::process::ExitStatusExt;
 use std::path::Path;
 use std::process::{Command, Output};
+use std::sync::{Mutex, OnceLock};
 use std::time::Duration;
 use std::{env, fs};
 use xattr::{get, set};
+
+static ISCSI_CREATE_LOCK: OnceLock<Mutex<()>> = OnceLock::new();
 
 // Utility to run a command and get its output with error handling
 fn run_command(command: &str, args: &[&str]) -> Result<Output, String> {
@@ -41,9 +44,11 @@ pub fn create_and_expose_lun(
 
     std::thread::sleep(Duration::from_secs(5));
 
-    // Create and expose the LUN via iSCSI using existing function
-    let res = create_iscsi_lun(target_name, lun_path, initiator_cidr)
-        .map_err(|e| format!("Failed to create and expose LUN: {}", e));
+    // Create and expose the LUN via iSCSI using existing function.
+    // This must be idempotent because CSI CreateVolume may be retried after
+    // the sidecar times out even if the first backend create completed.
+    let tid = create_iscsi_lun(target_name, lun_path, initiator_cidr)
+        .map_err(|e| format!("Failed to create and expose LUN: {}", e))?;
 
     let file = fs::File::create(format!("{}/{}.conf", get_tgt_conf_path(), target_name));
 
@@ -65,7 +70,7 @@ pub fn create_and_expose_lun(
         }
     }
 
-    res
+    Ok(tid)
 }
 
 // Utility: Create a LUN image file
@@ -335,11 +340,28 @@ fn create_iscsi_lun(
     lun_path: &str,
     initiator_cidr: &str,
 ) -> Result<usize, String> {
+    let _guard = ISCSI_CREATE_LOCK
+        .get_or_init(|| Mutex::new(()))
+        .lock()
+        .map_err(|e| format!("iSCSI create lock poisoned: {}", e))?;
+
+    if let Ok(existing_tid) = get_tid_for_target(target_name) {
+        println!(
+            "Target '{}' already exists as TID {}, reconciling existing target",
+            target_name, existing_tid
+        );
+        ensure_target_bound(existing_tid, initiator_cidr)?;
+        ensure_lun_attached(existing_tid, target_name, lun_path)?;
+        set(lun_path, "user.iscsi-id", &existing_tid.to_ne_bytes())
+            .map_err(|e| format!("Error setting xattr on LUN '{}': {}", lun_path, e))?;
+        return Ok(existing_tid);
+    }
+
     // Determine the next available TID
     let next_tid = get_next_available_tid()?;
 
     // Create iSCSI target with the specified name using dynamic TID
-    run_command(
+    if let Err(e) = run_command(
         "tgtadm",
         &[
             "--lld",
@@ -353,10 +375,43 @@ fn create_iscsi_lun(
             "--targetname",
             target_name,
         ],
-    )
-    .map_err(|e| format!("Failed to create iSCSI target '{}': {}", target_name, e))?;
+    ) {
+        if e.contains("target already exists") {
+            let existing_tid = get_tid_for_target(target_name)?;
+            println!(
+                "Target '{}' appeared during create as TID {}, reconciling existing target",
+                target_name, existing_tid
+            );
+            ensure_target_bound(existing_tid, initiator_cidr)?;
+            ensure_lun_attached(existing_tid, target_name, lun_path)?;
+            set(lun_path, "user.iscsi-id", &existing_tid.to_ne_bytes())
+                .map_err(|e| format!("Error setting xattr on LUN '{}': {}", lun_path, e))?;
+            return Ok(existing_tid);
+        }
 
-    run_command(
+        return Err(format!(
+            "Failed to create iSCSI target '{}': {}",
+            target_name, e
+        ));
+    }
+
+    ensure_target_bound(next_tid, initiator_cidr)
+        .map_err(|e| format!("Failed to bind portal to target '{}': {}", target_name, e))?;
+
+    dbg!(lun_path);
+    dbg!(next_tid);
+
+    ensure_lun_attached(next_tid, target_name, lun_path)?;
+
+    set(lun_path, "user.iscsi-id", &next_tid.to_ne_bytes())
+        .map_err(|e| format!("Error setting xattr on LUN '{}': {}", lun_path, e))?;
+
+    Ok(next_tid)
+}
+
+fn ensure_target_bound(tid: usize, initiator_cidr: &str) -> Result<(), String> {
+    let tid = tid.to_string();
+    match run_command(
         "tgtadm",
         &[
             "--lld",
@@ -366,18 +421,32 @@ fn create_iscsi_lun(
             "--op",
             "bind",
             "--tid",
-            &next_tid.to_string(),
+            &tid,
             "--initiator-address",
             initiator_cidr,
         ],
-    )
-    .map_err(|e| format!("Failed to bind portal to target '{}': {}", target_name, e))?;
+    ) {
+        Ok(_) => Ok(()),
+        Err(e) if e.contains("this access control rule already exists") => Ok(()),
+        Err(e) if e.contains("already exists") => Ok(()),
+        Err(e) => Err(e),
+    }
+}
 
-    dbg!(lun_path);
-    dbg!(next_tid);
+fn ensure_lun_attached(tid: usize, target_name: &str, lun_path: &str) -> Result<(), String> {
+    if let Some(existing_path) = get_lun_backing_store(tid, 1)? {
+        if existing_path == lun_path {
+            return Ok(());
+        }
 
-    // Attach the LUN to the target with LUN ID 1
-    run_command(
+        return Err(format!(
+            "Target '{}' TID {} already has LUN 1 backing store '{}', expected '{}'",
+            target_name, tid, existing_path, lun_path
+        ));
+    }
+
+    let tid = tid.to_string();
+    match run_command(
         "tgtadm",
         &[
             "--lld",
@@ -387,19 +456,66 @@ fn create_iscsi_lun(
             "--op",
             "new",
             "--tid",
-            &next_tid.to_string(),
+            &tid,
             "--lun",
             "1",
             "--backing-store",
             lun_path,
         ],
-    )
-    .map_err(|e| format!("Failed to attach LUN to target '{}': {}", target_name, e))?;
+    ) {
+        Ok(_) => Ok(()),
+        Err(e) if e.contains("logical unit number already exists") => {
+            println!(
+                "Target '{}' TID {} already has LUN 1, treating attach as idempotent",
+                target_name, tid
+            );
+            Ok(())
+        }
+        Err(e) => Err(format!(
+            "Failed to attach LUN to target '{}': {}",
+            target_name, e
+        )),
+    }?;
 
-    set(lun_path, "user.iscsi-id", &next_tid.to_ne_bytes())
-        .map_err(|e| format!("Error setting xattr on LUN '{}': {}", lun_path, e))?;
+    Ok(())
+}
 
-    Ok(next_tid)
+fn get_lun_backing_store(tid: usize, lun: usize) -> Result<Option<String>, String> {
+    let output = run_command(
+        "tgtadm",
+        &[
+            "--lld",
+            "iscsi",
+            "--mode",
+            "target",
+            "--op",
+            "show",
+            "--tid",
+            &tid.to_string(),
+        ],
+    )?;
+    let stdout = String::from_utf8_lossy(&output.stdout);
+    let mut in_target_lun = false;
+
+    for line in stdout.lines() {
+        let trimmed = line.trim();
+        if let Some(rest) = trimmed.strip_prefix("LUN:") {
+            in_target_lun = rest.trim().parse::<usize>().ok() == Some(lun);
+            continue;
+        }
+
+        if in_target_lun {
+            if trimmed.starts_with("LUN:") || trimmed.starts_with("Account information:") {
+                return Ok(None);
+            }
+
+            if let Some(rest) = trimmed.strip_prefix("Backing store path:") {
+                return Ok(Some(rest.trim().to_string()));
+            }
+        }
+    }
+
+    Ok(None)
 }
 
 fn list_active_connections(target_name: &str) -> Result<bool, String> {
