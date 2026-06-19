@@ -17,11 +17,11 @@ spec:
     spec:
       chart: renovate
       # renovate: datasource=docker depName=ghcr.io/renovatebot/charts/renovate
-      version: 46.199.0
+      version: 46.x.x
       sourceRef:
         kind: HelmRepository
         name: ghcr-renovatebot
         namespace: flux-system
   valuesFrom:
-  - kind: ConfigMap
-    name: renovate-values
+    - kind: ConfigMap
+      name: renovate-values
