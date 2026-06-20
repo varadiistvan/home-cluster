@@ -63,6 +63,11 @@ spec:
         app.kubernetes.io/instance: iscsi-provisioner
     spec:
       serviceAccountName: iscsi-eio-remediator
+      tolerations:
+        - key: iscsi.stevevaradi.me/eio
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
       imagePullSecrets:
         - name: registry-pass
       hostNetwork: true
@@ -220,6 +225,10 @@ data:
       err_file="$2"
 
       rm -f "$err_file"
+      if [ ! -d "$mount_path" ]; then
+        return 0
+      fi
+
       if timeout "$PROBE_TIMEOUT_SECONDS" sh -c '
         cd "$1" &&
         ls -A . >/dev/null &&

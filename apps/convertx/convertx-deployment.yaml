@@ -20,6 +20,22 @@ spec:
       annotations:
         iscsi.stevevaradi.me/eio-remediate: "true"
     spec:
+      initContainers:
+        - name: init-data-permissions
+          image: alpine:3.20
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -ec
+          args:
+            - |
+              chmod 0777 /app/data
+          securityContext:
+            runAsUser: 0
+            runAsGroup: 0
+          volumeMounts:
+            - mountPath: /app/data
+              name: data
       containers:
         - name: convertx
           # renovate: datasource=docker depName=ghcr.io/c4illin/convertx
