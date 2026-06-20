@@ -17,6 +17,8 @@ spec:
       labels:
         app.kubernetes.io/name: mealie
         app.kubernetes.io/instance: mealie
+      annotations:
+        iscsi.stevevaradi.me/eio-remediate: "true"
     spec:
       containers:
         - name: mealie

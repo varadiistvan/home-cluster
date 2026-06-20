@@ -17,6 +17,8 @@ spec:
       labels:
         app.kubernetes.io/name: convertx
         app.kubernetes.io/instance: convertx
+      annotations:
+        iscsi.stevevaradi.me/eio-remediate: "true"
     spec:
       containers:
         - name: convertx

@@ -86,6 +86,8 @@ spec:
               value: /tmp
             - name: ENABLE_ANNOTATION
               value: iscsi.stevevaradi.me/eio-remediate
+            - name: REMEDIATE_UNANNOTATED
+              value: "true"
             - name: SCAN_INTERVAL_SECONDS
               value: "30"
             - name: PROBE_TIMEOUT_SECONDS
@@ -149,6 +151,7 @@ data:
 
     : "${NODE_NAME:?NODE_NAME is required}"
     ENABLE_ANNOTATION="${ENABLE_ANNOTATION:-iscsi.stevevaradi.me/eio-remediate}"
+    REMEDIATE_UNANNOTATED="${REMEDIATE_UNANNOTATED:-false}"
     SCAN_INTERVAL_SECONDS="${SCAN_INTERVAL_SECONDS:-30}"
     PROBE_TIMEOUT_SECONDS="${PROBE_TIMEOUT_SECONDS:-5}"
     DELETE_COOLDOWN_SECONDS="${DELETE_COOLDOWN_SECONDS:-300}"
@@ -266,7 +269,12 @@ data:
       pod_name="$2"
       enabled="${3:-}"
 
-      if [ "$enabled" != "true" ]; then
+      if [ "$enabled" = "false" ]; then
+        log "pod ${namespace}/${pod_name} has unhealthy iSCSI mount ${volume_name}, but ${ENABLE_ANNOTATION}=false is set"
+        return
+      fi
+
+      if [ "$enabled" != "true" ] && [ "$REMEDIATE_UNANNOTATED" != "true" ]; then
         log "pod ${namespace}/${pod_name} has unhealthy iSCSI mount ${volume_name}, but ${ENABLE_ANNOTATION}=true is not set"
         return
       fi

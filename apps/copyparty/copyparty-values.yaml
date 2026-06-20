@@ -8,6 +8,8 @@ imagePullSecrets:
 serviceAccount:
   create: true
   automount: true
+podAnnotations:
+  iscsi.stevevaradi.me/eio-remediate: "true"
 service:
   type: ClusterIP
   http: 3923

@@ -18,7 +18,8 @@ configmap:
   annotations: {}
 statefulset:
   annotations: {}
-  podAnnotations: {}
+  podAnnotations:
+    iscsi.stevevaradi.me/eio-remediate: "true"
   storage:
     enabled: true
     size: 10Gi

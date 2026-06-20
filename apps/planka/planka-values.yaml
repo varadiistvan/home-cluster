@@ -12,7 +12,8 @@ postgresql:
 baseUrl: https://planka.stevevaradi.me
 serviceAccount:
   create: true
-podAnnotations: {}
+podAnnotations:
+  iscsi.stevevaradi.me/eio-remediate: "true"
 podSecurityContext: {}
 deploymentAnnotations: {}
 securityContext: {}

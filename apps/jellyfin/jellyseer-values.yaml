@@ -1,5 +1,7 @@
 imagePullSecrets:
   - name: registry-pass
+podAnnotations:
+  iscsi.stevevaradi.me/eio-remediate: "true"
 serviceAccount:
   create: true
   automount: true

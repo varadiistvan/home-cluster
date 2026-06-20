@@ -6,6 +6,9 @@ metadata:
   namespace: storage
 spec:
   instances: 3
+  inheritedMetadata:
+    annotations:
+      iscsi.stevevaradi.me/eio-remediate: "true"
   imageName: harbor.stevevaradi.me/stevevaradi/vector-pg:16
   imagePullPolicy: Always
   imagePullSecrets:

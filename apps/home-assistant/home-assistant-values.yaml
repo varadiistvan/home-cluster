@@ -5,7 +5,8 @@ imagePullSecrets:
 - name: registry-pass
 serviceAccount:
   create: true
-podAnnotations: {}
+podAnnotations:
+  iscsi.stevevaradi.me/eio-remediate: "true"
 env:
 - name: TZ
   value: Europe/Amsterdam

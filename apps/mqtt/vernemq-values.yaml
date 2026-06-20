@@ -77,7 +77,8 @@ statefulset:
   updateStrategy: RollingUpdate
   rollingUpdate: {}
   terminationGracePeriodSeconds: 60
-  podAnnotations: {}
+  podAnnotations:
+    iscsi.stevevaradi.me/eio-remediate: "true"
 pdb:
   enabled: false
   minAvailable: 1

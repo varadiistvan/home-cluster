@@ -2,6 +2,8 @@ server:
   image:
     repository: ghcr.io/gabe565/obico/web
     tag: sha-e3993e83d5a7f07617275c3e71b011c5ca59fa4d
+  podAnnotations:
+    iscsi.stevevaradi.me/eio-remediate: "true"
   env:
     EMAIL_HOST: smtp.gmail.com
     EMAIL_PORT: '587'
