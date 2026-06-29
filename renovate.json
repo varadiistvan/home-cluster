@@ -89,7 +89,7 @@
       }
     },
     {
-      "matchManagers": ["regex"],
+      "matchManagers": ["custom.regex"],
       "matchFileNames": ["**/Chart.yaml"],
       "automerge": true,
       "automergeType": "branch",
