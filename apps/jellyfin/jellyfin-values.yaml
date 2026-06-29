@@ -3,6 +3,8 @@ image:
   tag: "10.10.7"
 podAnnotations:
   iscsi.stevevaradi.me/eio-remediate: "true"
+deploymentStrategy:
+  type: Recreate
 affinity:
   nodeAffinity:
     preferredDuringSchedulingIgnoredDuringExecution:

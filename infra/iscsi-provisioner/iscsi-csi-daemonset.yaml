@@ -21,6 +21,11 @@ spec:
         app.kubernetes.io/component: node
     spec:
       serviceAccountName: csi-iscsi-custom-node-sa
+      tolerations:
+        - key: iscsi.stevevaradi.me/eio
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
       imagePullSecrets:
         - name: registry-pass
       hostNetwork: true

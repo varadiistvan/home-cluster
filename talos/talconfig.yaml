@@ -3,8 +3,8 @@
 ---
 clusterName: home
 # talhelper-validated; renovate can bump these
-talosVersion: v1.13.4
-kubernetesVersion: v1.34.1
+talosVersion: v1.13.5
+kubernetesVersion: v1.36.2
 # Shared VIP for the API server, held by whichever control plane is alive.
 # 192.168.0.155 assumed free — verify before cutover (.150 is the zigbee coordinator!).
 endpoint: https://192.168.0.155:6443
@@ -200,6 +200,8 @@ nodes:
       overlay:
         image: siderolabs/sbc-raspberrypi
         name: rpi_5
+        options:
+          configTxtAppend: dtparam=pciex1_gen=3
       customization:
         systemExtensions:
           officialExtensions:
@@ -226,6 +228,8 @@ nodes:
       overlay:
         image: siderolabs/sbc-raspberrypi
         name: rpi_5
+        options:
+          configTxtAppend: dtparam=pciex1_gen=3
       customization:
         systemExtensions:
           officialExtensions:

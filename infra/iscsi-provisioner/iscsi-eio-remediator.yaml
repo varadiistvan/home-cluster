@@ -103,6 +103,8 @@ spec:
               value: "true"
             - name: NODE_EIO_TAINT
               value: iscsi.stevevaradi.me/eio=true:NoSchedule
+            - name: CLEAR_TAINT_AFTER_CLEAN_SECONDS
+              value: "120"
           securityContext:
             allowPrivilegeEscalation: false
             readOnlyRootFilesystem: true
@@ -162,6 +164,7 @@ data:
     DELETE_COOLDOWN_SECONDS="${DELETE_COOLDOWN_SECONDS:-300}"
     TAINT_NODE_ON_EIO="${TAINT_NODE_ON_EIO:-true}"
     NODE_EIO_TAINT="${NODE_EIO_TAINT:-iscsi.stevevaradi.me/eio=true:NoSchedule}"
+    CLEAR_TAINT_AFTER_CLEAN_SECONDS="${CLEAR_TAINT_AFTER_CLEAN_SECONDS:-600}"
     KUBELET_ROOT="/host/var/lib/kubelet"
     TERMINATING=0
     ACTIVE_CHILD=""
@@ -212,12 +215,70 @@ data:
       now_seconds > "/state/${key}"
     }
 
+    taint_key() {
+      printf '%s\n' "$NODE_EIO_TAINT" | sed 's/[=:].*//'
+    }
+
+    taint_remove_arg() {
+      printf '%s-\n' "$(taint_key)"
+    }
+
+    node_is_quarantined() {
+      [ "$TAINT_NODE_ON_EIO" = "true" ] || return 1
+
+      key="$(taint_key)"
+      found="$(kubectl get node "$NODE_NAME" -o "jsonpath={.spec.taints[?(@.key=='$key')].key}" 2>/dev/null || true)"
+      [ "$found" = "$key" ]
+    }
+
+    record_eio() {
+      now_seconds > /state/last-eio
+      rm -f /state/clean-since
+    }
+
     quarantine_node() {
       [ "$TAINT_NODE_ON_EIO" = "true" ] || return 0
 
+      record_eio
       log "tainting node ${NODE_NAME} with ${NODE_EIO_TAINT}: iSCSI mount returned EIO"
       kubectl taint node "$NODE_NAME" "$NODE_EIO_TAINT" --overwrite >/dev/null 2>&1 || \
         log "failed to taint node ${NODE_NAME} with ${NODE_EIO_TAINT}"
+    }
+
+    clear_recovered_node() {
+      [ "$TAINT_NODE_ON_EIO" = "true" ] || return 0
+      [ "$CLEAR_TAINT_AFTER_CLEAN_SECONDS" -gt 0 ] || return 0
+
+      if ! node_is_quarantined; then
+        rm -f /state/clean-since /state/last-eio
+        return 0
+      fi
+
+      now="$(now_seconds)"
+      if [ -f /state/last-eio ]; then
+        last_eio="$(cat /state/last-eio 2>/dev/null || echo "$now")"
+        if [ $((now - last_eio)) -lt "$CLEAR_TAINT_AFTER_CLEAN_SECONDS" ]; then
+          return 0
+        fi
+      fi
+
+      if [ ! -f /state/clean-since ]; then
+        printf '%s\n' "$now" > /state/clean-since
+        log "node ${NODE_NAME} is quarantined but iSCSI probes are clean; starting recovery timer"
+        return 0
+      fi
+
+      clean_since="$(cat /state/clean-since 2>/dev/null || echo "$now")"
+      if [ $((now - clean_since)) -lt "$CLEAR_TAINT_AFTER_CLEAN_SECONDS" ]; then
+        return 0
+      fi
+
+      log "removing ${NODE_EIO_TAINT} from node ${NODE_NAME}: iSCSI probes stayed clean for ${CLEAR_TAINT_AFTER_CLEAN_SECONDS}s"
+      if kubectl taint node "$NODE_NAME" "$(taint_remove_arg)" >/dev/null 2>&1; then
+        rm -f /state/clean-since /state/last-eio
+      else
+        log "failed to remove ${NODE_EIO_TAINT} from node ${NODE_NAME}"
+      fi
     }
 
     probe_mount() {
@@ -310,6 +371,7 @@ data:
     log "starting iSCSI EIO remediator on ${NODE_NAME}"
     while [ "$TERMINATING" -eq 0 ]; do
       scan_file="/state/csi-paths"
+      eio_seen=0
       find "$KUBELET_ROOT/pods" -path '*/volumes/kubernetes.io~csi/*' ! -path '*/volumes/kubernetes.io~csi/*/*' >"$scan_file" 2>/dev/null || true
 
       while IFS= read -r csi_path; do
@@ -337,11 +399,17 @@ data:
         fi
 
         if [ "$rc" -eq 2 ]; then
+          eio_seen=1
+          record_eio
           remediate_mount "$mount_path"
         else
           log "probe failed for ${mount_path}: $(cat "$err_file" 2>/dev/null || true)"
         fi
       done < "$scan_file"
+
+      if [ "$eio_seen" -eq 0 ]; then
+        clear_recovered_node
+      fi
 
       [ "$TERMINATING" -eq 0 ] || break
       interruptible_sleep
