@@ -46,6 +46,17 @@
     {
       "customType": "regex",
       "managerFilePatterns": [
+        "/(^|/)talconfig\\.yaml$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+versioning=(?<versioning>[^\\s]+))?\\n(?<depKey>talosVersion|kubernetesVersion):\\s+(?<currentValue>\\S+)"
+      ],
+      "autoReplaceStringTemplate": "# renovate: datasource={{{datasource}}} depName={{{depName}}}{{#if versioning}} versioning={{{versioning}}}{{/if}}\n{{{depKey}}}: {{{newValue}}}",
+      "description": "Update Talos and Kubernetes versions in talhelper config"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
         "/(^|/)Chart\\.yaml$/"
       ],
       "matchStrings": [
