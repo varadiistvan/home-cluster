@@ -281,6 +281,22 @@ data:
       fi
     }
 
+    mount_options_for() {
+      mount_path="$1"
+      awk -v mp="$mount_path" '$2==mp{opts=$4} END{print opts}' /proc/mounts
+    }
+
+    # "ro" with no emergency_ro = intentional; emergency_ro = forced by kernel after abort
+    mount_is_intentionally_readonly() {
+      mount_path="$1"
+      opts=",$(mount_options_for "$mount_path"),"
+      case "$opts" in
+        *,emergency_ro,*) return 1 ;;
+        *,ro,*) return 0 ;;
+        *) return 1 ;;
+      esac
+    }
+
     probe_mount() {
       mount_path="$1"
       err_file="$2"
@@ -312,7 +328,10 @@ data:
         return 2
       fi
       if grep -qi 'read-only file system' "$err_file"; then
-        return 0
+        if mount_is_intentionally_readonly "$mount_path"; then
+          return 0
+        fi
+        return 2
       fi
 
       return 1
