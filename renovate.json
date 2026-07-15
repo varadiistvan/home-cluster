@@ -79,6 +79,12 @@
       "addLabels": ["self-built"]
     },
     {
+      "description": "Group dependencies by self-built project",
+      "matchFileNames": ["self-built/**"],
+      "groupName": "self-built dependencies in {{packageFileDir}}",
+      "separateMajorMinor": false
+    },
+    {
       "matchPackageNames": ["kube-prometheus-stack"],
       "postUpgradeTasks": {
         "commands": [
