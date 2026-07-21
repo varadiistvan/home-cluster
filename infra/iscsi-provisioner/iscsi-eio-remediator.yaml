@@ -21,9 +21,9 @@ rules:
   - apiGroups: [""]
     resources: ["nodes"]
     verbs: ["get", "patch"]
-  - apiGroups: [""]
+  - apiGroups: ["events.k8s.io"]
     resources: ["events"]
-    verbs: ["create", "patch"]
+    verbs: ["create"]
 ---
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1
@@ -75,7 +75,7 @@ spec:
       containers:
         - name: remediator
           # renovate: datasource=docker depName=harbor.stevevaradi.me/stevevaradi/iscsi-eio-remediator
-          image: harbor.stevevaradi.me/stevevaradi/iscsi-eio-remediator:v0.1.0
+          image: harbor.stevevaradi.me/stevevaradi/iscsi-eio-remediator:v0.2.0
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -92,11 +92,15 @@ spec:
             - name: ENABLE_ANNOTATION
               value: iscsi.stevevaradi.me/eio-remediate
             - name: REMEDIATE_UNANNOTATED
-              value: "true"
+              value: "false"
+            - name: CSI_DRIVER_NAME
+              value: iscsi.stevevaradi.me
             - name: SCAN_INTERVAL_SECONDS
               value: "30"
             - name: PROBE_TIMEOUT_SECONDS
               value: "5"
+            - name: KUBECTL_TIMEOUT_SECONDS
+              value: 10s
             - name: DELETE_COOLDOWN_SECONDS
               value: "300"
             - name: TAINT_NODE_ON_EIO
@@ -117,6 +121,26 @@ spec:
             limits:
               cpu: 100m
               memory: 128Mi
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - test -s /state/heartbeat && test $(( $(date +%s) - $(cat /state/heartbeat) )) -lt 180
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+            periodSeconds: 30
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - -c
+                - test -s /state/heartbeat && test $(( $(date +%s) - $(cat /state/heartbeat) )) -lt 180
+            initialDelaySeconds: 60
+            timeoutSeconds: 5
+            periodSeconds: 30
+            failureThreshold: 3
           volumeMounts:
             - name: kubelet-dir
               mountPath: /host/var/lib/kubelet
@@ -159,13 +183,16 @@ data:
     : "${NODE_NAME:?NODE_NAME is required}"
     ENABLE_ANNOTATION="${ENABLE_ANNOTATION:-iscsi.stevevaradi.me/eio-remediate}"
     REMEDIATE_UNANNOTATED="${REMEDIATE_UNANNOTATED:-false}"
+    CSI_DRIVER_NAME="${CSI_DRIVER_NAME:-iscsi.stevevaradi.me}"
     SCAN_INTERVAL_SECONDS="${SCAN_INTERVAL_SECONDS:-30}"
     PROBE_TIMEOUT_SECONDS="${PROBE_TIMEOUT_SECONDS:-5}"
+    KUBECTL_TIMEOUT_SECONDS="${KUBECTL_TIMEOUT_SECONDS:-10s}"
     DELETE_COOLDOWN_SECONDS="${DELETE_COOLDOWN_SECONDS:-300}"
     TAINT_NODE_ON_EIO="${TAINT_NODE_ON_EIO:-true}"
     NODE_EIO_TAINT="${NODE_EIO_TAINT:-iscsi.stevevaradi.me/eio=true:NoSchedule}"
     CLEAR_TAINT_AFTER_CLEAN_SECONDS="${CLEAR_TAINT_AFTER_CLEAN_SECONDS:-120}"
     KUBELET_ROOT="/host/var/lib/kubelet"
+    DELETE_STATE_DIR="/state/deleted"
     TERMINATING=0
     ACTIVE_CHILD=""
 
@@ -175,6 +202,14 @@ data:
 
     now_seconds() {
       date +%s
+    }
+
+    heartbeat() {
+      now_seconds > /state/heartbeat
+    }
+
+    kubectl_timed() {
+      timeout "$KUBECTL_TIMEOUT_SECONDS" kubectl "$@"
     }
 
     request_stop() {
@@ -196,23 +231,48 @@ data:
 
     pod_info_for_uid() {
       pod_uid="$1"
-      template='{{range .items}}{{if eq .metadata.uid "'$pod_uid'"}}{{.metadata.namespace}} {{.metadata.name}} {{with .metadata.annotations}}{{index . "'$ENABLE_ANNOTATION'"}}{{end}}{{"\n"}}{{end}}{{end}}'
-      kubectl get pods -A --field-selector "spec.nodeName=${NODE_NAME}" -o "go-template=${template}" 2>/dev/null || true
+      template='{{range .items}}{{if eq .metadata.uid "'$pod_uid'"}}{{.metadata.namespace}}{{"\t"}}{{.metadata.name}}{{"\t"}}{{with .metadata.annotations}}{{index . "'$ENABLE_ANNOTATION'"}}{{end}}{{"\n"}}{{end}}{{end}}'
+      kubectl_timed get pods -A --field-selector "spec.nodeName=${NODE_NAME}" -o "go-template=${template}"
+    }
+
+    driver_name_for_mount() {
+      mount_path="$1"
+      metadata_file="${mount_path%/mount}/vol_data.json"
+
+      [ -r "$metadata_file" ] || return 1
+      sed -n 's/.*"driverName"[[:space:]]*:[[:space:]]*"\([^"\\]*\)".*/\1/p' "$metadata_file" | head -n 1
     }
 
     recently_deleted() {
       key="$1"
-      state_file="/state/${key}"
+      state_file="${DELETE_STATE_DIR}/${key}"
       [ -f "$state_file" ] || return 1
 
       last="$(cat "$state_file" 2>/dev/null || echo 0)"
       now="$(now_seconds)"
+      case "$last" in
+        ''|*[!0-9]*) return 1 ;;
+      esac
       [ $((now - last)) -lt "$DELETE_COOLDOWN_SECONDS" ]
     }
 
     remember_delete() {
       key="$1"
-      now_seconds > "/state/${key}"
+      now_seconds > "${DELETE_STATE_DIR}/${key}"
+    }
+
+    prune_delete_state() {
+      now="$(now_seconds)"
+      for state_file in "${DELETE_STATE_DIR}"/*; do
+        [ -f "$state_file" ] || continue
+        last="$(cat "$state_file" 2>/dev/null || echo 0)"
+        case "$last" in
+          ''|*[!0-9]*) rm -f "$state_file"; continue ;;
+        esac
+        if [ $((now - last)) -ge "$DELETE_COOLDOWN_SECONDS" ]; then
+          rm -f "$state_file"
+        fi
+      done
     }
 
     taint_key() {
@@ -227,7 +287,7 @@ data:
       [ "$TAINT_NODE_ON_EIO" = "true" ] || return 1
 
       key="$(taint_key)"
-      found="$(kubectl get node "$NODE_NAME" -o "jsonpath={.spec.taints[?(@.key=='$key')].key}" 2>/dev/null || true)"
+      found="$(kubectl_timed get node "$NODE_NAME" -o "jsonpath={.spec.taints[?(@.key=='$key')].key}" 2>/state/kubectl.err)" || return 2
       [ "$found" = "$key" ]
     }
 
@@ -241,7 +301,7 @@ data:
 
       record_eio
       log "tainting node ${NODE_NAME} with ${NODE_EIO_TAINT}: iSCSI mount returned EIO"
-      kubectl taint node "$NODE_NAME" "$NODE_EIO_TAINT" --overwrite >/dev/null 2>&1 || \
+      kubectl_timed taint node "$NODE_NAME" "$NODE_EIO_TAINT" --overwrite >/dev/null 2>&1 || \
         log "failed to taint node ${NODE_NAME} with ${NODE_EIO_TAINT}"
     }
 
@@ -249,7 +309,18 @@ data:
       [ "$TAINT_NODE_ON_EIO" = "true" ] || return 0
       [ "$CLEAR_TAINT_AFTER_CLEAN_SECONDS" -gt 0 ] || return 0
 
-      if ! node_is_quarantined; then
+      if node_is_quarantined; then
+        node_status=0
+      else
+        node_status=$?
+      fi
+
+      if [ "$node_status" -eq 2 ]; then
+        log "could not check quarantine state for node ${NODE_NAME}; leaving recovery state unchanged"
+        return 0
+      fi
+
+      if [ "$node_status" -ne 0 ]; then
         rm -f /state/clean-since /state/last-eio
         return 0
       fi
@@ -257,6 +328,9 @@ data:
       now="$(now_seconds)"
       if [ -f /state/last-eio ]; then
         last_eio="$(cat /state/last-eio 2>/dev/null || echo "$now")"
+        case "$last_eio" in
+          ''|*[!0-9]*) last_eio="$now" ;;
+        esac
         if [ $((now - last_eio)) -lt "$CLEAR_TAINT_AFTER_CLEAN_SECONDS" ]; then
           return 0
         fi
@@ -269,12 +343,15 @@ data:
       fi
 
       clean_since="$(cat /state/clean-since 2>/dev/null || echo "$now")"
+      case "$clean_since" in
+        ''|*[!0-9]*) clean_since="$now" ;;
+      esac
       if [ $((now - clean_since)) -lt "$CLEAR_TAINT_AFTER_CLEAN_SECONDS" ]; then
         return 0
       fi
 
       log "removing ${NODE_EIO_TAINT} from node ${NODE_NAME}: iSCSI probes stayed clean for ${CLEAR_TAINT_AFTER_CLEAN_SECONDS}s"
-      if kubectl taint node "$NODE_NAME" "$(taint_remove_arg)" >/dev/null 2>&1; then
+      if kubectl_timed taint node "$NODE_NAME" "$(taint_remove_arg)" >/dev/null 2>&1; then
         rm -f /state/clean-since /state/last-eio
       else
         log "failed to remove ${NODE_EIO_TAINT} from node ${NODE_NAME}"
@@ -297,6 +374,10 @@ data:
       esac
     }
 
+    mount_is_active() {
+      timeout "$PROBE_TIMEOUT_SECONDS" mountpoint -q "$1"
+    }
+
     probe_mount() {
       mount_path="$1"
       err_file="$2"
@@ -306,6 +387,7 @@ data:
         return 0
       fi
 
+      # shellcheck disable=SC2016
       if timeout "$PROBE_TIMEOUT_SECONDS" sh -c '
         cd "$1" &&
         ls -A . >/dev/null &&
@@ -318,13 +400,9 @@ data:
 
       rm -rf "${mount_path}/.iscsi-eio-probe."* 2>/dev/null || true
 
-      if grep -qi 'input/output error' "$err_file"; then
-        return 2
-      fi
-      if grep -qi 'I/O error' "$err_file"; then
-        return 2
-      fi
-      if grep -qi 'stale file handle' "$err_file"; then
+      if grep -qi 'input/output error' "$err_file" || \
+        grep -qi 'I/O error' "$err_file" || \
+        grep -qi 'stale file handle' "$err_file"; then
         return 2
       fi
       if grep -qi 'read-only file system' "$err_file"; then
@@ -337,6 +415,34 @@ data:
       return 1
     }
 
+    emit_pod_event() {
+      namespace="$1"
+      pod_name="$2"
+      pod_uid="$3"
+      volume_name="$4"
+      message="iSCSI CSI mount ${volume_name} returned EIO on node ${NODE_NAME}; tainting node and deleting pod to force remount elsewhere"
+
+      kubectl_timed -n "$namespace" create -f - >/dev/null <<EOF
+    apiVersion: events.k8s.io/v1
+    kind: Event
+    metadata:
+      generateName: iscsi-eio-
+      namespace: ${namespace}
+    regarding:
+      apiVersion: v1
+      kind: Pod
+      name: ${pod_name}
+      uid: ${pod_uid}
+    reason: IscsiMountEIO
+    note: ${message}
+    type: Warning
+    action: DeletePod
+    reportingController: iscsi-eio-remediator
+    reportingInstance: ${NODE_NAME}
+    eventTime: "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    EOF
+    }
+
     remediate_mount() {
       mount_path="$1"
       pod_uid="$(printf '%s\n' "$mount_path" | sed -n 's#^.*/pods/\([^/]*\)/volumes/kubernetes.io~csi/.*#\1#p')"
@@ -347,16 +453,19 @@ data:
         return
       fi
 
-      info="$(pod_info_for_uid "$pod_uid")"
+      query_err="/state/pod-query.err"
+      if ! info="$(pod_info_for_uid "$pod_uid" 2>"$query_err")"; then
+        log "could not query pod ${pod_uid} on ${NODE_NAME}; leaving node quarantined: $(cat "$query_err" 2>/dev/null || true)"
+        return
+      fi
       if [ -z "$info" ]; then
-        log "pod ${pod_uid} on ${NODE_NAME} no longer exists; skipping ${mount_path}"
+        log "mounted iSCSI volume ${volume_name} belongs to deleted pod ${pod_uid}; leaving node quarantined for manual CSI cleanup"
         return
       fi
 
-      set -- $info
-      namespace="$1"
-      pod_name="$2"
-      enabled="${3:-}"
+      IFS="$(printf '\t')" read -r namespace pod_name enabled <<EOF
+    ${info}
+    EOF
 
       if [ "$enabled" = "false" ]; then
         log "pod ${namespace}/${pod_name} has unhealthy iSCSI mount ${volume_name}, but ${ENABLE_ANNOTATION}=false is set"
@@ -368,7 +477,7 @@ data:
         return
       fi
 
-      cooldown_key="$(printf '%s-%s' "$namespace" "$pod_name" | tr -c 'A-Za-z0-9_.-' '_')"
+      cooldown_key="$(printf '%s\n' "$pod_uid" | tr -c 'A-Za-z0-9_.-' '_')"
       if recently_deleted "$cooldown_key"; then
         log "recently deleted ${namespace}/${pod_name}; cooldown active"
         return
@@ -377,24 +486,28 @@ data:
       quarantine_node
 
       log "deleting pod ${namespace}/${pod_name}: iSCSI mount ${volume_name} returned EIO"
-      kubectl -n "$namespace" create event "iscsi-eio-${pod_name}-$(now_seconds)" \
-        --for "pod/${pod_name}" \
-        --reason "IscsiMountEIO" \
-        --type "Warning" \
-        --message "iSCSI CSI mount ${volume_name} returned EIO on node ${NODE_NAME}; tainting node and deleting pod to force remount elsewhere" >/dev/null 2>&1 || true
-      if kubectl -n "$namespace" delete pod "$pod_name" --wait=false; then
+      if ! emit_pod_event "$namespace" "$pod_name" "$pod_uid" "$volume_name"; then
+        log "failed to emit IscsiMountEIO event for ${namespace}/${pod_name}"
+      fi
+      if kubectl_timed -n "$namespace" delete pod "$pod_name" --wait=false; then
         remember_delete "$cooldown_key"
+      else
+        log "failed to delete pod ${namespace}/${pod_name}"
       fi
     }
 
-    log "starting iSCSI EIO remediator on ${NODE_NAME}"
+    mkdir -p "$DELETE_STATE_DIR"
+    log "starting iSCSI EIO remediator on ${NODE_NAME} for driver ${CSI_DRIVER_NAME}"
     while [ "$TERMINATING" -eq 0 ]; do
+      heartbeat
+      prune_delete_state
       scan_file="/state/csi-paths"
       eio_seen=0
       find "$KUBELET_ROOT/pods" -path '*/volumes/kubernetes.io~csi/*' ! -path '*/volumes/kubernetes.io~csi/*/*' >"$scan_file" 2>/dev/null || true
 
       while IFS= read -r csi_path; do
         [ "$TERMINATING" -eq 0 ] || break
+        heartbeat
 
         case "$csi_path" in
           */volumes/kubernetes.io~csi/*/mount)
@@ -407,6 +520,24 @@ data:
             continue
             ;;
         esac
+
+        driver_name="$(driver_name_for_mount "$mount_path" 2>/dev/null || true)"
+        [ "$driver_name" = "$CSI_DRIVER_NAME" ] || continue
+
+        if mount_is_active "$mount_path"; then
+          mount_status=0
+        else
+          mount_status=$?
+        fi
+        if [ "$mount_status" -eq 1 ]; then
+          continue
+        fi
+        if [ "$mount_status" -ne 0 ]; then
+          eio_seen=1
+          record_eio
+          log "could not determine whether iSCSI mount ${mount_path} is active; leaving node quarantined"
+          continue
+        fi
 
         err_file="/state/probe.err"
         set +e
@@ -430,6 +561,7 @@ data:
         clear_recovered_node
       fi
 
+      heartbeat
       [ "$TERMINATING" -eq 0 ] || break
       interruptible_sleep
     done
