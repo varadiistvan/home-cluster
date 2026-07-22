@@ -146,6 +146,18 @@ spec:
         namespaces:
           from: All
 
+    - name: https-navidrome
+      protocol: HTTPS
+      port: 443
+      hostname: navidrome.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: navidrome-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
     - name: https-mealie
       protocol: HTTPS
       port: 443
