@@ -1,0 +1,772 @@
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: iscsi-attach-reaper
+  namespace: storage
+  labels:
+    app.kubernetes.io/name: iscsi-attach-reaper
+    app.kubernetes.io/instance: iscsi-provisioner
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: iscsi-attach-reaper
+  labels:
+    app.kubernetes.io/name: iscsi-attach-reaper
+    app.kubernetes.io/instance: iscsi-provisioner
+rules:
+  # Phase A enumerates pods cluster-wide and force-deletes the wedged ones.
+  # Phase B needs the same list to prove a VolumeAttachment has no consumer.
+  - apiGroups: [""]
+    resources: ["pods"]
+    verbs: ["get", "list", "delete"]
+  # spec.source.persistentVolumeName -> PV -> csi.driver (scope), csi.volumeHandle
+  # (volumesInUse matching) and claimRef (consumer check + event target).
+  - apiGroups: [""]
+    resources: ["persistentvolumes"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["persistentvolumeclaims"]
+    verbs: ["get", "list"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["volumeattachments"]
+    verbs: ["get", "list", "delete"]
+  # Node Ready condition (both phases) and status.volumesInUse (phase B).
+  - apiGroups: [""]
+    resources: ["nodes"]
+    verbs: ["get", "list"]
+  - apiGroups: ["events.k8s.io"]
+    resources: ["events"]
+    verbs: ["create"]
+  # Deliberately absent, and load-bearing:
+  #   volumeattachments: patch/update -> makes finalizer stripping impossible
+  #   nodes: patch                    -> this component never taints anything
+  #   pods/eviction                   -> eviction is the graceful path that already failed
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: iscsi-attach-reaper
+  labels:
+    app.kubernetes.io/name: iscsi-attach-reaper
+    app.kubernetes.io/instance: iscsi-provisioner
+subjects:
+  - kind: ServiceAccount
+    name: iscsi-attach-reaper
+    namespace: storage
+roleRef:
+  kind: ClusterRole
+  name: iscsi-attach-reaper
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: iscsi-attach-reaper
+  namespace: storage
+  labels:
+    app.kubernetes.io/name: iscsi-attach-reaper
+    app.kubernetes.io/instance: iscsi-provisioner
+spec:
+  replicas: 1
+  revisionHistoryLimit: 2
+  strategy:
+    # A true singleton: RollingUpdate would briefly run two reapers, each with
+    # its own per-cycle deletion cap.
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: iscsi-attach-reaper
+      app.kubernetes.io/instance: iscsi-provisioner
+  template:
+    metadata:
+      annotations:
+        configmap.reloader.stakater.com/reload: iscsi-attach-reaper
+      labels:
+        app.kubernetes.io/name: iscsi-attach-reaper
+        app.kubernetes.io/instance: iscsi-provisioner
+    spec:
+      serviceAccountName: iscsi-attach-reaper
+      imagePullSecrets:
+        - name: registry-pass
+      terminationGracePeriodSeconds: 30
+      # Stay schedulable when iscsi-eio-remediator quarantines a node.
+      tolerations:
+        - key: iscsi.stevevaradi.me/eio
+          operator: Equal
+          value: "true"
+          effect: NoSchedule
+      containers:
+        - name: reaper
+          # renovate: datasource=docker depName=harbor.stevevaradi.me/stevevaradi/iscsi-eio-remediator
+          image: harbor.stevevaradi.me/stevevaradi/iscsi-eio-remediator:v0.3.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - /scripts/reap-stuck-attachments.sh
+          env:
+            - name: HOME
+              value: /tmp
+            - name: TMPDIR
+              value: /tmp
+            - name: CSI_DRIVER_NAME
+              value: iscsi.stevevaradi.me
+            - name: SCAN_INTERVAL_SECONDS
+              value: "120"
+            - name: KUBECTL_TIMEOUT_SECONDS
+              value: 30s
+            # Must exceed SCAN_INTERVAL_SECONDS; check-heartbeat.sh defaults to 180.
+            - name: HEARTBEAT_MAX_AGE_SECONDS
+              value: "420"
+            - name: DRY_RUN
+              value: "true"
+            # "" = all namespaces. Comma-separated allowlist during rollout.
+            - name: RESTRICT_TO_NAMESPACES
+              value: ""
+            - name: POD_TERMINATING_GRACE_SECONDS
+              value: "900"
+            - name: VA_ORPHAN_GRACE_SECONDS
+              value: "600"
+            - name: VA_ORPHAN_GRACE_IN_USE_SECONDS
+              value: "1800"
+            - name: POST_FORCE_DELETE_VA_GRACE_SECONDS
+              value: "180"
+            - name: FINALIZER_STUCK_SECONDS
+              value: "900"
+            - name: REAP_VA_FOR_MISSING_NODE
+              value: "false"
+            - name: MAX_POD_DELETIONS_PER_CYCLE
+              value: "1"
+            - name: MAX_VA_DELETIONS_PER_CYCLE
+              value: "1"
+            - name: DELETE_COOLDOWN_SECONDS
+              value: "1800"
+          securityContext:
+            allowPrivilegeEscalation: false
+            readOnlyRootFilesystem: true
+            runAsNonRoot: true
+            runAsUser: 65532
+            runAsGroup: 65532
+            capabilities:
+              drop: ["ALL"]
+            seccompProfile:
+              type: RuntimeDefault
+          resources:
+            requests:
+              cpu: 10m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+          readinessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - /scripts/check-heartbeat.sh
+            initialDelaySeconds: 30
+            timeoutSeconds: 5
+            periodSeconds: 60
+            failureThreshold: 3
+          livenessProbe:
+            exec:
+              command:
+                - /bin/sh
+                - /scripts/check-heartbeat.sh
+            initialDelaySeconds: 120
+            timeoutSeconds: 5
+            periodSeconds: 60
+            failureThreshold: 3
+          volumeMounts:
+            - name: scripts
+              mountPath: /scripts
+              readOnly: true
+            - name: state
+              mountPath: /state
+            - name: tmp
+              mountPath: /tmp
+      volumes:
+        - name: scripts
+          configMap:
+            name: iscsi-attach-reaper
+            defaultMode: 0755
+        - name: state
+          emptyDir: {}
+        - name: tmp
+          emptyDir: {}
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: iscsi-attach-reaper
+  namespace: storage
+  labels:
+    app.kubernetes.io/name: iscsi-attach-reaper
+    app.kubernetes.io/instance: iscsi-provisioner
+data:
+  check-heartbeat.sh: |
+    #!/bin/sh
+    set -eu
+
+    MAX_AGE_SECONDS="${HEARTBEAT_MAX_AGE_SECONDS:-180}"
+
+    beat="$(cat /state/heartbeat 2>/dev/null || true)"
+    case "$beat" in
+      ''|*[!0-9]*)
+        echo "heartbeat file missing or not a timestamp" >&2
+        exit 1
+        ;;
+    esac
+
+    age=$(( $(date +%s) - beat ))
+    if [ "$age" -ge "$MAX_AGE_SECONDS" ]; then
+      echo "heartbeat is ${age}s old (max ${MAX_AGE_SECONDS}s)" >&2
+      exit 1
+    fi
+  reap-stuck-attachments.sh: |
+    #!/bin/sh
+    #
+    # Remediates two conditions that deadlock iSCSI volumes and that nothing in
+    # Kubernetes resolves on its own:
+    #
+    #   A. Pods wedged in Terminating whose containers never started. The pod
+    #      object keeps the volume in the attach-detach controller's desired
+    #      state, so the volume is never detached.
+    #   B. VolumeAttachments left pinned to a node with no consuming pod. A
+    #      force-deleted pod bypasses the detach path and orphans its VA; on
+    #      k8s >= 1.27 the A/D controller will not force-detach (KEP-2268 gates
+    #      that behind the node.kubernetes.io/out-of-service taint), so the VA
+    #      stays forever and the replacement pod hangs in ContainerCreating.
+    #
+    # Design rule inherited from iscsi-eio-remediator: an unactionable condition
+    # logs, emits an event and moves on. It never wedges state, and it never
+    # blocks remediation of an unrelated volume.
+    set -eu
+
+    CSI_DRIVER_NAME="${CSI_DRIVER_NAME:-iscsi.stevevaradi.me}"
+    SCAN_INTERVAL_SECONDS="${SCAN_INTERVAL_SECONDS:-120}"
+    KUBECTL_TIMEOUT_SECONDS="${KUBECTL_TIMEOUT_SECONDS:-30s}"
+    DRY_RUN="${DRY_RUN:-true}"
+    RESTRICT_TO_NAMESPACES="${RESTRICT_TO_NAMESPACES:-}"
+    POD_TERMINATING_GRACE_SECONDS="${POD_TERMINATING_GRACE_SECONDS:-900}"
+    VA_ORPHAN_GRACE_SECONDS="${VA_ORPHAN_GRACE_SECONDS:-600}"
+    VA_ORPHAN_GRACE_IN_USE_SECONDS="${VA_ORPHAN_GRACE_IN_USE_SECONDS:-1800}"
+    POST_FORCE_DELETE_VA_GRACE_SECONDS="${POST_FORCE_DELETE_VA_GRACE_SECONDS:-180}"
+    FINALIZER_STUCK_SECONDS="${FINALIZER_STUCK_SECONDS:-900}"
+    REAP_VA_FOR_MISSING_NODE="${REAP_VA_FOR_MISSING_NODE:-false}"
+    MAX_POD_DELETIONS_PER_CYCLE="${MAX_POD_DELETIONS_PER_CYCLE:-1}"
+    MAX_VA_DELETIONS_PER_CYCLE="${MAX_VA_DELETIONS_PER_CYCLE:-1}"
+    DELETE_COOLDOWN_SECONDS="${DELETE_COOLDOWN_SECONDS:-1800}"
+    FORCED_STATE_TTL_SECONDS="${FORCED_STATE_TTL_SECONDS:-3600}"
+
+    DELETE_STATE_DIR="/state/deleted"
+    SEEN_STATE_DIR="/state/seen"
+    WARNED_STATE_DIR="/state/warned"
+    FORCED_STATE_DIR="/state/forced"
+    TERMINATING=0
+    ACTIVE_CHILD=""
+    # Field separator for the derived TSV-ish files. Deliberately NOT a tab:
+    # tab is an IFS whitespace character, so `read` collapses runs of them and
+    # an empty middle field silently shifts every later field by one.
+    SEP="$(printf '\037')"
+
+    log() {
+      printf '%s %s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)" "$*"
+    }
+
+    now_seconds() {
+      date +%s
+    }
+
+    # Write via a temp file so probes never observe a truncated heartbeat.
+    heartbeat() {
+      now_seconds > /state/heartbeat.tmp && mv -f /state/heartbeat.tmp /state/heartbeat
+    }
+
+    kubectl_timed() {
+      timeout "$KUBECTL_TIMEOUT_SECONDS" kubectl "$@"
+    }
+
+    request_stop() {
+      TERMINATING=1
+      log "received termination signal, stopping iSCSI attach reaper"
+      if [ -n "${ACTIVE_CHILD}" ]; then
+        kill "${ACTIVE_CHILD}" 2>/dev/null || true
+      fi
+    }
+
+    interruptible_sleep() {
+      sleep "$SCAN_INTERVAL_SECONDS" &
+      ACTIVE_CHILD="$!"
+      wait "$ACTIVE_CHILD" 2>/dev/null || true
+      ACTIVE_CHILD=""
+    }
+
+    trap request_stop TERM INT
+
+    state_key() {
+      printf '%s\n' "$1" | tr -c 'A-Za-z0-9_.-' '_'
+    }
+
+    # NOTE: sh has no locals -- every variable here is global. Helper internals
+    # are underscore-prefixed so a caller can never have them clobbered
+    # mid-expression (this bit once: recently_deleted wiped the orphan age).
+    stamp_age() {
+      _stamp_file="$1"
+      [ -f "$_stamp_file" ] || return 1
+
+      _stamp_last="$(cat "$_stamp_file" 2>/dev/null || echo '')"
+      case "$_stamp_last" in
+        ''|*[!0-9]*) return 1 ;;
+      esac
+      printf '%s\n' "$(( $(now_seconds) - _stamp_last ))"
+    }
+
+    recently_deleted() {
+      _cooldown_age="$(stamp_age "${DELETE_STATE_DIR}/$1")" || return 1
+      [ "$_cooldown_age" -lt "$DELETE_COOLDOWN_SECONDS" ]
+    }
+
+    remember_delete() {
+      now_seconds > "${DELETE_STATE_DIR}/$1"
+    }
+
+    prune_dir_by_age() {
+      dir="$1"
+      max_age="$2"
+      for _prune_file in "${dir}"/*; do
+        [ -f "$_prune_file" ] || continue
+        _prune_age="$(stamp_age "$_prune_file")" || { rm -f "$_prune_file"; continue; }
+        [ "$_prune_age" -lt "$max_age" ] || rm -f "$_prune_file"
+      done
+    }
+
+    # Drop per-VolumeAttachment state for VAs that no longer exist. Doing this
+    # from the current snapshot (rather than on issuing a delete) is what makes
+    # a delete stalled on a finalizer detectable: its timer keeps running.
+    prune_by_va_presence() {
+      for state_file in "${1}"/*; do
+        [ -f "$state_file" ] || continue
+        grep -qxF "$(basename "$state_file")" /state/va-names.txt || rm -f "$state_file"
+      done
+    }
+
+    namespace_allowed() {
+      [ -n "$RESTRICT_TO_NAMESPACES" ] || return 0
+      case ",${RESTRICT_TO_NAMESPACES}," in
+        *",$1,"*) return 0 ;;
+      esac
+      return 1
+    }
+
+    maybe_run() {
+      if [ "$DRY_RUN" = "true" ]; then
+        log "DRY_RUN: would run: $*"
+        return 0
+      fi
+      "$@"
+    }
+
+    emit_event() {
+      kind="$1"
+      namespace="$2"
+      name="$3"
+      uid="$4"
+      reason="$5"
+      message="$6"
+
+      kubectl_timed -n "$namespace" create -f - >/dev/null <<EOF
+    apiVersion: events.k8s.io/v1
+    kind: Event
+    metadata:
+      generateName: iscsi-reaper-
+      namespace: ${namespace}
+    regarding:
+      apiVersion: v1
+      kind: ${kind}
+      name: ${name}
+      namespace: ${namespace}
+      uid: ${uid}
+    reason: ${reason}
+    note: ${message}
+    type: Warning
+    action: Reap
+    reportingController: iscsi-attach-reaper
+    reportingInstance: iscsi-attach-reaper
+    eventTime: "$(date -u +%Y-%m-%dT%H:%M:%S).000000Z"
+    EOF
+    }
+
+    # ---------------------------------------------------------------------------
+    # Snapshot collection
+    # ---------------------------------------------------------------------------
+
+    # One consistent snapshot per cycle. Evaluating "no pod consumes this PVC"
+    # against a pod list fetched at a different instant than the VA list is a
+    # TOCTOU race, and VolumeAttachment registers no field selectors beyond
+    # metadata.name, so all filtering happens client-side anyway.
+    collect() {
+      for resource in pods volumeattachments persistentvolumes nodes; do
+        case "$resource" in
+          pods) args="-A" ;;
+          *) args="" ;;
+        esac
+        # shellcheck disable=SC2086
+        kubectl_timed get "$resource" $args -o json > "/state/${resource}.json.tmp" || return 1
+        mv -f "/state/${resource}.json.tmp" "/state/${resource}.json"
+      done
+    }
+
+    # pvName \t claimNs \t claimName \t volumeHandle \t claimUid
+    our_driver_pvs() {
+      jq -r --arg drv "$CSI_DRIVER_NAME" '
+        .items[]
+        | select((.spec.csi.driver // "") == $drv)
+        | [ .metadata.name,
+            (.spec.claimRef.namespace // ""),
+            (.spec.claimRef.name // ""),
+            (.spec.csi.volumeHandle // ""),
+            (.spec.claimRef.uid // "") ]
+        | join("\u001f")
+      ' /state/persistentvolumes.json
+    }
+
+    # nodeName \t podNs \t podName \t claimName, for every pod->PVC edge on a
+    # scheduled pod.
+    #
+    # Generic ephemeral volumes carry no persistentVolumeClaim key; their PVC is
+    # named <podName>-<volumeName>. Missing them would make "no pod consumes this
+    # PVC" wrong and delete a live VolumeAttachment.
+    #
+    # The spec.nodeName guard is load-bearing: without it an unscheduled pod's
+    # empty node matches a VA whose node was also defaulted to empty.
+    pod_claim_edges() {
+      jq -r '
+        .items[]
+        | . as $p
+        | select(($p.spec.nodeName // "") != "")
+        | ($p.spec.volumes // [])[]
+        | if .persistentVolumeClaim then .persistentVolumeClaim.claimName
+          elif .ephemeral then ($p.metadata.name + "-" + .name)
+          else empty end
+        | [ $p.spec.nodeName, $p.metadata.namespace, $p.metadata.name, . ]
+        | join("\u001f")
+      ' /state/pods.json
+    }
+
+    # ns \t name \t uid \t node \t phase \t nFinalizers \t nStarted \t isMirror
+    #
+    # nStarted counts container statuses that contradict "never started", across
+    # init, regular and ephemeral containers. Checking lastState generally (not
+    # just lastState.terminated) closes the first-crash window before
+    # restartCount increments; checking initContainerStatuses catches running
+    # native sidecars.
+    stuck_terminating_pods() {
+      jq -r --argjson now "$(now_seconds)" --argjson grace "$POD_TERMINATING_GRACE_SECONDS" '
+        .items[]
+        | select(.metadata.deletionTimestamp != null)
+        | select(
+            (.metadata.deletionTimestamp | sub("\\.[0-9]+Z$"; "Z") | fromdateiso8601)
+            <= ($now - $grace)
+          )
+        | [ .metadata.namespace,
+            .metadata.name,
+            .metadata.uid,
+            (.spec.nodeName // ""),
+            (.status.phase // ""),
+            ((.metadata.finalizers // []) | length),
+            ( [ (.status.initContainerStatuses      // [])[],
+                (.status.containerStatuses          // [])[],
+                (.status.ephemeralContainerStatuses // [])[] ]
+              | map(select(
+                  (.state.waiting == null)
+                  or ((.restartCount // 0) > 0)
+                  or ((.lastState // {}) != {})
+                  or (.started == true)
+                ))
+              | length ),
+            (if (.metadata.annotations // {})["kubernetes.io/config.mirror"] then "true" else "false" end) ]
+        | join("\u001f")
+      ' /state/pods.json
+    }
+
+    # vaName \t nodeName \t pvName \t deletionTimestamp \t finalizers
+    our_volume_attachments() {
+      jq -r --arg drv "$CSI_DRIVER_NAME" '
+        .items[]
+        | select(.spec.attacher == $drv)
+        | [ .metadata.name,
+            (.spec.nodeName // ""),
+            (.spec.source.persistentVolumeName // ""),
+            (.metadata.deletionTimestamp // ""),
+            ((.metadata.finalizers // []) | join(",")) ]
+        | join("\u001f")
+      ' /state/volumeattachments.json
+    }
+
+    # Prints True / False / Unknown / NotFound.
+    node_ready() {
+      ready="$(jq -r --arg n "$1" '
+        .items[]
+        | select(.metadata.name == $n)
+        | ((.status.conditions // [] | map(select(.type == "Ready")) | first | .status) // "Unknown")
+      ' /state/nodes.json | head -n 1)"
+      [ -n "$ready" ] || ready="NotFound"
+      printf '%s\n' "$ready"
+    }
+
+    # volumesInUse entries are kubernetes.io/csi/<driver>^<volumeHandle> -- the
+    # CSI handle, not the PV name. Matching on the PV name silently never fires.
+    volume_in_use_on_node() {
+      jq -e -r --arg n "$1" --arg h "kubernetes.io/csi/${CSI_DRIVER_NAME}^$2" '
+        .items[]
+        | select(.metadata.name == $n)
+        | ((.status.volumesInUse // []) | index($h)) != null
+      ' /state/nodes.json >/dev/null 2>&1
+    }
+
+    iso_to_epoch() {
+      printf '%s\n' "$1" | jq -Rr 'sub("\\.[0-9]+Z$"; "Z") | fromdateiso8601' 2>/dev/null
+    }
+
+    # ---------------------------------------------------------------------------
+    # Phase A: pods wedged in Terminating that never started a container
+    # ---------------------------------------------------------------------------
+
+    reap_stuck_pods() {
+      pod_deletes=0
+
+      while IFS="$SEP" read -r ns name uid node phase finalizers started mirror; do
+        [ "$TERMINATING" -eq 0 ] || break
+        [ -n "${name:-}" ] || continue
+        [ "$pod_deletes" -lt "$MAX_POD_DELETIONS_PER_CYCLE" ] || break
+
+        # Mirror pods are kubelet-owned; deleting the API object changes nothing.
+        [ "$mirror" = "false" ] || continue
+        namespace_allowed "$ns" || continue
+
+        # Pending is an independent confirmation from a different kubelet code
+        # path, and it stops the "never started" count from passing vacuously
+        # when a pod carries no container statuses at all.
+        if [ "$phase" != "Pending" ]; then
+          continue
+        fi
+
+        if [ "$started" -ne 0 ]; then
+          log "UNACTIONABLE: pod ${ns}/${name} stuck Terminating but ${started} container(s) started; needs manual review"
+          emit_event Pod "$ns" "$name" "$uid" StuckTerminatingPod \
+            "Pod is stuck Terminating on node ${node} but its containers started; refusing to force-delete because data may have been written" || true
+          continue
+        fi
+
+        # --force does not remove finalizers: the pod would stay Terminating
+        # while we burn a cap slot every cycle logging a success that never was.
+        if [ "$finalizers" -ne 0 ]; then
+          log "UNACTIONABLE: pod ${ns}/${name} stuck Terminating with ${finalizers} finalizer(s); refusing to force-delete"
+          emit_event Pod "$ns" "$name" "$uid" StuckTerminatingPod \
+            "Pod is stuck Terminating on node ${node} with finalizers set; a controller must release them" || true
+          continue
+        fi
+
+        ready="$(node_ready "$node")"
+        if [ "$ready" != "True" ]; then
+          log "UNACTIONABLE: pod ${ns}/${name} stuck Terminating on node ${node} (Ready=${ready}); refusing to force-delete an unreachable node's pod"
+          continue
+        fi
+
+        # Only pods holding one of our volumes are in scope. Collect every
+        # matching PV so phase B gets a shortened grace for all of them.
+        pod_pvs=""
+        while IFS="$SEP" read -r pv claim_ns claim_name handle claim_uid; do
+          [ "$claim_ns" = "$ns" ] || continue
+          if grep -qxF "${ns}${SEP}${name}${SEP}${claim_name}" /state/podclaims.tsv; then
+            pod_pvs="${pod_pvs} ${pv}"
+          fi
+        done < /state/ourpvs.tsv
+        if [ -z "$pod_pvs" ]; then
+          continue
+        fi
+
+        key="$(state_key "$uid")"
+        if recently_deleted "$key"; then
+          continue
+        fi
+
+        log "force-deleting pod ${ns}/${name} on ${node}: stuck Terminating for >${POD_TERMINATING_GRACE_SECONDS}s, no container ever started"
+        emit_event Pod "$ns" "$name" "$uid" StuckTerminatingPod \
+          "Force-deleting pod stuck Terminating on node ${node}; no container ever started, so no application data was written" || true
+
+        if maybe_run kubectl_timed -n "$ns" delete pod "$name" \
+          --force --grace-period=0 --wait=false --preconditions-uid="$uid"; then
+          remember_delete "$key"
+          # Let phase B use a shorter grace for these pairs next cycle: we know
+          # the only consumer never started a container.
+          for pv in $pod_pvs; do
+            now_seconds > "${FORCED_STATE_DIR}/$(state_key "${node}_${pv}")"
+          done
+          pod_deletes=$(( pod_deletes + 1 ))
+        else
+          log "failed to force-delete pod ${ns}/${name}"
+        fi
+      done < /state/stuck-pods.tsv
+    }
+
+    # ---------------------------------------------------------------------------
+    # Phase B: VolumeAttachments with no consuming pod on their node
+    # ---------------------------------------------------------------------------
+
+    reap_orphaned_attachments() {
+      va_deletes=0
+
+      while IFS="$SEP" read -r va node pv deleted finalizers; do
+        [ "$TERMINATING" -eq 0 ] || break
+        [ -n "${va:-}" ] || continue
+        [ "$va_deletes" -lt "$MAX_VA_DELETIONS_PER_CYCLE" ] || break
+
+        if [ -z "$pv" ]; then
+          log "skipping VolumeAttachment ${va}: no persistentVolumeName (inline volume?)"
+          continue
+        fi
+
+        # Already detaching. If it has been detaching too long, the CSI unpublish
+        # is stuck behind a finalizer -- report it and stop. Stripping the
+        # external-attacher finalizer would leak NAS state and re-open the
+        # split-brain window; the missing patch verb makes it impossible anyway.
+        if [ -n "$deleted" ]; then
+          deleted_epoch="$(iso_to_epoch "$deleted")" || deleted_epoch=""
+          if [ -n "$deleted_epoch" ] && [ $(( $(now_seconds) - deleted_epoch )) -ge "$FINALIZER_STUCK_SECONDS" ]; then
+            log "UNACTIONABLE: VolumeAttachment ${va} terminating for >${FINALIZER_STUCK_SECONDS}s, blocked on finalizers [${finalizers}]; needs manual CSI cleanup"
+          fi
+          continue
+        fi
+
+        claim_ns=""
+        claim_name=""
+        handle=""
+        claim_uid=""
+        while IFS="$SEP" read -r p_pv p_ns p_name p_handle p_uid; do
+          if [ "$p_pv" = "$pv" ]; then
+            claim_ns="$p_ns"
+            claim_name="$p_name"
+            handle="$p_handle"
+            claim_uid="$p_uid"
+            break
+          fi
+        done < /state/ourpvs.tsv
+
+        if [ -z "$claim_name" ]; then
+          log "skipping VolumeAttachment ${va}: PV ${pv} has no claimRef"
+          continue
+        fi
+        namespace_allowed "$claim_ns" || continue
+
+        ready="$(node_ready "$node")"
+        if [ "$ready" = "NotFound" ]; then
+          # A missing Node does not mean a powered-off machine, and pod GC has
+          # already removed every pod bound to it -- which would make "no
+          # consumer" trivially true for all of that node's volumes at once.
+          if [ "$REAP_VA_FOR_MISSING_NODE" != "true" ]; then
+            log "UNACTIONABLE: node ${node} not found; refusing to reap VolumeAttachment ${va} (set REAP_VA_FOR_MISSING_NODE=true once the node is confirmed powered off)"
+            continue
+          fi
+        elif [ "$ready" != "True" ]; then
+          # The machine may be partitioned and still writing. Unpublishing would
+          # let the volume attach elsewhere: two hosts, one ext4, corruption.
+          log "UNACTIONABLE: node ${node} is Ready=${ready}; refusing to reap VolumeAttachment ${va}"
+          continue
+        fi
+
+        # Any pod on that node referencing the claim, in any phase including
+        # Terminating. Including Terminating is what keeps StatefulSet rolling
+        # updates with long grace periods safe.
+        if grep -qxF "${node}${SEP}${claim_ns}${SEP}${claim_name}" /state/edges.tsv; then
+          continue
+        fi
+
+        seen_file="${SEEN_STATE_DIR}/${va}"
+        if [ ! -f "$seen_file" ]; then
+          now_seconds > "$seen_file"
+          log "VolumeAttachment ${va} (${claim_ns}/${claim_name} on ${node}) has no consumer; starting orphan timer"
+          continue
+        fi
+
+        grace="$VA_ORPHAN_GRACE_SECONDS"
+        if [ -f "${FORCED_STATE_DIR}/$(state_key "${node}_${pv}")" ]; then
+          grace="$POST_FORCE_DELETE_VA_GRACE_SECONDS"
+        elif volume_in_use_on_node "$node" "$handle"; then
+          # kubelet still claims the volume. This flag stays stale forever in
+          # exactly the wedged-kubelet case, so it must extend the grace, never
+          # veto -- vetoing would reproduce the wedge-forever bug.
+          grace="$VA_ORPHAN_GRACE_IN_USE_SECONDS"
+          if [ ! -f "${WARNED_STATE_DIR}/${va}" ]; then
+            now_seconds > "${WARNED_STATE_DIR}/${va}"
+            log "node ${node} still reports ${handle} in volumesInUse with no consuming pod; extending grace to ${grace}s"
+            emit_event PersistentVolumeClaim "$claim_ns" "$claim_name" "$claim_uid" OrphanedVolumeAttachment \
+              "VolumeAttachment ${va} has no consuming pod on node ${node}, but kubelet still reports the volume in use; likely a stale mount needing manual CSI cleanup" || true
+          fi
+        fi
+
+        orphan_age="$(stamp_age "$seen_file")" || { rm -f "$seen_file"; continue; }
+        [ "$orphan_age" -ge "$grace" ] || continue
+
+        key="$(state_key "$va")"
+        if recently_deleted "$key"; then
+          continue
+        fi
+
+        log "deleting VolumeAttachment ${va}: ${claim_ns}/${claim_name} has had no consuming pod on ${node} for ${orphan_age}s"
+        emit_event PersistentVolumeClaim "$claim_ns" "$claim_name" "$claim_uid" OrphanedVolumeAttachment \
+          "Deleting orphaned VolumeAttachment ${va} on node ${node} so the volume can attach elsewhere" || true
+
+        if maybe_run kubectl_timed delete volumeattachment "$va" --wait=false; then
+          remember_delete "$key"
+          va_deletes=$(( va_deletes + 1 ))
+        else
+          log "failed to delete VolumeAttachment ${va}"
+        fi
+      done < /state/vas.tsv
+    }
+
+    # ---------------------------------------------------------------------------
+
+    mkdir -p "$DELETE_STATE_DIR" "$SEEN_STATE_DIR" "$WARNED_STATE_DIR" "$FORCED_STATE_DIR"
+    log "starting iSCSI attach reaper for driver ${CSI_DRIVER_NAME} (dry-run=${DRY_RUN})"
+
+    while [ "$TERMINATING" -eq 0 ]; do
+      heartbeat
+
+      if ! collect; then
+        log "failed to collect cluster snapshot; skipping cycle"
+        heartbeat
+        [ "$TERMINATING" -eq 0 ] || break
+        interruptible_sleep
+        continue
+      fi
+
+      our_driver_pvs > /state/ourpvs.tsv
+      pod_claim_edges | sort -u > /state/podedges.tsv
+      cut -d "$SEP" -f1,2,4 /state/podedges.tsv | sort -u > /state/edges.tsv
+      cut -d "$SEP" -f2,3,4 /state/podedges.tsv | sort -u > /state/podclaims.tsv
+      stuck_terminating_pods > /state/stuck-pods.tsv
+      our_volume_attachments > /state/vas.tsv
+      cut -d "$SEP" -f1 /state/vas.tsv > /state/va-names.txt
+
+      prune_dir_by_age "$DELETE_STATE_DIR" "$DELETE_COOLDOWN_SECONDS"
+      prune_dir_by_age "$FORCED_STATE_DIR" "$FORCED_STATE_TTL_SECONDS"
+      prune_by_va_presence "$SEEN_STATE_DIR"
+      prune_by_va_presence "$WARNED_STATE_DIR"
+
+      heartbeat
+      reap_stuck_pods
+
+      # Phase B runs against the same pre-phase-A snapshot on purpose: a pod
+      # deleted a moment ago still appears as a consumer, so its VA is skipped
+      # this cycle and picked up on the next one. That is the safe direction.
+      heartbeat
+      reap_orphaned_attachments
+
+      heartbeat
+      [ "$TERMINATING" -eq 0 ] || break
+      interruptible_sleep
+    done
+
+    log "stopped iSCSI attach reaper"

@@ -75,7 +75,7 @@ spec:
       containers:
         - name: remediator
           # renovate: datasource=docker depName=harbor.stevevaradi.me/stevevaradi/iscsi-eio-remediator
-          image: harbor.stevevaradi.me/stevevaradi/iscsi-eio-remediator:v0.2.0
+          image: harbor.stevevaradi.me/stevevaradi/iscsi-eio-remediator:v0.3.0
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
@@ -457,28 +457,32 @@ data:
     action: DeletePod
     reportingController: iscsi-eio-remediator
     reportingInstance: ${NODE_NAME}
-    eventTime: "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+    eventTime: "$(date -u +%Y-%m-%dT%H:%M:%S).000000Z"
     EOF
     }
 
+    # Returns 0 when remediation is in flight and the node must stay quarantined,
+    # 1 when the EIO is not actionable from here. Holding the taint for an
+    # unactionable EIO quarantines the node forever, because nothing will ever
+    # clear the condition that keeps re-triggering it.
     remediate_mount() {
       mount_path="$1"
       pod_uid="$(printf '%s\n' "$mount_path" | sed -n 's#^.*/pods/\([^/]*\)/volumes/kubernetes.io~csi/.*#\1#p')"
       volume_name="$(printf '%s\n' "$mount_path" | sed -n 's#^.*/volumes/kubernetes.io~csi/\([^/]*\)/mount$#\1#p')"
 
       if [ -z "$pod_uid" ] || [ -z "$volume_name" ]; then
-        log "could not parse pod UID or volume from ${mount_path}"
-        return
+        log "could not parse pod UID or volume from ${mount_path}; not holding quarantine on ${NODE_NAME}"
+        return 1
       fi
 
       query_err="/state/pod-query.err"
       if ! info="$(pod_info_for_uid "$pod_uid" 2>"$query_err")"; then
-        log "could not query pod ${pod_uid} on ${NODE_NAME}; leaving node quarantined: $(cat "$query_err" 2>/dev/null || true)"
-        return
+        log "could not query pod ${pod_uid} on ${NODE_NAME}; not holding quarantine: $(cat "$query_err" 2>/dev/null || true)"
+        return 1
       fi
       if [ -z "$info" ]; then
-        log "mounted iSCSI volume ${volume_name} belongs to deleted pod ${pod_uid}; leaving node quarantined for manual CSI cleanup"
-        return
+        log "mounted iSCSI volume ${volume_name} belongs to deleted pod ${pod_uid}; needs manual CSI cleanup, not holding quarantine on ${NODE_NAME}"
+        return 1
       fi
 
       IFS="$(printf '\t')" read -r namespace pod_name enabled <<EOF
@@ -486,19 +490,19 @@ data:
     EOF
 
       if [ "$enabled" = "false" ]; then
-        log "pod ${namespace}/${pod_name} has unhealthy iSCSI mount ${volume_name}, but ${ENABLE_ANNOTATION}=false is set"
-        return
+        log "pod ${namespace}/${pod_name} has unhealthy iSCSI mount ${volume_name}, but ${ENABLE_ANNOTATION}=false is set; not holding quarantine on ${NODE_NAME}"
+        return 1
       fi
 
       if [ "$enabled" != "true" ] && [ "$REMEDIATE_UNANNOTATED" != "true" ]; then
-        log "pod ${namespace}/${pod_name} has unhealthy iSCSI mount ${volume_name}, but ${ENABLE_ANNOTATION}=true is not set"
-        return
+        log "pod ${namespace}/${pod_name} has unhealthy iSCSI mount ${volume_name}, but ${ENABLE_ANNOTATION}=true is not set; not holding quarantine on ${NODE_NAME}"
+        return 1
       fi
 
       cooldown_key="$(printf '%s\n' "$pod_uid" | tr -c 'A-Za-z0-9_.-' '_')"
       if recently_deleted "$cooldown_key"; then
         log "recently deleted ${namespace}/${pod_name}; cooldown active"
-        return
+        return 0
       fi
 
       quarantine_node
@@ -511,6 +515,20 @@ data:
         remember_delete "$cooldown_key"
       else
         log "failed to delete pod ${namespace}/${pod_name}"
+      fi
+      return 0
+    }
+
+    # Quarantine is only held while remediate_mount reports actionable work.
+    handle_eio() {
+      set +e
+      remediate_mount "$1"
+      actionable=$?
+      set -e
+
+      if [ "$actionable" -eq 0 ]; then
+        eio_seen=1
+        record_eio
       fi
     }
 
@@ -551,9 +569,8 @@ data:
           continue
         fi
         if [ "$mount_status" -ne 0 ]; then
-          eio_seen=1
-          record_eio
-          log "could not determine whether iSCSI mount ${mount_path} is active; leaving node quarantined"
+          log "could not determine whether iSCSI mount ${mount_path} is active"
+          handle_eio "$mount_path"
           continue
         fi
 
@@ -567,9 +584,7 @@ data:
         fi
 
         if [ "$rc" -eq 2 ]; then
-          eio_seen=1
-          record_eio
-          remediate_mount "$mount_path"
+          handle_eio "$mount_path"
         else
           log "probe failed for ${mount_path}: $(cat "$err_file" 2>/dev/null || true)"
         fi

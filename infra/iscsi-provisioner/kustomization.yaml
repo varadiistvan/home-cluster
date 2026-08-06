@@ -11,3 +11,4 @@ resources:
 - iscsi-csi-daemonset.yaml
 - iscsi-csi-deployment.yaml
 - iscsi-eio-remediator.yaml
+- iscsi-attach-reaper.yaml
