@@ -125,8 +125,7 @@ spec:
             exec:
               command:
                 - /bin/sh
-                - -c
-                - test -s /state/heartbeat && test $(( $(date +%s) - $(cat /state/heartbeat) )) -lt 180
+                - /scripts/check-heartbeat.sh
             initialDelaySeconds: 30
             timeoutSeconds: 5
             periodSeconds: 30
@@ -135,8 +134,7 @@ spec:
             exec:
               command:
                 - /bin/sh
-                - -c
-                - test -s /state/heartbeat && test $(( $(date +%s) - $(cat /state/heartbeat) )) -lt 180
+                - /scripts/check-heartbeat.sh
             initialDelaySeconds: 60
             timeoutSeconds: 5
             periodSeconds: 30
@@ -176,6 +174,25 @@ metadata:
     app.kubernetes.io/name: iscsi-eio-remediator
     app.kubernetes.io/instance: iscsi-provisioner
 data:
+  check-heartbeat.sh: |
+    #!/bin/sh
+    set -eu
+
+    MAX_AGE_SECONDS="${HEARTBEAT_MAX_AGE_SECONDS:-180}"
+
+    beat="$(cat /state/heartbeat 2>/dev/null || true)"
+    case "$beat" in
+      ''|*[!0-9]*)
+        echo "heartbeat file missing or not a timestamp" >&2
+        exit 1
+        ;;
+    esac
+
+    age=$(( $(date +%s) - beat ))
+    if [ "$age" -ge "$MAX_AGE_SECONDS" ]; then
+      echo "heartbeat is ${age}s old (max ${MAX_AGE_SECONDS}s)" >&2
+      exit 1
+    fi
   remediate-iscsi-eio.sh: |
     #!/bin/sh
     set -eu
@@ -204,8 +221,9 @@ data:
       date +%s
     }
 
+    # Write via a temp file so probes never observe a truncated heartbeat.
     heartbeat() {
-      now_seconds > /state/heartbeat
+      now_seconds > /state/heartbeat.tmp && mv -f /state/heartbeat.tmp /state/heartbeat
     }
 
     kubectl_timed() {
