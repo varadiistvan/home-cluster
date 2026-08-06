@@ -1,8 +1,9 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-  - navidrome-pvc.yaml
-  - navidrome-deployment.yaml
-  - navidrome-service.yaml
-  - httproute.yaml
-  - security-policy.yaml
+  - ./navidrome-pvc.yaml
+  - ./navidrome-deployment.yaml
+  - ./navidrome-service.yaml
+  - ./httproute.yaml
+  - ./security-policy.yaml
+  - ./navidrome-lastfm-secret.enc.yaml
