@@ -17,7 +17,7 @@ spec:
     spec:
       chart: grafana
       # renovate: datasource=docker depName=ghcr.io/grafana-community/helm-charts/grafana
-      version: 12.10.4
+      version: 12.10.x
       sourceRef:
         kind: HelmRepository
         name: grafana

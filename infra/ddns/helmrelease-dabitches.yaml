@@ -16,7 +16,7 @@ spec:
   chart:
     spec:
       chart: kubernetes-cloudflare-ddns
-      version: 1.0.6
+      version: 1.0.x
       sourceRef:
         kind: HelmRepository
         name: kubito

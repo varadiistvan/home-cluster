@@ -16,7 +16,7 @@ spec:
   chart:
     spec:
       chart: zigbee2mqtt
-      version: 2.6.3
+      version: 2.6.x
       sourceRef:
         kind: HelmRepository
         name: zigbee2mqtt

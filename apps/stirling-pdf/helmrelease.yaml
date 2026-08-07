@@ -17,7 +17,7 @@ spec:
     spec:
       chart: stirling-pdf-chart
       # renovate: datasource=helm depName=stirling-pdf-chart registryUrl=https://docs.stirlingpdf.com/Stirling-PDF-chart
-      version: 3.1.0
+      version: 3.1.x
       sourceRef:
         kind: HelmRepository
         name: stirling-pdf
