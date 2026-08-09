@@ -17,7 +17,7 @@ spec:
     spec:
       chart: planka
       # renovate: datasource=helm depName=planka registryUrl=https://plankanban.github.io/planka
-      version: 2.1.x
+      version: 2.2.x
       sourceRef:
         kind: HelmRepository
         name: planka
