@@ -26,6 +26,116 @@ spec:
         runAsUser: 1000
         runAsGroup: 1000
         fsGroup: 1000
+      initContainers:
+        - name: install-nd-lyrics
+          # renovate: datasource=docker depName=curlimages/curl
+          image: docker.io/curlimages/curl:8.16.0
+          imagePullPolicy: IfNotPresent
+          command:
+            - /bin/sh
+            - -ec
+          args:
+            - |
+              plugin_path="/data/plugins/nd-lyrics.ndp"
+              plugin_tmp="${plugin_path}.tmp"
+              plugin_sha256="a9196e5b4e2c2eb2aaccb9f35c9faf6f488fe9081ff5685b1556901686c7540f"
+
+              mkdir -p "$(dirname "${plugin_path}")"
+              if [ -f "${plugin_path}" ] && printf '%s  %s\n' "${plugin_sha256}" "${plugin_path}" | sha256sum -c - >/dev/null 2>&1; then
+                exit 0
+              fi
+
+              rm -f "${plugin_tmp}"
+              trap 'rm -f "${plugin_tmp}"' EXIT
+              curl --fail --location --retry 3 --retry-all-errors \
+                --output "${plugin_tmp}" \
+                "https://github.com/J0R6IT0/navidrome-lyrics-plugin/releases/download/v7.2.0/nd-lyrics.ndp"
+              printf '%s  %s\n' "${plugin_sha256}" "${plugin_tmp}" | sha256sum -c -
+              mv "${plugin_tmp}" "${plugin_path}"
+              trap - EXIT
+          volumeMounts:
+            - name: data
+              mountPath: /data
+        - name: rescan-navidrome-plugins
+          # renovate: datasource=docker depName=deluan/navidrome
+          image: docker.io/deluan/navidrome:0.63.2
+          imagePullPolicy: IfNotPresent
+          command:
+            - /app/navidrome
+          args:
+            - plugin
+            - rescan
+          env:
+            - name: ND_DATAFOLDER
+              value: /data
+            - name: ND_MUSICFOLDER
+              value: /nfs_media/music
+          volumeMounts:
+            - name: data
+              mountPath: /data
+        - name: configure-nd-lyrics
+          # renovate: datasource=docker depName=deluan/navidrome
+          image: docker.io/deluan/navidrome:0.63.2
+          imagePullPolicy: IfNotPresent
+          command:
+            - /app/navidrome
+          args:
+            - plugin
+            - edit
+            - nd-lyrics
+            - --config
+            - >-
+              {"lyricsFormats":"lrc","durationToleranceSeconds":3,"providersList":[{"provider":"lrclib"},{"provider":"lrcmux"}],"providerMode":"priority","enableCache":true,"negativeCache":true,"writeLyrics":true,"overwriteLyrics":false,"writeToSpecificFolder":false}
+          env:
+            - name: ND_DATAFOLDER
+              value: /data
+            - name: ND_MUSICFOLDER
+              value: /nfs_media/music
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: media
+              mountPath: /nfs_media
+        - name: grant-nd-lyrics-library-access
+          # renovate: datasource=docker depName=deluan/navidrome
+          image: docker.io/deluan/navidrome:0.63.2
+          imagePullPolicy: IfNotPresent
+          command:
+            - /app/navidrome
+          args:
+            - plugin
+            - edit
+            - nd-lyrics
+            - --all-libraries
+            - --write-access
+          env:
+            - name: ND_DATAFOLDER
+              value: /data
+            - name: ND_MUSICFOLDER
+              value: /nfs_media/music
+          volumeMounts:
+            - name: data
+              mountPath: /data
+            - name: media
+              mountPath: /nfs_media
+        - name: enable-nd-lyrics
+          # renovate: datasource=docker depName=deluan/navidrome
+          image: docker.io/deluan/navidrome:0.63.2
+          imagePullPolicy: IfNotPresent
+          command:
+            - /app/navidrome
+          args:
+            - plugin
+            - enable
+            - nd-lyrics
+          env:
+            - name: ND_DATAFOLDER
+              value: /data
+            - name: ND_MUSICFOLDER
+              value: /nfs_media/music
+          volumeMounts:
+            - name: data
+              mountPath: /data
       containers:
         - name: navidrome
           # renovate: datasource=docker depName=deluan/navidrome
@@ -45,6 +155,8 @@ spec:
               value: "@every 1h"
             - name: ND_ENABLEDOWNLOADS
               value: "true"
+            - name: ND_LYRICSPRIORITY
+              value: ".ttml,.elrc,.lrc,nd-lyrics,embedded"
             - name: ND_LOGLEVEL
               value: info
             - name: TZ
@@ -74,7 +186,6 @@ spec:
               mountPath: /data
             - name: media
               mountPath: /nfs_media
-              readOnly: true
       volumes:
         - name: data
           persistentVolumeClaim:
