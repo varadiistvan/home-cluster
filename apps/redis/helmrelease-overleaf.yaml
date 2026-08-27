@@ -16,6 +16,7 @@ spec:
   chart:
     spec:
       chart: redis
+      # renovate: datasource=docker depName=registry-1.docker.io/bitnamicharts/redis versioning=semver
       version: 22.0.x
       sourceRef:
         kind: HelmRepository

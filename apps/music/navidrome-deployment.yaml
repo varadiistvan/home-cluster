@@ -47,9 +47,11 @@ spec:
 
               rm -f "${plugin_tmp}"
               trap 'rm -f "${plugin_tmp}"' EXIT
+              # renovate: datasource=github-releases depName=J0R6IT0/navidrome-lyrics-plugin versioning=semver
+              plugin_url="https://github.com/J0R6IT0/navidrome-lyrics-plugin/releases/download/v7.2.0/nd-lyrics.ndp"
               curl --fail --location --retry 3 --retry-all-errors \
                 --output "${plugin_tmp}" \
-                "https://github.com/J0R6IT0/navidrome-lyrics-plugin/releases/download/v7.2.0/nd-lyrics.ndp"
+                "${plugin_url}"
               printf '%s  %s\n' "${plugin_sha256}" "${plugin_tmp}" | sha256sum -c -
               mv "${plugin_tmp}" "${plugin_path}"
               trap - EXIT

@@ -16,6 +16,7 @@ spec:
   chart:
     spec:
       chart: kubernetes-cloudflare-ddns
+      # renovate: datasource=helm depName=kubernetes-cloudflare-ddns registryUrl=https://charts.kubito.dev
       version: 1.0.x
       sourceRef:
         kind: HelmRepository

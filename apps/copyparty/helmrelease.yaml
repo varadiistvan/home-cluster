@@ -16,7 +16,7 @@ spec:
   chart:
     spec:
       chart: copyparty
-      # renovate: datasource=docker depName=ghcr.io/danielr1996/copyparty
+      # renovate: datasource=docker depName=ghcr.io/danielr1996/copyparty versioning=semver
       version: 0.5.x
       sourceRef:
         kind: HelmRepository

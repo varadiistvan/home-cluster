@@ -16,7 +16,7 @@ spec:
   chart:
     spec:
       chart: renovate
-      # renovate: datasource=docker depName=ghcr.io/renovatebot/charts/renovate
+      # renovate: datasource=docker depName=ghcr.io/renovatebot/charts/renovate versioning=semver
       version: 46.x.x
       sourceRef:
         kind: HelmRepository

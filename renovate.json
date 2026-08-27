@@ -2,6 +2,12 @@
   "$schema": "https://docs.renovatebot.com/renovate-schema.json",
   "extends": ["config:recommended"],
   "ignorePaths": ["**/self-built/images/csi-driver-iscsi/**"],
+  "kubernetes": {
+    "managerFilePatterns": ["/^(?:apps|infra|monitoring)/.*\\.ya?ml$/"]
+  },
+  "helm-values": {
+    "managerFilePatterns": ["/(?:^|/).+-values\\.ya?ml$/"]
+  },
   "customManagers": [
     {
       "customType": "regex",
@@ -9,9 +15,9 @@
         "/\\.yaml$/"
       ],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+registryUrl=(?<registryUrl>[^\\s]+))?(?:\\s+versioning=(?<versioning>[^\\s]+))?\\s+-\\s+https://github\\.com/[^/]+/[^/]+/releases/download/(?<currentValue>[^/]+)/"
+        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+registryUrl=(?<registryUrl>[^\\s]+))?(?:\\s+versioning=(?<versioning>[^\\s]+))?\\s+(?:-\\s+|[A-Za-z_][A-Za-z0-9_]*=)?[\\\"']?https://github\\.com/[^/]+/[^/]+/releases/download/(?<currentValue>[^/]+)/"
       ],
-      "description": "Update GitHub release download URLs in Kustomization files"
+      "description": "Update GitHub release download URLs"
     },
     {
       "customType": "regex",
@@ -19,7 +25,7 @@
         "/\\.yaml$/"
       ],
       "matchStrings": [
-        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+registryUrl=(?<registryUrl>[^\\s]+))?(?:\\s+versioning=(?<versioning>[^\\s]+))?\\n\\s+version:\\s+(?<currentValue>\\S+)"
+        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+registryUrl=(?<registryUrl>[^\\s]+))?(?:\\s+versioning=(?<versioning>[^\\s]+))?\\n\\s+version:\\s+[\\\"']?(?<currentValue>[^\\\"'\\s#]+)[\\\"']?"
       ],
       "description": "Update version fields with renovate comment"
     },
@@ -63,6 +69,17 @@
         "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+registryUrl=(?<registryUrl>[^\\s]+))?(?:\\s+versioning=(?<versioning>[^\\s]+))?\\nappVersion:\\s+[\"']?(?<currentValue>[^\"'\\s#]+)[\"']?"
       ],
       "description": "Update appVersion in Chart.yaml and track upstream image"
+    },
+    {
+      "customType": "regex",
+      "managerFilePatterns": [
+        "/(^|/|\\.)Dockerfile$/",
+        "/(^|/)Dockerfile\\.[^/]*$/"
+      ],
+      "matchStrings": [
+        "# renovate: datasource=(?<datasource>[^\\s]+) depName=(?<depName>[^\\s]+)(?:\\s+registryUrl=(?<registryUrl>[^\\s]+))?(?:\\s+versioning=(?<versioning>[^\\s]+))?\\nARG [A-Z0-9_]+_VERSION=(?<currentValue>\\S+)"
+      ],
+      "description": "Update version arguments in Dockerfiles"
     }
   ],
   "packageRules": [
@@ -91,6 +108,21 @@
           "python3 -c \"import urllib.request,json,re; d=json.loads(urllib.request.urlopen('https://artifacthub.io/api/v1/packages/helm/prometheus-community/kube-prometheus-stack/{{newVersion}}').read()); ver=d.get('app_version'); f='infra/monitoring-crds/kustomization.yaml'; c=open(f).read(); open(f,'w').write(re.sub(r'download/v[0-9.]+/stripped',f'download/{ver}/stripped',c)) if ver else None\""
         ],
         "fileFilters": ["infra/monitoring-crds/kustomization.yaml"],
+        "executionMode": "update"
+      }
+    },
+    {
+      "matchPackageNames": ["mongo"],
+      "allowedVersions": "/^(?:4\\.4|7\\.0)\\./",
+      "groupName": "MongoDB patch versions"
+    },
+    {
+      "matchPackageNames": ["J0R6IT0/navidrome-lyrics-plugin"],
+      "postUpgradeTasks": {
+        "commands": [
+          "python3 -c \"import hashlib,re,urllib.request; f='apps/music/navidrome-deployment.yaml'; c=open(f).read(); u=re.search(r'https://github\\.com/J0R6IT0/navidrome-lyrics-plugin/releases/download/[^/]+/nd-lyrics\\.ndp',c).group(0); h=hashlib.sha256(urllib.request.urlopen(u).read()).hexdigest(); c=re.sub(r'plugin_sha256=\\\"[0-9a-f]{64}\\\"','plugin_sha256=\\\"'+h+'\\\"',c); open(f,'w').write(c)\""
+        ],
+        "fileFilters": ["apps/music/navidrome-deployment.yaml"],
         "executionMode": "update"
       }
     },

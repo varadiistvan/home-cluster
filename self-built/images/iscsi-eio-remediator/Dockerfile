@@ -1,6 +1,7 @@
 FROM alpine:3.24
 
 ARG TARGETARCH
+# renovate: datasource=github-releases depName=kubernetes/kubernetes versioning=semver
 ARG KUBECTL_VERSION=v1.36.2
 
 RUN apk add --no-cache ca-certificates curl jq \

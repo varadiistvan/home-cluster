@@ -16,7 +16,7 @@ spec:
   chart:
     spec:
       chart: node-feature-discovery
-      # renovate: datasource=docker depName=registry.k8s.io/nfd/charts/node-feature-discovery
+      # renovate: datasource=docker depName=registry.k8s.io/nfd/charts/node-feature-discovery versioning=semver
       version: 0.19.x
       sourceRef:
         kind: HelmRepository

@@ -43,48 +43,44 @@ renovate:
 
       "binarySource": "install",
 
-      "enabledManagers": ["flux", "dockerfile", "docker-compose", "kubernetes", "helmv3", "terraform", "gomod", "cargo", "github-actions", "npm", "gradle", "gradle-wrapper", "regex"],
+      "enabledManagers": ["flux", "dockerfile", "docker-compose", "kubernetes", "helm-values", "helmv3", "terraform", "gomod", "cargo", "github-actions", "npm", "gradle", "gradle-wrapper", "custom.regex"],
 
-      "allowedPostUpgradeCommands": ["^python3 -c .*"],
+      "allowedCommands": ["^python3 -c .*"],
 
       "npm": {
         "postUpdateOptions": ["npmDedupe"],
         "ignoreScripts": true
       },
 
-      "gradleWrapper": {
-        "enabled": true
-      },
-
       "packageRules": [
         {
           "matchDatasources": ["docker"],
-          "matchPackagePatterns": ["^harbor\\.stevevaradi\\.me/ghcr/"],
+          "matchPackageNames": ["/^harbor\\.stevevaradi\\.me\\/ghcr\\//"],
           "registryUrls": ["https://ghcr.io"]
           // (optional) set hostRules for ghcr.io if private
         },
 
         {
           "matchDatasources": ["docker"],
-          "matchPackagePatterns": ["^harbor\\.stevevaradi\\.me/quay/"],
+          "matchPackageNames": ["/^harbor\\.stevevaradi\\.me\\/quay\\//"],
           "registryUrls": ["https://quay.io"]
         },
 
         {
           "matchDatasources": ["docker"],
-          "matchPackagePatterns": ["^harbor\\.stevevaradi\\.me/k8s-reg/"],
+          "matchPackageNames": ["/^harbor\\.stevevaradi\\.me\\/k8s-reg\\//"],
           "registryUrls": ["https://registry.k8s.io"]
         },
 
         {
           "matchDatasources": ["docker"],
-          "matchPackagePatterns": ["^harbor\\.stevevaradi\\.me/hub/[^/]+/"],
+          "matchPackageNames": ["/^harbor\\.stevevaradi\\.me\\/hub\\/[^/]+\\//"],
           "registryUrls": ["https://index.docker.io"]
         },
 
         {
           "matchDatasources": ["docker"],
-          "matchPackagePatterns": ["^harbor\\.stevevaradi\\.me/hub/library/"],
+          "matchPackageNames": ["/^harbor\\.stevevaradi\\.me\\/hub\\/library\\//"],
           "registryUrls": ["https://index.docker.io"]
         },
 

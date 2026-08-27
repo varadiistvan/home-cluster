@@ -16,7 +16,7 @@ spec:
   chart:
     spec:
       chart: seerr-chart
-      # renovate: datasource=docker depName=ghcr.io/seerr-team/seerr/seerr-chart
+      # renovate: datasource=docker depName=ghcr.io/seerr-team/seerr/seerr-chart versioning=semver
       version: 3.9.x
       sourceRef:
         kind: HelmRepository

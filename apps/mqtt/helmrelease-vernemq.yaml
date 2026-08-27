@@ -16,6 +16,7 @@ spec:
   chart:
     spec:
       chart: vernemq
+      # renovate: datasource=helm depName=vernemq registryUrl=https://vernemq.github.io/docker-vernemq
       version: 2.1.x
       sourceRef:
         kind: HelmRepository

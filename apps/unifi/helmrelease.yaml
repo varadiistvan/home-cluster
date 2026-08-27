@@ -16,7 +16,7 @@ spec:
   chart:
     spec:
       chart: unifi
-      # renovate: datasource=docker depName=ghcr.io/mkilchhofer/unifi-chart/unifi
+      # renovate: datasource=docker depName=ghcr.io/mkilchhofer/unifi-chart/unifi versioning=semver
       version: 1.16.x
       sourceRef:
         kind: HelmRepository
