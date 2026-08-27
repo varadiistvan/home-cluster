@@ -4,6 +4,10 @@ kind: CiliumLoadBalancerIPPool
 metadata:
   name: vip-syncthing
 spec:
+  serviceSelector:
+    matchLabels:
+      app.kubernetes.io/name: syncthing
+      app.kubernetes.io/instance: syncthing
   blocks:
     - start: "192.168.0.154"
       stop: "192.168.0.154"

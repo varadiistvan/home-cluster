@@ -125,4 +125,5 @@ spec:
           configMap:
             name: syncthing-init
         - name: data
-          emptyDir: {}
+          persistentVolumeClaim:
+            claimName: data-syncthing-syncthing-0

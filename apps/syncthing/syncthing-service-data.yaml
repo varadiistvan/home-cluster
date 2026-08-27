@@ -3,6 +3,8 @@ kind: Service
 metadata:
   name: syncthing-data
   namespace: syncthing
+  annotations:
+    lbipam.cilium.io/ips: "192.168.0.154"
   labels:
     app.kubernetes.io/name: syncthing
     app.kubernetes.io/instance: syncthing

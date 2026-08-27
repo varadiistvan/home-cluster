@@ -1,15 +1,15 @@
 apiVersion: kustomize.config.k8s.io/v1beta1
 kind: Kustomization
 resources:
-- cluster.yaml
-- cnpg-apps-secret.enc.yaml
-- databases.yaml
-- mealie-postgres-storage-secret.enc.yaml
-- planka-password-storage-secret.enc.yaml
-- postgres-immich-storage-secret.enc.yaml
-- postgres-penpot-storage-secret.enc.yaml
-- barman-minio-secret.enc.yaml
-- barman-objectstore.yaml
-- barman-scheduled-backup.yaml
+  - ./cluster.yaml
+  - ./cnpg-apps-secret.enc.yaml
+  - ./databases.yaml
+  - ./mealie-postgres-storage-secret.enc.yaml
+  - ./planka-password-storage-secret.enc.yaml
+  - ./postgres-immich-storage-secret.enc.yaml
+  - ./postgres-penpot-storage-secret.enc.yaml
+  - ./barman-minio-secret.enc.yaml
+  - ./barman-objectstore.yaml
+  - ./barman-scheduled-backup.yaml
 configurations:
 - ../../common/kustomizeconfig.yaml
