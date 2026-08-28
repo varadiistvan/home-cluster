@@ -3,8 +3,7 @@ image:
   repository: docker.io/apkdv/siyuan-unlock
   pullPolicy: IfNotPresent
   # renovate: datasource=docker depName=docker.io/apkdv/siyuan-unlock versioning=regex:^v(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$
-  # v3.8.1 exits after showing the kernel CLI instead of starting the server.
-  tag: v3.3.5
+  tag: v3.8.1
 timezone: Europe/Amsterdam
 uid: 1000
 gid: 1000
