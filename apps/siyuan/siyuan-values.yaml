@@ -2,6 +2,7 @@ replicaCount: 1
 image:
   repository: docker.io/apkdv/siyuan-unlock
   pullPolicy: IfNotPresent
+  # renovate: datasource=docker depName=docker.io/apkdv/siyuan-unlock versioning=regex:^v(?<major>3)\.(?<minor>\d+)\.(?<patch>\d+)$
   tag: v3.8.1
 timezone: Europe/Amsterdam
 uid: 1000
