@@ -39,7 +39,7 @@ spec:
       containers:
         - name: convertx
           # renovate: datasource=docker depName=ghcr.io/c4illin/convertx
-          image: ghcr.io/c4illin/convertx:v0.17.0
+          image: ghcr.io/c4illin/convertx:v0.18.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
