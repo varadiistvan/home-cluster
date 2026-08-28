@@ -17,7 +17,7 @@ spec:
     spec:
       chart: zigbee2mqtt
       # renovate: datasource=helm depName=zigbee2mqtt registryUrl=https://charts.zigbee2mqtt.io
-      version: 2.6.x
+      version: 2.13.x
       sourceRef:
         kind: HelmRepository
         name: zigbee2mqtt
