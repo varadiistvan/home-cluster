@@ -29,7 +29,7 @@ spec:
       initContainers:
         - name: install-nd-lyrics
           # renovate: datasource=docker depName=curlimages/curl
-          image: docker.io/curlimages/curl:8.16.0
+          image: docker.io/curlimages/curl:8.21.0
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
