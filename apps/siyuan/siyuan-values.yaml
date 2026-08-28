@@ -2,7 +2,7 @@ replicaCount: 1
 image:
   repository: docker.io/apkdv/siyuan-unlock
   pullPolicy: IfNotPresent
-  tag: v3.3.5
+  tag: v103.1.15
 timezone: Europe/Amsterdam
 uid: 1000
 gid: 1000
