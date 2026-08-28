@@ -117,10 +117,10 @@
       "groupName": "MongoDB patch versions"
     },
     {
-      "description": "Ignore legacy SiYuan v100/v103 image tags",
+      "description": "Allow SiYuan semantic releases through v99 and ignore legacy v100/v103 tags",
       "matchDatasources": ["docker"],
       "matchPackageNames": ["docker.io/apkdv/siyuan-unlock"],
-      "allowedVersions": "/^v3\\.\\d+\\.\\d+$/"
+      "allowedVersions": "/^v(?:[0-9]|[1-9][0-9])\\.\\d+\\.\\d+$/"
     },
     {
       "matchPackageNames": ["J0R6IT0/navidrome-lyrics-plugin"],
