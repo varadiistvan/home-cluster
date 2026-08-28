@@ -43,7 +43,7 @@ createResource: false
 resource:
   name: mongodb-replica-set
   # renovate: datasource=docker depName=mongo versioning=semver
-  version: 4.4.0
+  version: 4.4.30
   members: 3
   tls:
     enabled: false

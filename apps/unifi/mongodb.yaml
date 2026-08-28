@@ -9,7 +9,7 @@ spec:
   type: ReplicaSet
   featureCompatibilityVersion: "7.0"
   # renovate: datasource=docker depName=mongo versioning=semver
-  version: "7.0.23"
+  version: "7.0.40"
   security:
     authentication:
       modes: ["SCRAM"]
