@@ -64,7 +64,7 @@ spec:
               mountPath: /data
       containers:
         - name: redisinsight
-          image: redis/redisinsight:2.70
+          image: redis/redisinsight:3.8
           imagePullPolicy: IfNotPresent
           env:
             - name: SERVER_TLS
