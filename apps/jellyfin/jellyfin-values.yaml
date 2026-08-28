@@ -1,6 +1,6 @@
 image:
   repository: docker.io/jellyfin/jellyfin
-  tag: "10.10.7"
+  tag: "10.11.11"
 podAnnotations:
   iscsi.stevevaradi.me/eio-remediate: "true"
 deploymentStrategy:
