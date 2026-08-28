@@ -33,7 +33,7 @@ spec:
       containers:
         - name: liveness-probe
           # renovate: datasource=docker depName=registry.k8s.io/sig-storage/livenessprobe
-          image: registry.k8s.io/sig-storage/livenessprobe:v2.16.0
+          image: registry.k8s.io/sig-storage/livenessprobe:v2.19.0
           imagePullPolicy: IfNotPresent
           args:
             - --csi-address=/csi/csi.sock
