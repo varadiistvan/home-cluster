@@ -16,6 +16,8 @@ podAnnotations:
   iscsi.stevevaradi.me/eio-remediate: "true"
 deploymentStrategy:
   type: Recreate
+  # Remove the RollingUpdate settings owned by the previous chart revision.
+  rollingUpdate: null
 affinity:
   nodeAffinity:
     preferredDuringSchedulingIgnoredDuringExecution:
