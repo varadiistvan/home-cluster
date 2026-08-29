@@ -24,7 +24,7 @@ spec:
     spec:
       initContainers:
         - name: init-data-permissions
-          image: alpine:3.20
+          image: alpine:3.24
           imagePullPolicy: IfNotPresent
           command:
             - /bin/sh
