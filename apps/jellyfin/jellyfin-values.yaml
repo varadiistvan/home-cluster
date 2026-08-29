@@ -12,6 +12,24 @@ startupProbe:
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 8640
+# Mark transient stalls unready quickly, but only restart Jellyfin after three
+# minutes of continuous health-check failures.
+readinessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 3
+livenessProbe:
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 10
+  periodSeconds: 30
+  timeoutSeconds: 5
+  failureThreshold: 6
 podAnnotations:
   iscsi.stevevaradi.me/eio-remediate: "true"
 deploymentStrategy:
