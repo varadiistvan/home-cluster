@@ -17,7 +17,7 @@ spec:
     - name: vector
     - name: vchord
       # renovate: datasource=github-releases depName=tensorchord/VectorChord versioning=semver
-      version: 0.4.3
+      version: 0.5.3
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: Database
