@@ -26,7 +26,7 @@ spec:
       containers:
         - name: bytestash
           # renovate: datasource=docker depName=ghcr.io/jordan-dalby/bytestash
-          image: ghcr.io/jordan-dalby/bytestash:1.5.11
+          image: ghcr.io/jordan-dalby/bytestash:1.5.12
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
