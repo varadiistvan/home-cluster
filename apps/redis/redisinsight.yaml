@@ -39,6 +39,7 @@ metadata:
   labels:
     app: redisinsight
 spec:
+  progressDeadlineSeconds: 1800
   replicas: 1
   selector:
     matchLabels:
@@ -64,7 +65,7 @@ spec:
               mountPath: /data
       containers:
         - name: redisinsight
-          image: redis/redisinsight:2.70
+          image: redis/redisinsight:3.8
           imagePullPolicy: IfNotPresent
           env:
             - name: SERVER_TLS
@@ -85,12 +86,25 @@ spec:
               memory: 512Mi
           livenessProbe:
             httpGet:
-              path: /api/health
+              path: /api/health/
               port: http
-            initialDelaySeconds: 60
-            periodSeconds: 5
-            timeoutSeconds: 3
+            periodSeconds: 30
+            timeoutSeconds: 5
             failureThreshold: 3
+          readinessProbe:
+            httpGet:
+              path: /api/health/
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          startupProbe:
+            httpGet:
+              path: /api/health/
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 180
       volumes:
         - name: db
           persistentVolumeClaim:
