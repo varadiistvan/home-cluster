@@ -45,7 +45,10 @@ spec:
     matchLabels:
       app: redisinsight
   strategy:
-    type: Recreate
+    type: RollingUpdate
+    rollingUpdate:
+      maxUnavailable: 1
+      maxSurge: 0
   template:
     metadata:
       labels:
