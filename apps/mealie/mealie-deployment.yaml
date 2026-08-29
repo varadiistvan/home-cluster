@@ -7,7 +7,10 @@ metadata:
     app.kubernetes.io/name: mealie
     app.kubernetes.io/instance: mealie
 spec:
+  progressDeadlineSeconds: 1800
   replicas: 1
+  strategy:
+    type: Recreate
   selector:
     matchLabels:
       app.kubernetes.io/name: mealie
@@ -23,11 +26,32 @@ spec:
       containers:
         - name: mealie
           # renovate: datasource=docker depName=ghcr.io/mealie-recipes/mealie
-          image: ghcr.io/mealie-recipes/mealie:v2.8.0
+          image: ghcr.io/mealie-recipes/mealie:v3.24.0
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
               containerPort: 9000
+          startupProbe:
+            httpGet:
+              path: /api/app/about
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 180
+          readinessProbe:
+            httpGet:
+              path: /api/app/about
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 6
+          livenessProbe:
+            httpGet:
+              path: /api/app/about
+              port: http
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
           envFrom:
             - configMapRef:
                 name: mealie
