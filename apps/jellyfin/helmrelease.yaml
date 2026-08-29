@@ -6,13 +6,15 @@ metadata:
   namespace: media
 spec:
   interval: 30m
-  timeout: 10m
+  # Jellyfin database migrations can take hours and must not be interrupted.
+  timeout: 24h
   install:
     remediation:
       retries: -1
   upgrade:
-    remediation:
-      retries: 3
+    strategy:
+      name: RetryOnFailure
+      retryInterval: 30m
   chart:
     spec:
       chart: jellyfin

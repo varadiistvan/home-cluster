@@ -1,10 +1,23 @@
 image:
   repository: docker.io/jellyfin/jellyfin
-  tag: "10.10.7"
+  tag: "10.11.11"
+# Keep liveness and readiness probes disabled until Jellyfin reports healthy.
+# This prevents kubelet from restarting the pod during long database migrations.
+startupProbe:
+  tcpSocket: null
+  httpGet:
+    path: /health
+    port: http
+  initialDelaySeconds: 0
+  periodSeconds: 10
+  timeoutSeconds: 5
+  failureThreshold: 8640
 podAnnotations:
   iscsi.stevevaradi.me/eio-remediate: "true"
 deploymentStrategy:
   type: Recreate
+  # Remove the RollingUpdate settings owned by the previous chart revision.
+  rollingUpdate: null
 affinity:
   nodeAffinity:
     preferredDuringSchedulingIgnoredDuringExecution:
