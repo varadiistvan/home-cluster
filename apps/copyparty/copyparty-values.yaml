@@ -2,7 +2,7 @@ replicaCount: 1
 image:
   repository: docker.io/copyparty/ac
   pullPolicy: IfNotPresent
-  tag: 1.19.20
+  tag: 1.20.21
 imagePullSecrets:
 - name: registry-pass
 serviceAccount:
