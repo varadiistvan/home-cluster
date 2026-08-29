@@ -6,13 +6,34 @@ metadata:
   namespace: home
 spec:
   interval: 30m
-  timeout: 10m
+  timeout: 20m
   install:
     remediation:
       retries: -1
   upgrade:
     remediation:
       retries: 3
+  postRenderers:
+    - kustomize:
+        patches:
+          - target:
+              kind: StatefulSet
+              name: vernemq
+            patch: |
+              - op: add
+                path: /spec/minReadySeconds
+                value: 30
+              - op: add
+                path: /spec/template/spec/containers/0/startupProbe
+                value:
+                  httpGet:
+                    path: /health/ping
+                    port: api
+                    scheme: HTTP
+                  periodSeconds: 10
+                  timeoutSeconds: 5
+                  failureThreshold: 90
+                  successThreshold: 1
   chart:
     spec:
       chart: vernemq
