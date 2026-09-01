@@ -74,7 +74,7 @@ spec:
               value: qux
             # TODO: set to "false" once the accounts are created
             - name: QUX_USER_ALLOW_SIGNUP
-              value: "true"
+              value: "false"
             - name: QUX_USER_ALLOWED_DOMAINS
               value: "*"
             - name: TZ
@@ -166,7 +166,7 @@ spec:
             - name: QUX_AUTH
               value: qux
             - name: QUX_USER_ALLOW_SIGNUP
-              value: "true"
+              value: "false"
             - name: QUX_USER_ALLOWED_DOMAINS
               value: "*"
             - name: TZ
