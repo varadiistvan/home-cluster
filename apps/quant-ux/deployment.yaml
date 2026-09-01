@@ -26,6 +26,9 @@ spec:
       annotations:
         iscsi.stevevaradi.me/eio-remediate: "true"
     spec:
+      # Upstream publishes amd64-only images
+      nodeSelector:
+        kubernetes.io/arch: amd64
       containers:
         - name: backend
           # renovate: datasource=docker depName=klausenschaefersinho/quant-ux-backend
@@ -135,6 +138,9 @@ spec:
         app.kubernetes.io/instance: quant-ux
         app.kubernetes.io/component: frontend
     spec:
+      # Upstream publishes amd64-only images
+      nodeSelector:
+        kubernetes.io/arch: amd64
       containers:
         - name: frontend
           # renovate: datasource=docker depName=klausenschaefersinho/quant-ux
@@ -213,6 +219,9 @@ spec:
         app.kubernetes.io/instance: quant-ux
         app.kubernetes.io/component: websocket
     spec:
+      # Upstream publishes amd64-only images
+      nodeSelector:
+        kubernetes.io/arch: amd64
       containers:
         - name: websocket
           # renovate: datasource=docker depName=klausenschaefersinho/quant-ux-websocket
