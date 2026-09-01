@@ -1,0 +1,52 @@
+---
+apiVersion: mongodbcommunity.mongodb.com/v1
+kind: MongoDBCommunity
+metadata:
+  name: quant-ux-mongodb
+  namespace: storage
+spec:
+  members: 1
+  type: ReplicaSet
+  featureCompatibilityVersion: "7.0"
+  # renovate: datasource=docker depName=mongo versioning=semver
+  version: "7.0.40"
+  security:
+    authentication:
+      modes:
+        - SCRAM
+  users:
+    - name: quantux
+      db: admin
+      passwordSecretRef:
+        name: quant-ux-mongodb
+      roles:
+        - name: readWrite
+          db: quantux
+        - name: dbAdmin
+          db: quantux
+        - name: clusterMonitor
+          db: admin
+      scramCredentialsSecretName: quant-ux-scram
+  additionalMongodConfig:
+    storage.wiredTiger.engineConfig.journalCompressor: zlib
+  statefulSet:
+    spec:
+      volumeClaimTemplates:
+        - metadata:
+            name: data-volume
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            storageClassName: iscsi-csi
+            resources:
+              requests:
+                storage: 10Gi
+        - metadata:
+            name: logs-volume
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            storageClassName: nfs-csi
+            resources:
+              requests:
+                storage: 2Gi

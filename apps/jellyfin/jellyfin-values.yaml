@@ -1,30 +1,33 @@
 image:
   repository: docker.io/jellyfin/jellyfin
   tag: "10.11.11"
-# Keep liveness and readiness probes disabled until Jellyfin reports healthy.
-# This prevents kubelet from restarting the pod during long database migrations.
+# The 24-hour startup window prevents long database migrations from being killed.
 startupProbe:
   tcpSocket: null
   httpGet:
-    path: /health
+    path: /
     port: http
   initialDelaySeconds: 0
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 8640
-# Mark transient stalls unready quickly, but only restart Jellyfin after three
-# minutes of continuous health-check failures.
+# Keep degraded instances out of service without restarting them. Readiness
+# checks the health response body because Jellyfin always returns HTTP 200.
 readinessProbe:
-  httpGet:
-    path: /health
-    port: http
+  httpGet: null
+  exec:
+    command:
+      - /bin/sh
+      - -ec
+      - test "$(curl -fsS --max-time 4 http://127.0.0.1:8096/health)" = Healthy
   initialDelaySeconds: 10
   periodSeconds: 10
   timeoutSeconds: 5
   failureThreshold: 3
+# Liveness is TCP-only and is suppressed until startup has succeeded.
 livenessProbe:
-  httpGet:
-    path: /health
+  httpGet: null
+  tcpSocket:
     port: http
   initialDelaySeconds: 10
   periodSeconds: 30
@@ -34,39 +37,38 @@ podAnnotations:
   iscsi.stevevaradi.me/eio-remediate: "true"
 deploymentStrategy:
   type: Recreate
-  # Remove the RollingUpdate settings owned by the previous chart revision.
   rollingUpdate: null
 affinity:
   nodeAffinity:
     preferredDuringSchedulingIgnoredDuringExecution:
-    - weight: 100
-      preference:
-        matchExpressions:
-        - key: kubernetes.io/hostname
-          operator: In
-          values:
-          - macm1
+      - weight: 100
+        preference:
+          matchExpressions:
+            - key: kubernetes.io/hostname
+              operator: In
+              values:
+                - macm1
 ingress:
   enabled: false
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
   hosts:
-  - host: jellyfin.stevevaradi.me
-    paths:
-    - path: /
-      pathType: Prefix
+    - host: jellyfin.stevevaradi.me
+      paths:
+        - path: /
+          pathType: Prefix
   tls:
-  - secretName: jellyfin-tls
-    hosts:
-    - jellyfin.stevevaradi.me
+    - secretName: jellyfin-tls
+      hosts:
+        - jellyfin.stevevaradi.me
 volumes:
-- name: nfs-media
-  nfs:
-    server: 192.168.0.151
-    path: /export/media
+  - name: nfs-media
+    nfs:
+      server: 192.168.0.151
+      path: /export/media
 volumeMounts:
-- name: nfs-media
-  mountPath: /nfs_media
+  - name: nfs-media
+    mountPath: /nfs_media
 persistence:
   config:
     enabled: true

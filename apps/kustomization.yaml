@@ -25,6 +25,7 @@ resources:
   - ./overleaf
   - ./penpot
   - ./planka
+  - ./quant-ux
   - ./redis
   - ./renovate
   - ./siyuan

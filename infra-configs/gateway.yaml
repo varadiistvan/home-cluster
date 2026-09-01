@@ -218,6 +218,30 @@ spec:
         namespaces:
           from: All
 
+    - name: https-quant-ux
+      protocol: HTTPS
+      port: 443
+      hostname: quant-ux.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: quant-ux-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
+    - name: https-quant-ux-ws
+      protocol: HTTPS
+      port: 443
+      hostname: quant-ux-ws.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: quant-ux-ws-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
     - name: https-redisinsight
       protocol: HTTPS
       port: 443

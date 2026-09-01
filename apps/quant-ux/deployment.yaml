@@ -1,0 +1,256 @@
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quant-ux-backend
+  namespace: quant-ux
+  labels:
+    app.kubernetes.io/name: quant-ux
+    app.kubernetes.io/instance: quant-ux
+    app.kubernetes.io/component: backend
+spec:
+  replicas: 1
+  strategy:
+    type: Recreate
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: quant-ux
+      app.kubernetes.io/instance: quant-ux
+      app.kubernetes.io/component: backend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: quant-ux
+        app.kubernetes.io/instance: quant-ux
+        app.kubernetes.io/component: backend
+      annotations:
+        iscsi.stevevaradi.me/eio-remediate: "true"
+    spec:
+      containers:
+        - name: backend
+          # renovate: datasource=docker depName=klausenschaefersinho/quant-ux-backend
+          image: klausenschaefersinho/quant-ux-backend:latest@sha256:9a458e9fdfe3b74bbd8e847cc682646f5a9ad453c3cc427e971001e8c12da8d0
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8080
+          env:
+            # Public frontend URL, used for the links in outgoing mails
+            - name: QUX_HTTP_HOST
+              value: https://quant-ux.stevevaradi.me
+            - name: QUX_HTTP_PORT
+              value: "8080"
+            - name: QUX_MONGO_DB_NAME
+              value: quantux
+            - name: QUX_MONGO_TABLE_PREFIX
+              value: quantux
+            - name: MONGO_PASSWORD
+              valueFrom:
+                secretKeyRef:
+                  name: quant-ux-mongodb
+                  key: password
+            - name: QUX_MONGO_CONNECTION_STRING
+              value: mongodb://quantux:$(MONGO_PASSWORD)@quant-ux-mongodb-svc.storage.svc.cluster.local:27017/quantux?authSource=admin&replicaSet=quant-ux-mongodb
+            # No SMTP server configured: sign-up/reset mails are not delivered
+            - name: QUX_MAIL_HOST
+              value: localhost
+            - name: QUX_MAIL_USER
+              value: quant-ux@stevevaradi.me
+            - name: QUX_MAIL_SSL
+              value: disabled
+            - name: QUX_IMAGE_FOLDER_USER
+              value: /app-data/qux-images
+            - name: QUX_IMAGE_FOLDER_APPS
+              value: /app-data/qux-image-apps
+            - name: QUX_AUTH_SERVICE
+              value: qux
+            # TODO: set to "false" once the accounts are created
+            - name: QUX_USER_ALLOW_SIGNUP
+              value: "true"
+            - name: QUX_USER_ALLOWED_DOMAINS
+              value: "*"
+            - name: TZ
+              value: Europe/Budapest
+          envFrom:
+            - secretRef:
+                name: quant-ux
+          startupProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 30
+          readinessProbe:
+            tcpSocket:
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 50m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+          volumeMounts:
+            - name: data
+              mountPath: /app-data/qux-images
+              subPath: qux-images
+            - name: data
+              mountPath: /app-data/qux-image-apps
+              subPath: qux-image-apps
+      volumes:
+        - name: data
+          persistentVolumeClaim:
+            claimName: quant-ux-data
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quant-ux-frontend
+  namespace: quant-ux
+  labels:
+    app.kubernetes.io/name: quant-ux
+    app.kubernetes.io/instance: quant-ux
+    app.kubernetes.io/component: frontend
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: quant-ux
+      app.kubernetes.io/instance: quant-ux
+      app.kubernetes.io/component: frontend
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: quant-ux
+        app.kubernetes.io/instance: quant-ux
+        app.kubernetes.io/component: frontend
+    spec:
+      containers:
+        - name: frontend
+          # renovate: datasource=docker depName=klausenschaefersinho/quant-ux
+          image: klausenschaefersinho/quant-ux:latest@sha256:63efef2d463afe0db4797769598c68f032206cfc2e9f89f5701610589b46b1ef
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: http
+              containerPort: 8082
+          env:
+            - name: QUX_HTTP_PORT
+              value: "8082"
+            # In-cluster backend, the frontend proxies /rest and /ai to it
+            - name: QUX_PROXY_URL
+              value: http://quant-ux-backend.quant-ux.svc.cluster.local:8080
+            # Browser-facing websocket endpoint
+            - name: QUX_WS_URL
+              value: wss://quant-ux-ws.stevevaradi.me
+            - name: QUX_AUTH
+              value: qux
+            - name: QUX_USER_ALLOW_SIGNUP
+              value: "true"
+            - name: QUX_USER_ALLOWED_DOMAINS
+              value: "*"
+            - name: TZ
+              value: Europe/Budapest
+          startupProbe:
+            httpGet:
+              path: /config.json
+              port: http
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            httpGet:
+              path: /config.json
+              port: http
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            httpGet:
+              path: /config.json
+              port: http
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 25m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: quant-ux-websocket
+  namespace: quant-ux
+  labels:
+    app.kubernetes.io/name: quant-ux
+    app.kubernetes.io/instance: quant-ux
+    app.kubernetes.io/component: websocket
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app.kubernetes.io/name: quant-ux
+      app.kubernetes.io/instance: quant-ux
+      app.kubernetes.io/component: websocket
+  template:
+    metadata:
+      labels:
+        app.kubernetes.io/name: quant-ux
+        app.kubernetes.io/instance: quant-ux
+        app.kubernetes.io/component: websocket
+    spec:
+      containers:
+        - name: websocket
+          # renovate: datasource=docker depName=klausenschaefersinho/quant-ux-websocket
+          image: klausenschaefersinho/quant-ux-websocket:latest@sha256:cf663d6c001bbaa57cda9db6f9508eb96df33960980e3174c0158cf969c51cbc
+          imagePullPolicy: IfNotPresent
+          ports:
+            - name: ws
+              containerPort: 8086
+          env:
+            - name: QUX_SERVER
+              value: http://quant-ux-backend.quant-ux.svc.cluster.local:8080/
+            - name: QUX_SERVER_PORT
+              value: "8086"
+            - name: TZ
+              value: Europe/Budapest
+          startupProbe:
+            tcpSocket:
+              port: ws
+            periodSeconds: 5
+            timeoutSeconds: 5
+            failureThreshold: 24
+          readinessProbe:
+            tcpSocket:
+              port: ws
+            periodSeconds: 10
+            timeoutSeconds: 5
+            failureThreshold: 3
+          livenessProbe:
+            tcpSocket:
+              port: ws
+            initialDelaySeconds: 30
+            periodSeconds: 30
+            timeoutSeconds: 5
+            failureThreshold: 3
+          resources:
+            requests:
+              cpu: 25m
+              memory: 64Mi
+            limits:
+              cpu: 500m
+              memory: 256Mi
