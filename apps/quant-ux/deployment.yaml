@@ -54,7 +54,12 @@ spec:
                   key: password
             - name: QUX_MONGO_CONNECTION_STRING
               value: mongodb://quantux:$(MONGO_PASSWORD)@quant-ux-mongodb-svc.storage.svc.cluster.local:27017/quantux?authSource=admin&replicaSet=quant-ux-mongodb
-            # No SMTP server configured: sign-up/reset mails are not delivered
+            # No SMTP server configured. QUX_DEBUG swaps the real MailClient for
+            # an in-memory one: without it MATC.createMail() passes a null pool
+            # name to MailClient.createShared() and the verticle dies on an NPE.
+            # It only affects the mail client, nothing else reads the flag.
+            - name: QUX_DEBUG
+              value: "true"
             - name: QUX_MAIL_HOST
               value: localhost
             - name: QUX_MAIL_USER
