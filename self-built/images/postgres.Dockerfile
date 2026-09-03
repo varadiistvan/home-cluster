@@ -3,7 +3,7 @@
 FROM docker.io/tensorchord/vchord-postgres:pg16-v1.1.1 AS vchord
 # renovate: versioning=regex:^pg16-v(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$
 FROM docker.io/tensorchord/pgvecto-rs:pg16-v0.4.0 AS pgvecto
-FROM ghcr.io/cloudnative-pg/postgresql:16-standard-bookworm
+FROM ghcr.io/cloudnative-pg/postgresql:18-standard-bookworm
 
 USER root
 # pgvecto.rs (vectors)
