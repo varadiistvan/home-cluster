@@ -206,7 +206,12 @@ def main() -> None:
 
     configmap_path = f"/api/v1/namespaces/{NAMESPACE}/configmaps"
     job_path = f"/apis/batch/v1/namespaces/{NAMESPACE}/jobs"
+    job_names = [f"{name}-{arch}" for arch in ARCHES] + [f"{name}-index"]
     try:
+        # A Renovate retry may reuse an identical Dockerfile. Remove completed
+        # (or failed) names from its prior attempt before recreating them.
+        for job_name in job_names:
+            delete(f"{job_path}/{job_name}")
         post(configmap_path, configmap)
         for arch in ARCHES:
             post(job_path, kaniko_job(arch))
