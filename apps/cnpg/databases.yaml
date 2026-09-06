@@ -13,8 +13,11 @@ spec:
   extensions:
     - name: cube
     - name: earthdistance
+    - name: vectors
     - name: vector
     - name: vchord
+      # renovate: datasource=github-releases depName=tensorchord/VectorChord versioning=semver
+      version: 0.4.3
 ---
 apiVersion: postgresql.cnpg.io/v1
 kind: Database
