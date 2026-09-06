@@ -9,7 +9,7 @@ spec:
   inheritedMetadata:
     annotations:
       iscsi.stevevaradi.me/eio-remediate: "true"
-  imageName: harbor.stevevaradi.me/stevevaradi/vector-pg:18
+  imageName: harbor.stevevaradi.me/stevevaradi/vector-pg:16
   imagePullPolicy: Always
   imagePullSecrets:
     - name: registry-pass
@@ -25,6 +25,7 @@ spec:
     shared_preload_libraries:
       - pgaudit
       - vchord
+      - vectors
     parameters:
       # required by pg_failover_slots
       hot_standby_feedback: "on"
