@@ -13,7 +13,6 @@ spec:
   extensions:
     - name: cube
     - name: earthdistance
-    - name: vectors
     - name: vector
     - name: vchord
       # renovate: datasource=github-releases depName=tensorchord/VectorChord versioning=semver
