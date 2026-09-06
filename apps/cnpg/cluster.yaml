@@ -9,7 +9,9 @@ spec:
   inheritedMetadata:
     annotations:
       iscsi.stevevaradi.me/eio-remediate: "true"
-  imageName: harbor.stevevaradi.me/stevevaradi/vector-pg:16
+  # Bridge image only: keeps PostgreSQL 16 and existing extensions, but supplies
+  # Vchord 1.1.1 upgrade scripts for a separately tested extension migration.
+  imageName: harbor.stevevaradi.me/stevevaradi/vector-pg:16-vchord-1.1.1
   imagePullPolicy: Always
   imagePullSecrets:
     - name: registry-pass
