@@ -15,6 +15,11 @@ spec:
     crds: CreateReplace
     remediation:
       retries: 3
+  values:
+    # Gateway API and Envoy Gateway CRDs are managed outside this chart.
+    # The bundled chart CRDs use the experimental Gateway API channel.
+    crds:
+      enabled: false
   chart:
     spec:
       chart: gateway-helm
