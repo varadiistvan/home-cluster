@@ -542,7 +542,9 @@ data:
       prune_delete_state
       scan_file="/state/csi-paths"
       eio_seen=0
-      if ! timeout "$SCAN_TIMEOUT_SECONDS" find "$KUBELET_ROOT/pods" -path '*/volumes/kubernetes.io~csi/*' ! -path '*/volumes/kubernetes.io~csi/*/*' >"$scan_file" 2>/state/find.err; then
+      # Print CSI volume roots, then prune them. Without -prune, find descends into
+      # mounted application data and can block long enough to fail the liveness probe.
+      if ! timeout "$SCAN_TIMEOUT_SECONDS" find "$KUBELET_ROOT/pods" -path '*/volumes/kubernetes.io~csi/*' -prune -print >"$scan_file" 2>/state/find.err; then
         log "timed out or failed scanning kubelet CSI paths: $(cat /state/find.err 2>/dev/null || true)"
       fi
 
