@@ -60,7 +60,7 @@ spec:
               mountPath: /data
         - name: rescan-navidrome-plugins
           # renovate: datasource=docker depName=deluan/navidrome
-          image: docker.io/deluan/navidrome:0.63.2
+          image: docker.io/deluan/navidrome:0.64.0
           imagePullPolicy: IfNotPresent
           command:
             - /app/navidrome
@@ -77,7 +77,7 @@ spec:
               mountPath: /data
         - name: configure-nd-lyrics
           # renovate: datasource=docker depName=deluan/navidrome
-          image: docker.io/deluan/navidrome:0.63.2
+          image: docker.io/deluan/navidrome:0.64.0
           imagePullPolicy: IfNotPresent
           command:
             - /app/navidrome
@@ -100,7 +100,7 @@ spec:
               mountPath: /nfs_media
         - name: grant-nd-lyrics-library-access
           # renovate: datasource=docker depName=deluan/navidrome
-          image: docker.io/deluan/navidrome:0.63.2
+          image: docker.io/deluan/navidrome:0.64.0
           imagePullPolicy: IfNotPresent
           command:
             - /app/navidrome
@@ -122,7 +122,7 @@ spec:
               mountPath: /nfs_media
         - name: enable-nd-lyrics
           # renovate: datasource=docker depName=deluan/navidrome
-          image: docker.io/deluan/navidrome:0.63.2
+          image: docker.io/deluan/navidrome:0.64.0
           imagePullPolicy: IfNotPresent
           command:
             - /app/navidrome
@@ -141,7 +141,7 @@ spec:
       containers:
         - name: navidrome
           # renovate: datasource=docker depName=deluan/navidrome
-          image: docker.io/deluan/navidrome:0.63.2
+          image: docker.io/deluan/navidrome:0.64.0
           imagePullPolicy: IfNotPresent
           securityContext:
             allowPrivilegeEscalation: false
