@@ -87,7 +87,7 @@ spec:
             - nd-lyrics
             - --config
             - >-
-              {"lyricsFormats":"lrc","durationToleranceSeconds":3,"providersList":[{"provider":"lrclib"},{"provider":"lrcmux"}],"providerMode":"priority","enableCache":true,"negativeCache":true,"writeLyrics":true,"overwriteLyrics":false,"writeToSpecificFolder":false}
+              {"lyricsFormats":"lrc","durationToleranceSeconds":3,"providersList":[{"provider":"lrclib","romanizationScript":"none","translationLanguage":"none"},{"provider":"lrcmux","romanizationScript":"none","translationLanguage":"none"}],"providerMode":"priority","enableCache":true,"negativeCache":true,"writeLyrics":true,"overwriteLyrics":false,"writeToSpecificFolder":false}
           env:
             - name: ND_DATAFOLDER
               value: /data
