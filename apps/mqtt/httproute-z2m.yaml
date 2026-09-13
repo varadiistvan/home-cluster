@@ -4,6 +4,13 @@ kind: HTTPRoute
 metadata:
   name: z2m-frontend
   namespace: home
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Zigbee2MQTT"
+    gethomepage.dev/group: "Home"
+    gethomepage.dev/icon: "zigbee2mqtt.png"
+    gethomepage.dev/description: "Zigbee bridge"
+    gethomepage.dev/pod-selector: "app.kubernetes.io/instance=z2m"
 spec:
   parentRefs:
     - name: cilium-gateway-local

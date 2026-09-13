@@ -4,6 +4,12 @@ kind: HTTPRoute
 metadata:
   name: bytestash
   namespace: bytestash
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "ByteStash"
+    gethomepage.dev/group: "Files & Documents"
+    gethomepage.dev/icon: "mdi-code-braces-box"
+    gethomepage.dev/description: "Code snippets"
 spec:
   parentRefs:
     - name: cilium-gateway-local

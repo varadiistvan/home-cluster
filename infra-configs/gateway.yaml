@@ -110,6 +110,18 @@ spec:
         namespaces:
           from: All
 
+    - name: https-homepage
+      protocol: HTTPS
+      port: 443
+      hostname: homepage.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: homepage-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
     - name: https-immich
       protocol: HTTPS
       port: 443

@@ -4,6 +4,13 @@ kind: HTTPRoute
 metadata:
   name: penpot
   namespace: penpot
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Penpot"
+    gethomepage.dev/group: "Tools"
+    gethomepage.dev/icon: "penpot.png"
+    gethomepage.dev/description: "Design"
+    gethomepage.dev/pod-selector: "app.kubernetes.io/instance=penpot"
 spec:
   parentRefs:
     - name: cilium-gateway-local

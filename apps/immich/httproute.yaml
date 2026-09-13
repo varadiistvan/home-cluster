@@ -4,6 +4,13 @@ kind: HTTPRoute
 metadata:
   name: immich
   namespace: media
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Immich"
+    gethomepage.dev/group: "Media"
+    gethomepage.dev/icon: "immich.png"
+    gethomepage.dev/description: "Photos"
+    gethomepage.dev/pod-selector: "app.kubernetes.io/instance=immich,app.kubernetes.io/name=server"
 spec:
   parentRefs:
     - name: cilium-gateway-local

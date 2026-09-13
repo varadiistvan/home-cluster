@@ -4,6 +4,12 @@ kind: HTTPRoute
 metadata:
   name: planka
   namespace: planka
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Planka"
+    gethomepage.dev/group: "Home"
+    gethomepage.dev/icon: "planka.png"
+    gethomepage.dev/description: "Kanban boards"
 spec:
   parentRefs:
     - name: cilium-gateway-local

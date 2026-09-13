@@ -34,6 +34,13 @@ kind: HTTPRoute
 metadata:
   name: nas
   namespace: external
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "NAS"
+    gethomepage.dev/group: "Files & Documents"
+    gethomepage.dev/icon: "mdi-nas"
+    gethomepage.dev/description: "Network storage"
+    gethomepage.dev/external: "true"
 spec:
   parentRefs:
     - name: cilium-gateway-local

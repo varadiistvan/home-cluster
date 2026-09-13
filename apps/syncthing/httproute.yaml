@@ -4,6 +4,13 @@ kind: HTTPRoute
 metadata:
   name: syncthing-gui
   namespace: syncthing
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Syncthing"
+    gethomepage.dev/group: "Files & Documents"
+    gethomepage.dev/icon: "syncthing.png"
+    gethomepage.dev/description: "File sync"
+    gethomepage.dev/pod-selector: "app.kubernetes.io/name=syncthing"
 spec:
   parentRefs:
     - name: cilium-gateway-local

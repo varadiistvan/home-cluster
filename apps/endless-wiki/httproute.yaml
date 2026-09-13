@@ -4,6 +4,12 @@ kind: HTTPRoute
 metadata:
   name: wiki
   namespace: scratch
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Endless Wiki"
+    gethomepage.dev/group: "Tools"
+    gethomepage.dev/icon: "mdi-book-open-variant"
+    gethomepage.dev/description: "Generated wiki"
 spec:
   parentRefs:
     - name: cilium-gateway-local

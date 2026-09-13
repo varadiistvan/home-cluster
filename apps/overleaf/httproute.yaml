@@ -4,6 +4,12 @@ kind: HTTPRoute
 metadata:
   name: overleaf
   namespace: storage
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Overleaf"
+    gethomepage.dev/group: "Files & Documents"
+    gethomepage.dev/icon: "overleaf.png"
+    gethomepage.dev/description: "LaTeX editor"
 spec:
   parentRefs:
     - name: cilium-gateway-local

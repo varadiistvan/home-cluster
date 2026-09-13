@@ -4,6 +4,12 @@ kind: HTTPRoute
 metadata:
   name: jellyfin
   namespace: media
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Jellyfin"
+    gethomepage.dev/group: "Media"
+    gethomepage.dev/icon: "jellyfin.png"
+    gethomepage.dev/description: "Movies and shows"
 spec:
   parentRefs:
     - name: cilium-gateway-local
@@ -21,6 +27,13 @@ kind: HTTPRoute
 metadata:
   name: jellyseer
   namespace: media
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Jellyseerr"
+    gethomepage.dev/group: "Media"
+    gethomepage.dev/icon: "jellyseerr.png"
+    gethomepage.dev/description: "Media requests"
+    gethomepage.dev/pod-selector: "app.kubernetes.io/instance=jellyseer"
 spec:
   parentRefs:
     - name: cilium-gateway-local

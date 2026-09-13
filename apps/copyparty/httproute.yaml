@@ -4,6 +4,12 @@ kind: HTTPRoute
 metadata:
   name: copyparty
   namespace: copyparty
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Copyparty"
+    gethomepage.dev/group: "Files & Documents"
+    gethomepage.dev/icon: "mdi-folder-network"
+    gethomepage.dev/description: "File server"
 spec:
   parentRefs:
     - name: cilium-gateway-local

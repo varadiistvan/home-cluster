@@ -6,6 +6,11 @@ ingress:
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
     nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.0/24,10.192.1.0/24
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Grafana"
+    gethomepage.dev/group: "Infrastructure"
+    gethomepage.dev/icon: "grafana.png"
+    gethomepage.dev/description: "Dashboards"
   path: /
   hosts:
   - grafana.stevevaradi.me

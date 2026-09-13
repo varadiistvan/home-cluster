@@ -4,6 +4,12 @@ kind: HTTPRoute
 metadata:
   name: cyberchef
   namespace: cyberchef
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "CyberChef"
+    gethomepage.dev/group: "Tools"
+    gethomepage.dev/icon: "cyberchef.png"
+    gethomepage.dev/description: "Data wrangling"
 spec:
   parentRefs:
     - name: cilium-gateway-local

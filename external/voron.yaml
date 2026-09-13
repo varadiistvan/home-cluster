@@ -41,6 +41,14 @@ kind: HTTPRoute
 metadata:
   name: voron
   namespace: external
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Voron"
+    gethomepage.dev/group: "3D Printing"
+    gethomepage.dev/icon: "mainsail.png"
+    gethomepage.dev/description: "Voron printer"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/href: "https://voron.stevevaradi.me/"
 spec:
   parentRefs:
     - name: cilium-gateway-local
@@ -72,6 +80,13 @@ kind: HTTPRoute
 metadata:
   name: voron-cam
   namespace: external
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Voron Cam"
+    gethomepage.dev/group: "3D Printing"
+    gethomepage.dev/icon: "mdi-cctv"
+    gethomepage.dev/description: "Voron webcam"
+    gethomepage.dev/external: "true"
 spec:
   parentRefs:
     - name: cilium-gateway-local

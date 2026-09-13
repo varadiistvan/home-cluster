@@ -34,6 +34,13 @@ kind: HTTPRoute
 metadata:
   name: ollama
   namespace: external
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Ollama"
+    gethomepage.dev/group: "Infrastructure"
+    gethomepage.dev/icon: "ollama.png"
+    gethomepage.dev/description: "LLM API"
+    gethomepage.dev/external: "true"
 spec:
   parentRefs:
     - name: cilium-gateway-local

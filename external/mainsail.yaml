@@ -41,6 +41,14 @@ kind: HTTPRoute
 metadata:
   name: mainsail
   namespace: external
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Mainsail"
+    gethomepage.dev/group: "3D Printing"
+    gethomepage.dev/icon: "mainsail.png"
+    gethomepage.dev/description: "Klipper UI"
+    gethomepage.dev/external: "true"
+    gethomepage.dev/href: "https://mainsail.stevevaradi.me/"
 spec:
   parentRefs:
     - name: cilium-gateway-local
@@ -72,6 +80,13 @@ kind: HTTPRoute
 metadata:
   name: mainsail-cam
   namespace: external
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "Mainsail Cam"
+    gethomepage.dev/group: "3D Printing"
+    gethomepage.dev/icon: "mdi-cctv"
+    gethomepage.dev/description: "Printer webcam"
+    gethomepage.dev/external: "true"
 spec:
   parentRefs:
     - name: cilium-gateway-local

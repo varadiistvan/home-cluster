@@ -4,6 +4,12 @@ kind: HTTPRoute
 metadata:
   name: siyuan
   namespace: siyuan
+  annotations:
+    gethomepage.dev/enabled: "true"
+    gethomepage.dev/name: "SiYuan"
+    gethomepage.dev/group: "Files & Documents"
+    gethomepage.dev/icon: "siyuan.png"
+    gethomepage.dev/description: "Notes"
 spec:
   parentRefs:
     - name: cilium-gateway-local
