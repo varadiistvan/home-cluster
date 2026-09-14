@@ -149,7 +149,7 @@ spec:
       containers:
         - name: frontend
           # renovate: datasource=docker depName=klausenschaefersinho/quant-ux
-          image: klausenschaefersinho/quant-ux:latest@sha256:dd404aba1f8e6b45c585c06c6eb46f57c4dd221ab8329925600ba798b92652fe
+          image: klausenschaefersinho/quant-ux:latest@sha256:6fcb1c666ce59cedfa9381b51c4dc67a0ca1bcfc32fa210896a7fb2c7437e514
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
