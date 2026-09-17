@@ -33,6 +33,10 @@ spec:
   isCA: true
   commonName: selfsigned-ca
   secretName: root-secret
+  # Long-lived root: cert-manager's 90d default rotated the CA out from under
+  # the 365d leaves it signs (hubble), breaking mTLS until the leaves expired.
+  duration: 87600h # 10y
+  renewBefore: 8760h # 1y
   privateKey:
     algorithm: ECDSA
     size: 256
