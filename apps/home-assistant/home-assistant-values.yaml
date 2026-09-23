@@ -168,20 +168,10 @@ persistence:
   accessMode: ReadWriteOnce
   size: 8Gi
   storageClass: iscsi-csi
-additionalVolumes:
-- name: dbus
-  hostPath:
-    path: /var/run/dbus
-    type: Directory
-- name: bluetooth-dev
-  hostPath:
-    path: /dev
-    type: Directory
-additionalMounts:
-- mountPath: /var/run/dbus
-  name: dbus
-- mountPath: /dev
-  name: bluetooth-dev
+# No host D-Bus/BlueZ on Talos (kernel lacks CONFIG_BT); mounting Talos's
+# D-Bus socket made bluetooth setup hang. Use ESPHome Bluetooth proxies.
+additionalVolumes: []
+additionalMounts: []
 additionalPorts: []
 additionalServices: []
 serviceMonitor:
