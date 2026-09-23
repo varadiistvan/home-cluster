@@ -6,7 +6,7 @@ metadata:
   namespace: flux-system
 spec:
   interval: 10m
-  retryInterval: 1m
+  retryInterval: 5s
   dependsOn:
     - name: infra
   path: ./monitoring
