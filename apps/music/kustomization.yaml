@@ -5,5 +5,4 @@ resources:
   - ./navidrome-deployment.yaml
   - ./navidrome-service.yaml
   - ./httproute.yaml
-  - ./security-policy.yaml
   - ./navidrome-lastfm-secret.enc.yaml
