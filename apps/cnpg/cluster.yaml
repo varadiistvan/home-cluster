@@ -1,4 +1,3 @@
----
 apiVersion: postgresql.cnpg.io/v1
 kind: Cluster
 metadata:
@@ -73,3 +72,9 @@ spec:
   replicationSlots:
     highAvailability:
       enabled: true
+  resources:
+    requests:
+      cpu: 30m
+      memory: 368Mi
+    limits:
+      memory: 2Gi

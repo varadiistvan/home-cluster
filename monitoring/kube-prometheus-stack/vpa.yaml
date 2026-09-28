@@ -1,0 +1,26 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: prometheus
+  namespace: monitoring
+spec:
+  targetRef:
+    apiVersion: monitoring.coreos.com/v1
+    kind: Prometheus
+    name: misty-show-kube-prometheus-prometheus
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: prometheus
+        controlledValues: RequestsOnly
+        minAllowed:
+          cpu: 20m
+          memory: 768Mi
+        maxAllowed:
+          cpu: "2"
+          memory: 2560Mi
+      - containerName: "*"
+        mode: "Off"

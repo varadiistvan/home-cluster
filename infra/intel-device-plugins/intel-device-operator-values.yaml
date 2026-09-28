@@ -4,10 +4,10 @@ manager:
   devices:
     gpu: true
 resources:
-  limits:
-    cpu: 100m
-    memory: 120Mi
   requests:
-    cpu: 100m
-    memory: 100Mi
+    cpu: 10m
+    memory: 48Mi
+  limits:
+    memory: 256Mi
+    cpu:
 tolerations: []

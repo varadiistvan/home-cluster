@@ -105,21 +105,27 @@ spec:
               FLAGS="$FLAGS --no-port-probing"
               exec syncthing serve --home="/var/syncthing" $FLAGS
           ports:
-            - { name: gui,    containerPort: 8384, protocol: TCP }
-            - { name: st-tcp, containerPort: 22000, protocol: TCP }
-            - { name: st-udp, containerPort: 22000, protocol: UDP }
-            - { name: disco,  containerPort: 21027, protocol: UDP }
+            - {name: gui, containerPort: 8384, protocol: TCP}
+            - {name: st-tcp, containerPort: 22000, protocol: TCP}
+            - {name: st-udp, containerPort: 22000, protocol: UDP}
+            - {name: disco, containerPort: 21027, protocol: UDP}
           volumeMounts:
             - name: data
               mountPath: /var/syncthing
           readinessProbe:
-            tcpSocket: { port: 8384 }
+            tcpSocket: {port: 8384}
             initialDelaySeconds: 5
             periodSeconds: 10
           livenessProbe:
-            tcpSocket: { port: 8384 }
+            tcpSocket: {port: 8384}
             initialDelaySeconds: 30
             periodSeconds: 30
+          resources:
+            requests:
+              cpu: 10m
+              memory: 80Mi
+            limits:
+              memory: 512Mi
       volumes:
         - name: init
           configMap:

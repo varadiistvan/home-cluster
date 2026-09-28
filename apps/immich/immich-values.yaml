@@ -23,6 +23,14 @@ server:
       - secretName: immich-tls
         hosts:
         - immich.stevevaradi.me
+  controllers:
+    main:
+      containers:
+        main:
+          resources:
+            requests:
+              cpu: 10m
+              memory: 512Mi
 machine-learning:
   enabled: true
   image:
@@ -36,6 +44,14 @@ machine-learning:
       type: persistentVolumeClaim
       accessMode: ReadWriteMany
       storageClass: nfs-csi
+  controllers:
+    main:
+      containers:
+        main:
+          resources:
+            requests:
+              cpu: 10m
+              memory: 288Mi
 valkey:
   enabled: false
 controllers:

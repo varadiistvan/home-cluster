@@ -53,12 +53,11 @@ ingress:
     hosts:
     - vernemq.stevevaradi.me
 resources:
-  limits:
-    cpu: 1
-    memory: 768Mi
   requests:
-    cpu: 500m
-    memory: 256Mi
+    cpu: 10m
+    memory: 880Mi
+  limits:
+    memory: 1536Mi
 persistentVolume:
   enabled: true
   accessModes:

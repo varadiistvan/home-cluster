@@ -28,16 +28,32 @@ backend:
     kubernetes.io/arch: amd64
   image:
     repository: docker.io/penpotapp/backend
+  resources:
+    requests:
+      cpu: 270m
+      memory: 1792Mi
 frontend:
   nodeSelector:
     kubernetes.io/arch: amd64
   image:
     repository: docker.io/penpotapp/frontend
+  resources:
+    requests:
+      cpu: 10m
+      memory: 144Mi
+    limits:
+      memory: 320Mi
 exporter:
   nodeSelector:
     kubernetes.io/arch: amd64
   image:
     repository: docker.io/penpotapp/exporter
+  resources:
+    requests:
+      cpu: 10m
+      memory: 416Mi
+    limits:
+      memory: 1Gi
 persistence:
   assets:
     enabled: true

@@ -153,10 +153,9 @@ spec:
               type: RuntimeDefault
           resources:
             requests:
-              cpu: 10m
-              memory: 64Mi
+              cpu: 35m
+              memory: 80Mi
             limits:
-              cpu: 200m
               memory: 256Mi
           readinessProbe:
             exec:

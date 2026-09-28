@@ -1,0 +1,36 @@
+admissionController:
+  logLevel: 2
+  certGen:
+    enabled: false
+  certManager:
+    enabled: true
+    createSelfSignedIssuer:
+      enabled: true
+  resources:
+    requests:
+      cpu: 10m
+      memory: 48Mi
+    limits:
+      memory: 256Mi
+recommender:
+  logLevel: 2
+  extraArgs:
+    - --pod-recommendation-min-cpu-millicores=10
+    - --pod-recommendation-min-memory-mb=32
+  resources:
+    requests:
+      cpu: 20m
+      memory: 96Mi
+    limits:
+      memory: 512Mi
+updater:
+  logLevel: 2
+  extraArgs:
+    - --in-place-skip-disruption-budget=true
+    - --min-replicas=1
+  resources:
+    requests:
+      cpu: 10m
+      memory: 48Mi
+    limits:
+      memory: 256Mi

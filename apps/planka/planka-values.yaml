@@ -38,7 +38,12 @@ ingress:
   - secretName: planka-tls
     hosts:
     - planka.stevevaradi.me
-resources: {}
+resources:
+  requests:
+    cpu: 10m
+    memory: 128Mi
+  limits:
+    memory: 320Mi
 nodeSelector: {}
 tolerations: []
 affinity: {}
@@ -48,16 +53,5 @@ persistence:
   storageClass: iscsi-csi
   accessMode: ReadWriteOnce
   size: 10Gi
-oidc:
-  enabled: false
-  clientId: ''
-  clientSecret: ''
-  existingSecret: ''
-  issuerUrl: ''
-  scopes: []
-  admin:
-    ignoreRoles: false
-    rolesAttribute: groups
-    roles: []
 extraEnv: []
 extraMounts: []

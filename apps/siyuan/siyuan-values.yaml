@@ -26,12 +26,11 @@ ingress:
     hosts:
     - siyuan.stevevaradi.me
 resources:
-  limits:
-    cpu: 100m
-    memory: 128Mi
   requests:
-    cpu: 100m
-    memory: 128Mi
+    cpu: 15m
+    memory: 80Mi
+  limits:
+    memory: 512Mi
 autoscaling:
   enabled: false
   minReplicas: 1

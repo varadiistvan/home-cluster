@@ -43,6 +43,12 @@ spec:
           volumeMounts:
             - name: socket-dir
               mountPath: /csi
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 256Mi
         - name: node-driver-registrar
           # renovate: datasource=docker depName=registry.k8s.io/sig-storage/csi-node-driver-registrar
           image: registry.k8s.io/sig-storage/csi-node-driver-registrar:v2.18.0
@@ -63,6 +69,12 @@ spec:
               mountPath: /csi
             - name: registration-dir
               mountPath: /registration
+          resources:
+            requests:
+              cpu: 10m
+              memory: 32Mi
+            limits:
+              memory: 256Mi
         - name: iscsi-plugin
           # renovate: datasource=docker depName=harbor.stevevaradi.me/stevevaradi/csi-driver-iscsi
           image: harbor.stevevaradi.me/stevevaradi/csi-driver-iscsi:v2.14.0
@@ -117,6 +129,10 @@ spec:
               mountPath: /var/lib/iscsi-csi
             - name: run-udev
               mountPath: /run/udev
+          resources:
+            requests:
+              cpu: 10m
+              memory: 48Mi
       volumes:
         - name: socket-dir
           hostPath:

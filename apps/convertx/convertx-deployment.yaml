@@ -54,6 +54,10 @@ spec:
           volumeMounts:
             - mountPath: /app/data
               name: data
+          resources:
+            requests:
+              cpu: 10m
+              memory: 272Mi
       volumes:
         - name: data
           persistentVolumeClaim:

@@ -4,6 +4,7 @@ resources:
   - ./helmrelease-jellyseerr.yaml
   - ./helmrelease.yaml
   - ./httproute.yaml
+  - ./traffic-policy.yaml
   - ./security-policy.yaml
 configMapGenerator:
 - name: jellyseer-values

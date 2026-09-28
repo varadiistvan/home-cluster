@@ -6,8 +6,8 @@ image:
   repository: stirlingtools/stirling-pdf
 rootPath: null
 envs:
-  - name: _JAVA_OPTIONS
-    value: "-Djava.io.tmpdir=/tmp/stirling-pdf"
+- name: _JAVA_OPTIONS
+  value: "-Djava.io.tmpdir=/tmp/stirling-pdf"
 envsFrom: []
 serviceAccount:
   create: true
@@ -27,7 +27,7 @@ persistence:
   path: /tmp
   storageClass: nfs-csi-retain
 ingress:
-  enabled: true
+  enabled: false
   pathType: ImplementationSpecific
   annotations:
     cert-manager.io/cluster-issuer: letsencrypt
@@ -74,3 +74,7 @@ probes:
     failureThreshold: 3
   readinessHttpGetConfig:
     scheme: HTTP
+resources:
+  requests:
+    cpu: 20m
+    memory: 1088Mi

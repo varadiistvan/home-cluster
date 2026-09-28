@@ -1,0 +1,15 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: TCPRoute
+metadata:
+  name: vernemq-mqtts
+  namespace: home
+spec:
+  parentRefs:
+    - name: cilium-gateway-local
+      namespace: network
+      sectionName: tcp-mqtts
+  rules:
+    - backendRefs:
+        - name: vernemq
+          port: 8883

@@ -32,7 +32,12 @@ ingress:
     - secretName: jellyseer-tls
       hosts:
         - jellyseer.stevevaradi.me
-resources: {}
+resources:
+  requests:
+    cpu: 20m
+    memory: 288Mi
+  limits:
+    memory: 640Mi
 volumes: []
 volumeMounts: []
 nodeSelector: {}

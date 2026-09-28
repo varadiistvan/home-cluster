@@ -42,10 +42,30 @@ server:
       - secretName: obico-tls
         hosts:
         - obico.stevevaradi.me
+  resources:
+    requests:
+      cpu: 10m
+      memory: 192Mi
+    limits:
+      memory: 448Mi
+  additionalContainers:
+    tasks:
+      resources:
+        requests:
+          cpu: 10m
+          memory: 288Mi
+        limits:
+          memory: 640Mi
 ml-api:
   image:
     repository: ghcr.io/gabe565/obico/ml-api
     tag: sha-e3993e83d5a7f07617275c3e71b011c5ca59fa4d
+  resources:
+    requests:
+      cpu: 10m
+      memory: 400Mi
+    limits:
+      memory: 1Gi
 imagePullSecrets:
 - name: registry-pass
 redis:

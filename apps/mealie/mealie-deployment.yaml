@@ -61,6 +61,12 @@ spec:
           volumeMounts:
             - mountPath: /app/data
               name: mealie-data
+          resources:
+            requests:
+              cpu: 10m
+              memory: 256Mi
+            limits:
+              memory: 576Mi
       volumes:
         - name: mealie-data
           persistentVolumeClaim:

@@ -188,6 +188,12 @@ spec:
               mountPath: /data
             - name: media
               mountPath: /nfs_media
+          resources:
+            requests:
+              cpu: 10m
+              memory: 80Mi
+            limits:
+              memory: 256Mi
       volumes:
         - name: data
           persistentVolumeClaim:

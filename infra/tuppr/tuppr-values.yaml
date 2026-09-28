@@ -16,3 +16,9 @@ controller:
 
 webhook:
   enabled: true
+resources:
+  requests:
+    cpu: 10m
+    memory: 176Mi
+  limits:
+    memory: 384Mi

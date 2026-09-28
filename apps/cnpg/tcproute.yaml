@@ -1,0 +1,15 @@
+---
+apiVersion: gateway.networking.k8s.io/v1
+kind: TCPRoute
+metadata:
+  name: pg-cnpg-rw
+  namespace: storage
+spec:
+  parentRefs:
+    - name: cilium-gateway-local
+      namespace: network
+      sectionName: tcp-postgres
+  rules:
+    - backendRefs:
+        - name: pg-cnpg-rw
+          port: 5432

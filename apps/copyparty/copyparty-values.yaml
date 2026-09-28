@@ -42,7 +42,12 @@ ingress:
   - secretName: copyparty-tls
     hosts:
     - copyparty.stevevaradi.me
-resources: {}
+resources:
+  requests:
+    cpu: 10m
+    memory: 48Mi
+  limits:
+    memory: 512Mi
 volumes: []
 volumeMounts: []
 storage:

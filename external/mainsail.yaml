@@ -109,6 +109,9 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: mainsail
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: mainsail-cam
   authorization:
     defaultAction: Deny
     rules:

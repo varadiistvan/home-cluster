@@ -20,15 +20,6 @@ spec:
 apiVersion: source.toolkit.fluxcd.io/v1
 kind: HelmRepository
 metadata:
-  name: ingress-nginx
-  namespace: flux-system
-spec:
-  interval: 1h
-  url: https://kubernetes.github.io/ingress-nginx
----
-apiVersion: source.toolkit.fluxcd.io/v1
-kind: HelmRepository
-metadata:
   name: kubito
   namespace: flux-system
 spec:
@@ -286,3 +277,21 @@ spec:
   interval: 1h
   url: oci://registry-1.docker.io/envoyproxy
   type: oci
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: autoscaler
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://kubernetes.github.io/autoscaler
+---
+apiVersion: source.toolkit.fluxcd.io/v1
+kind: HelmRepository
+metadata:
+  name: metrics-server
+  namespace: flux-system
+spec:
+  interval: 1h
+  url: https://kubernetes-sigs.github.io/metrics-server/

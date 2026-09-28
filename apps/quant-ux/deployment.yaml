@@ -1,4 +1,3 @@
----
 apiVersion: apps/v1
 kind: Deployment
 metadata:
@@ -103,11 +102,10 @@ spec:
             failureThreshold: 3
           resources:
             requests:
-              cpu: 50m
-              memory: 512Mi
+              cpu: 10m
+              memory: 176Mi
             limits:
-              cpu: 2000m
-              memory: 2Gi
+              memory: 768Mi
           volumeMounts:
             - name: data
               mountPath: /app-data/qux-images
@@ -195,11 +193,10 @@ spec:
             failureThreshold: 3
           resources:
             requests:
-              cpu: 25m
-              memory: 128Mi
+              cpu: 10m
+              memory: 32Mi
             limits:
-              cpu: 500m
-              memory: 512Mi
+              memory: 256Mi
 ---
 apiVersion: apps/v1
 kind: Deployment
@@ -263,8 +260,7 @@ spec:
             failureThreshold: 3
           resources:
             requests:
-              cpu: 25m
-              memory: 64Mi
+              cpu: 10m
+              memory: 32Mi
             limits:
-              cpu: 500m
               memory: 256Mi

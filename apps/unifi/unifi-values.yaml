@@ -33,9 +33,18 @@ logging:
       url: http://loki.logs.svc.cluster.local:3100/loki/api/v1/push
 mongodb:
   enabled: false
-  dbUri: mongodb://mongo/unifi
-  statDbUri: mongodb://mongo/unifi_stat
-  databaseName: unifi
+extraEnvVars:
+  - name: MONGO_PASS
+    valueFrom:
+      secretKeyRef:
+        name: unifi-mongodb
+        key: password
+  - name: DB_URI
+    value: mongodb://unifi:$(MONGO_PASS)@unifi-mongodb-svc.home.svc.cluster.local:27017/ace?authSource=admin&replicaSet=unifi-mongodb
+  - name: STATDB_URI
+    value: mongodb://unifi:$(MONGO_PASS)@unifi-mongodb-svc.home.svc.cluster.local:27017/ace_stat?authSource=admin&replicaSet=unifi-mongodb
+  - name: DB_NAME
+    value: ace
 persistence:
   enabled: true
   storageClass: ''
@@ -49,7 +58,12 @@ extraJvmOpts: []
 jvmInitHeapSize: ''
 jvmMaxHeapSize: 1024M
 extraConfigFiles: {}
-resources: {}
+resources:
+  requests:
+    cpu: 10m
+    memory: 768Mi
+  limits:
+    memory: 1792Mi
 livenessProbe:
   enabled: true
   initialDelaySeconds: 0

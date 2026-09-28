@@ -32,7 +32,12 @@ ingress:
   - secretName: ha-tls
     hosts:
     - ha.stevevaradi.me
-resources: {}
+resources:
+  requests:
+    cpu: 15m
+    memory: 816Mi
+  limits:
+    memory: 2Gi
 nodeSelector:
   kubernetes.io/arch: arm64
 tolerations: []
@@ -186,7 +191,7 @@ addons:
       repository: ghcr.io/coder/code-server
       pullPolicy: IfNotPresent
     ingress:
-      enabled: true
+      enabled: false
       annotations:
         cert-manager.io/cluster-issuer: letsencrypt
         nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.1/24, 10.192.1.1/24

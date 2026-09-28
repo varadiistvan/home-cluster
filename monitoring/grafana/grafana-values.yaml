@@ -2,29 +2,13 @@ global:
   image:
     registry: docker.io
 ingress:
-  enabled: true
-  annotations:
-    cert-manager.io/cluster-issuer: letsencrypt
-    nginx.ingress.kubernetes.io/whitelist-source-range: 192.168.0.0/24,10.192.1.0/24
-    gethomepage.dev/enabled: "true"
-    gethomepage.dev/name: "Grafana"
-    gethomepage.dev/group: "Infrastructure"
-    gethomepage.dev/icon: "grafana.png"
-    gethomepage.dev/description: "Dashboards"
-  path: /
-  hosts:
-  - grafana.stevevaradi.me
-  tls:
-  - secretName: grafana-tls
-    hosts:
-    - grafana.stevevaradi.me
+  enabled: false
 resources:
-  limits:
-    cpu: 200m
-    memory: 1Gi
   requests:
-    cpu: 50m
-    memory: 128Mi
+    cpu: 15m
+    memory: 208Mi
+  limits:
+    memory: 1Gi
 persistence:
   type: pvc
   enabled: true

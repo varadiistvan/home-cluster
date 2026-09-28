@@ -13,8 +13,13 @@ auth:
   existingSecret: renovate-redis-auth
   existingSecretPasswordKey: password
 master:
-  resourcesPreset: small
-  resources: {}
+  resourcesPreset: none
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 256Mi
   persistence:
     enabled: true
     storageClass: nfs-csi
@@ -27,6 +32,13 @@ metrics:
     repository: bitnamilegacy/redis-exporter
   prometheusRule:
     enabled: true
+  resources:
+    requests:
+      cpu: 10m
+      memory: 32Mi
+    limits:
+      memory: 64Mi
+  resourcesPreset: none
 volumePermissions:
   enabled: true
   image:

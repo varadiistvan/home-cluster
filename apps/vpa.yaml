@@ -1,0 +1,240 @@
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: home-assistant
+  namespace: home
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: home-assistant
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: home-assistant
+        controlledValues: RequestsOnly
+        minAllowed:
+          cpu: 10m
+          memory: 512Mi
+        maxAllowed:
+          cpu: "1"
+          memory: 1792Mi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: vernemq
+  namespace: home
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: StatefulSet
+    name: vernemq
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: vernemq
+        controlledValues: RequestsOnly
+        minAllowed:
+          cpu: 10m
+          memory: 512Mi
+        maxAllowed:
+          cpu: "500m"
+          memory: 1280Mi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: jellyfin
+  namespace: media
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: jellyfin
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: jellyfin
+        controlledValues: RequestsOnly
+        minAllowed:
+          cpu: 10m
+          memory: 512Mi
+        maxAllowed:
+          cpu: "4"
+          memory: 3Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: immich-server
+  namespace: media
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: immich-server
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: main
+        controlledValues: RequestsOnly
+        minAllowed:
+          cpu: 10m
+          memory: 256Mi
+        maxAllowed:
+          cpu: "2"
+          memory: 2Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: immich-machine-learning
+  namespace: media
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: immich-machine-learning
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: main
+        controlledValues: RequestsOnly
+        minAllowed:
+          cpu: 10m
+          memory: 192Mi
+        maxAllowed:
+          cpu: "4"
+          memory: 4Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: penpot-backend
+  namespace: penpot
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: penpot-backend
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: penpot-backend
+        controlledValues: RequestsOnly
+        minAllowed:
+          cpu: 10m
+          memory: 1Gi
+        maxAllowed:
+          cpu: "2"
+          memory: 3Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: stirling-pdf-stirling-pdf-chart
+  namespace: stirling-pdf
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: stirling-pdf-stirling-pdf-chart
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: stirling-pdf-chart
+        controlledValues: RequestsOnly
+        minAllowed:
+          cpu: 10m
+          memory: 512Mi
+        maxAllowed:
+          cpu: "2"
+          memory: 2Gi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: overleaf
+  namespace: storage
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: overleaf
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: overleaf
+        controlledValues: RequestsOnly
+        minAllowed:
+          cpu: 10m
+          memory: 512Mi
+        maxAllowed:
+          cpu: "2"
+          memory: 1792Mi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: mealie
+  namespace: mealie
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: mealie
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: mealie
+        controlledValues: RequestsOnly
+        minAllowed:
+          cpu: 10m
+          memory: 160Mi
+        maxAllowed:
+          cpu: "1"
+          memory: 512Mi
+---
+apiVersion: autoscaling.k8s.io/v1
+kind: VerticalPodAutoscaler
+metadata:
+  name: convertx
+  namespace: convertx
+spec:
+  targetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: convertx
+  updatePolicy:
+    updateMode: InPlaceOrRecreate
+    minReplicas: 1
+  resourcePolicy:
+    containerPolicies:
+      - containerName: convertx
+        controlledValues: RequestsOnly
+        minAllowed:
+          cpu: 10m
+          memory: 128Mi
+        maxAllowed:
+          cpu: "2"
+          memory: 2Gi

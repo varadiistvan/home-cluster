@@ -118,11 +118,10 @@ spec:
             runAsGroup: 0
           resources:
             requests:
-              cpu: 5m
-              memory: 32Mi
+              cpu: 45m
+              memory: 96Mi
             limits:
-              cpu: 100m
-              memory: 128Mi
+              memory: 256Mi
           readinessProbe:
             exec:
               command:

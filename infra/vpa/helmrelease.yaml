@@ -1,0 +1,31 @@
+---
+apiVersion: helm.toolkit.fluxcd.io/v2
+kind: HelmRelease
+metadata:
+  name: vpa
+  namespace: system
+spec:
+  interval: 30m
+  timeout: 10m
+  install:
+    crds: CreateReplace
+    remediation:
+      retries: -1
+  upgrade:
+    crds: CreateReplace
+    remediation:
+      retries: 3
+  dependsOn:
+    - name: metrics-server
+  chart:
+    spec:
+      chart: vertical-pod-autoscaler
+      # renovate: datasource=helm depName=vertical-pod-autoscaler registryUrl=https://kubernetes.github.io/autoscaler
+      version: 0.13.x
+      sourceRef:
+        kind: HelmRepository
+        name: autoscaler
+        namespace: flux-system
+  valuesFrom:
+  - kind: ConfigMap
+    name: vpa-values

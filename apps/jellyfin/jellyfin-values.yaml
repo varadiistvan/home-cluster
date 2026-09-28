@@ -79,3 +79,7 @@ persistence:
     enabled: false
 securityContext:
   privileged: true
+resources:
+  requests:
+    cpu: 20m
+    memory: 880Mi

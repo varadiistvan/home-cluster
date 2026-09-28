@@ -109,6 +109,9 @@ spec:
     - group: gateway.networking.k8s.io
       kind: HTTPRoute
       name: voron
+    - group: gateway.networking.k8s.io
+      kind: HTTPRoute
+      name: voron-cam
   authorization:
     defaultAction: Deny
     rules:

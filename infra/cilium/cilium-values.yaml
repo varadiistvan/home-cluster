@@ -6,6 +6,10 @@ certgen:
 envoy:
   image:
     repository: quay.io/cilium/cilium-envoy
+  resources:
+    requests:
+      cpu: 15m
+      memory: 48Mi
 nodeinit:
   image:
     repository: quay.io/cilium/startup-script
@@ -49,14 +53,32 @@ hubble:
       enabled: true
       serviceMonitor:
         enabled: true
+    resources:
+      requests:
+        cpu: 10m
+        memory: 32Mi
+      limits:
+        memory: 256Mi
   ui:
     enabled: true
     backend:
       image:
         repository: quay.io/cilium/hubble-ui-backend
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          memory: 256Mi
     frontend:
       image:
         repository: quay.io/cilium/hubble-ui
+      resources:
+        requests:
+          cpu: 10m
+          memory: 32Mi
+        limits:
+          memory: 256Mi
   metrics:
     dashboards:
       enabled: true
@@ -95,6 +117,12 @@ operator:
   dashboards:
     enabled: true
     namespace: monitoring
+  resources:
+    requests:
+      cpu: 10m
+      memory: 208Mi
+    limits:
+      memory: 448Mi
 logOptions:
   format: json
 logSystemLoad: true
@@ -137,3 +165,7 @@ cgroup:
   autoMount:
     enabled: false
   hostRoot: /sys/fs/cgroup
+resources:
+  requests:
+    cpu: 105m
+    memory: 320Mi

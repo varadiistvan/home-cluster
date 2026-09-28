@@ -4,6 +4,7 @@ resources:
   - ./cluster.yaml
   - ./cnpg-apps-secret.enc.yaml
   - ./databases.yaml
+  - ./tcproute.yaml
   - ./mealie-postgres-storage-secret.enc.yaml
   - ./planka-password-storage-secret.enc.yaml
   - ./postgres-immich-storage-secret.enc.yaml

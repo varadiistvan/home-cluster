@@ -2,3 +2,9 @@ image:
   repository: ghcr.io/cloudnative-pg/cloudnative-pg
 imagePullSecrets:
 - name: registry-pass
+resources:
+  requests:
+    cpu: 15m
+    memory: 64Mi
+  limits:
+    memory: 256Mi

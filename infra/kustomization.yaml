@@ -10,7 +10,6 @@ resources:
   - ./csi-driver-nfs
   - ./ddns
   - ./gateway-api
-  - ./ingress-nginx
   - ./intel-device-plugins
   - ./iscsi-provisioner
   - ./mongodb-operator
@@ -18,3 +17,5 @@ resources:
   - ./reloader
   - ./tuppr
   - ./kyverno
+  - ./metrics-server
+  - ./vpa

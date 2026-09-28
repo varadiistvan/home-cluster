@@ -1,4 +1,3 @@
----
 apiVersion: mongodbcommunity.mongodb.com/v1
 kind: MongoDBCommunity
 metadata:
@@ -19,19 +18,56 @@ spec:
       passwordSecretRef:
         name: unifi-mongodb
       roles:
-        - name: clusterAdmin
-          db: admin
-        - name: userAdminAnyDatabase
+        - name: dbOwner
+          db: ace
+        - name: dbOwner
+          db: ace_stat
+        - name: dbOwner
+          db: ace_audit
+        - name: dbOwner
+          db: ace_restore
+        - name: clusterMonitor
           db: admin
       scramCredentialsSecretName: unifi-scram
   additionalMongodConfig:
     storage.wiredTiger.engineConfig.journalCompressor: zlib
   statefulSet:
     spec:
+      volumeClaimTemplates:
+        - metadata:
+            name: data-volume
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            storageClassName: iscsi-csi
+            resources:
+              requests:
+                storage: 10Gi
+        - metadata:
+            name: logs-volume
+          spec:
+            accessModes:
+              - ReadWriteOnce
+            storageClassName: iscsi-csi
+            resources:
+              requests:
+                storage: 2Gi
       template:
         spec:
           containers:
             - name: mongodb-agent
-              # default 1s readiness timeout flaps on slow nodes
               readinessProbe:
                 timeoutSeconds: 5
+              resources:
+                requests:
+                  cpu: 15m
+                  memory: 112Mi
+                limits:
+                  memory: 256Mi
+            - name: mongod
+              resources:
+                requests:
+                  cpu: 10m
+                  memory: 320Mi
+                limits:
+                  memory: 1Gi

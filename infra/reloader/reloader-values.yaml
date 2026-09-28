@@ -29,12 +29,11 @@ reloader:
       seccompProfile:
         type: RuntimeDefault
     resources:
-      limits:
-        cpu: 100m
-        memory: 512Mi
       requests:
         cpu: 10m
-        memory: 128Mi
+        memory: 80Mi
+      limits:
+        memory: 256Mi
     imagePullSecrets:
     - name: registry-pass
     gomaxprocsOverride: ''
