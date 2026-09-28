@@ -17,7 +17,7 @@ spec:
     spec:
       chart: penpot
       # renovate: datasource=helm depName=penpot registryUrl=https://helm.penpot.app
-      version: 1.9.x
+      version: 1.10.x
       sourceRef:
         kind: HelmRepository
         name: penpot
