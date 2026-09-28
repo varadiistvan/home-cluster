@@ -26,3 +26,12 @@ spec:
       scramCredentialsSecretName: unifi-scram
   additionalMongodConfig:
     storage.wiredTiger.engineConfig.journalCompressor: zlib
+  statefulSet:
+    spec:
+      template:
+        spec:
+          containers:
+            - name: mongodb-agent
+              # default 1s readiness timeout flaps on slow nodes
+              readinessProbe:
+                timeoutSeconds: 5

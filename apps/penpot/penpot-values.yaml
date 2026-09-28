@@ -20,10 +20,6 @@ config:
     existingSecret: penpot-redis-uri
     secretKeys:
       redisUriKey: uri
-  assets:
-    storageBackend: assets-fs
-    filesystem:
-      directory: /opt/data/assets
   autoFileSnapshot:
     every: 5
     timeout: 3h
@@ -47,12 +43,6 @@ persistence:
     enabled: true
     storageClass: nfs-csi-retain
     size: 20Gi
-    accessModes:
-    - ReadWriteOnce
-  exporter:
-    enabled: true
-    storageClass: nfs-csi-retain
-    size: 10Gi
     accessModes:
     - ReadWriteOnce
 ingress:
