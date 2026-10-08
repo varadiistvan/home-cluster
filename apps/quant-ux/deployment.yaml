@@ -31,7 +31,7 @@ spec:
       containers:
         - name: backend
           # renovate: datasource=docker depName=klausenschaefersinho/quant-ux-backend
-          image: klausenschaefersinho/quant-ux-backend:latest@sha256:1e147df0d963730b877c5a8ec77ae55b5cde0349536784182e6428df7b88eeea
+          image: klausenschaefersinho/quant-ux-backend:latest@sha256:5b4507acb2bdc2c81a908b87ec9d1f39ec0ca9977258bc339fe0ef5762b33864
           imagePullPolicy: IfNotPresent
           ports:
             - name: http
