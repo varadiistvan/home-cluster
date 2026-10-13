@@ -43,6 +43,81 @@ grafana.ini:
     enabled: false
     host: smtp.postmarkapp.com:587
     from_address: grafana@stevevaradi.me
+datasources:
+  datasources.yaml:
+    apiVersion: 1
+    datasources:
+    - name: Prometheus (provisioned)
+      uid: prometheus
+      type: prometheus
+      access: proxy
+      url: http://misty-show-kube-prometheus-prometheus.monitoring.svc:9090
+      isDefault: false
+dashboardProviders:
+  dashboardproviders.yaml:
+    apiVersion: 1
+    providers:
+    - name: home-cluster
+      orgId: 1
+      folder: Home Cluster
+      type: file
+      disableDeletion: true
+      editable: true
+      options:
+        path: /var/lib/grafana/dashboards/home-cluster
+dashboards:
+  home-cluster:
+    node-exporter-full:
+      gnetId: 1860
+      revision: 37
+      datasource:
+      - name: DS_PROMETHEUS
+        value: prometheus
+    k8s-global:
+      url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-views-global.json
+    k8s-namespaces:
+      url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-views-namespaces.json
+    k8s-nodes:
+      url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-views-nodes.json
+    k8s-pods:
+      url: https://raw.githubusercontent.com/dotdc/grafana-dashboards-kubernetes/master/dashboards/k8s-views-pods.json
+    power:
+      json: |
+        {
+          "title": "Power Usage",
+          "uid": "home-power",
+          "schemaVersion": 39,
+          "refresh": "30s",
+          "time": {"from": "now-24h", "to": "now"},
+          "panels": [
+            {
+              "type": "stat",
+              "title": "Current draw",
+              "gridPos": {"h": 6, "w": 24, "x": 0, "y": 0},
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "fieldConfig": {"defaults": {"unit": "watt", "decimals": 1}},
+              "options": {"reduceOptions": {"calcs": ["lastNotNull"]}, "colorMode": "background", "graphMode": "area"},
+              "targets": [{"expr": "sum by (node) (scaphandre_host_power_microwatts) / 1e6", "legendFormat": "{{node}}"}]
+            },
+            {
+              "type": "timeseries",
+              "title": "Power over time",
+              "gridPos": {"h": 10, "w": 24, "x": 0, "y": 6},
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "fieldConfig": {"defaults": {"unit": "watt", "custom": {"fillOpacity": 15, "stacking": {"mode": "normal"}}}},
+              "targets": [{"expr": "sum by (node) (scaphandre_host_power_microwatts) / 1e6", "legendFormat": "{{node}}"}]
+            },
+            {
+              "type": "stat",
+              "title": "Energy (last 24h)",
+              "gridPos": {"h": 6, "w": 24, "x": 0, "y": 16},
+              "datasource": {"type": "prometheus", "uid": "prometheus"},
+              "fieldConfig": {"defaults": {"unit": "kwatth", "decimals": 2}},
+              "options": {"reduceOptions": {"calcs": ["lastNotNull"]}},
+              "targets": [{"expr": "sum by (node) (avg_over_time(scaphandre_host_power_microwatts[24h])) / 1e6 * 24 / 1000", "legendFormat": "{{node}}"}]
+            }
+          ]
+        }
 namespaceOverride: monitoring
 imageRenderer:
   enabled: false
