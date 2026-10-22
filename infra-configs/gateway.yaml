@@ -18,7 +18,9 @@ spec:
               loadBalancerSourceRanges:
                 - "192.168.0.0/24"
                 - "10.192.1.0/24"
-      envoyDaemonSet: {}
+      envoyDaemonSet:
+        container:
+          image: docker.io/envoyproxy/envoy:distroless-v1.39.3
 ---
 apiVersion: gateway.networking.k8s.io/v1
 kind: GatewayClass
