@@ -19,7 +19,7 @@ spec:
     spec:
       chart: jellyfin
       # renovate: datasource=helm depName=jellyfin registryUrl=https://jellyfin.github.io/jellyfin-helm
-      version: 3.2.x
+      version: 3.7.x
       sourceRef:
         kind: HelmRepository
         name: jellyfin
