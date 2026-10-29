@@ -95,6 +95,7 @@ spec:
           clientCIDRs:
             - 192.168.0.0/24
             - 10.192.1.0/24
+            - 2001:1c00:b8c:e600::/64
 ---
 apiVersion: gateway.envoyproxy.io/v1alpha1
 kind: SecurityPolicy
@@ -114,3 +115,4 @@ spec:
           clientCIDRs:
             - 192.168.0.0/24
             - 10.192.1.0/24
+            - 2001:1c00:b8c:e600::/64
