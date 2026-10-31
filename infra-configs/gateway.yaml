@@ -315,6 +315,18 @@ spec:
         namespaces:
           from: All
 
+    - name: https-searxng
+      protocol: HTTPS
+      port: 443
+      hostname: searxng.stevevaradi.me
+      tls:
+        mode: Terminate
+        certificateRefs:
+          - name: searxng-tls-secret
+      allowedRoutes:
+        namespaces:
+          from: All
+
     - name: https-syncthing
       protocol: HTTPS
       port: 443

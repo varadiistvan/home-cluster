@@ -30,6 +30,7 @@ resources:
   - ./quant-ux
   - ./redis
   - ./renovate
+  - ./searxng
   - ./siyuan
   - ./stirling-pdf
   - ./syncthing
