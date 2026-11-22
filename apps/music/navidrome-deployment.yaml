@@ -110,6 +110,7 @@ spec:
             - nd-lyrics
             - --all-libraries
             - --write-access
+            - --all-users
           env:
             - name: ND_DATAFOLDER
               value: /data
