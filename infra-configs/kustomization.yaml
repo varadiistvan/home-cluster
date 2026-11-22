@@ -8,4 +8,4 @@ resources:
   - ./nfd-rules.yaml
   - ./talos-upgrade.yaml
   - ./kubernetes-upgrade.yaml
-  - ./kyverno-timezone-policy.yaml
+  - ./set-timezone-policy.yaml

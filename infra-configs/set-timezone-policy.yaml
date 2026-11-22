@@ -1,0 +1,140 @@
+---
+# Default timezone injection, formerly the legacy `kyverno.io` ClusterPolicy
+# `set-timezone`.
+#
+# Kyverno 1.20 no longer executes `kyverno.io` policy types and the kyverno
+# 3.10 chart refuses to install while any of them exist. Injecting a default TZ
+# does not need a policy engine, so this moved to the native, GA
+# MutatingAdmissionPolicy.
+#
+# Both mutations build an apply configuration that merges by container name,
+# and each filters out containers that already set TZ. A resource that is
+# already patched therefore produces an empty configuration, which keeps the
+# mutations idempotent and stops reinvocation from churning pod templates.
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: set-timezone-pods
+spec:
+  failurePolicy: Fail
+  reinvocationPolicy: Never
+  matchConstraints:
+    resourceRules:
+      - apiGroups: [""]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["pods"]
+    # Same exclusions the Kyverno policy carried.
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values: ["flux-system", "kube-system", "kyverno", "system-upgrade"]
+  mutations:
+    - patchType: ApplyConfiguration
+      applyConfiguration:
+        expression: >-
+          Object{
+            spec: Object.spec{
+              containers: object.spec.containers
+                .filter(c, !c.?env.orValue([]).exists(e, e.name == "TZ"))
+                .map(c, Object.spec.containers{
+                  name: c.name,
+                  env: [Object.spec.containers.env{name: "TZ", value: "Europe/Amsterdam"}]
+                })
+            }
+          }
+    - patchType: ApplyConfiguration
+      applyConfiguration:
+        expression: >-
+          object.spec.?initContainers.orValue([]).size() == 0
+            ? Object{}
+            : Object{
+                spec: Object.spec{
+                  initContainers: object.spec.initContainers
+                    .filter(c, !c.?env.orValue([]).exists(e, e.name == "TZ"))
+                    .map(c, Object.spec.initContainers{
+                      name: c.name,
+                      env: [Object.spec.initContainers.env{name: "TZ", value: "Europe/Amsterdam"}]
+                    })
+                }
+              }
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: set-timezone-pods
+spec:
+  policyName: set-timezone-pods
+---
+# Workload variant: the same injection one level down, on the pod template.
+# Deployments, StatefulSets, DaemonSets and Jobs all nest a PodTemplateSpec at
+# spec.template, so a single policy covers them. CronJobs were not covered by
+# the Kyverno policy either (autogen was disabled there); their Jobs produce
+# Pods, which the policy above handles.
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicy
+metadata:
+  name: set-timezone-workloads
+spec:
+  failurePolicy: Fail
+  reinvocationPolicy: Never
+  matchConstraints:
+    resourceRules:
+      - apiGroups: ["apps"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["deployments", "statefulsets", "daemonsets"]
+      - apiGroups: ["batch"]
+        apiVersions: ["v1"]
+        operations: ["CREATE", "UPDATE"]
+        resources: ["jobs"]
+    namespaceSelector:
+      matchExpressions:
+        - key: kubernetes.io/metadata.name
+          operator: NotIn
+          values: ["flux-system", "kube-system", "kyverno", "system-upgrade"]
+  mutations:
+    - patchType: ApplyConfiguration
+      applyConfiguration:
+        expression: >-
+          Object{
+            spec: Object.spec{
+              template: Object.spec.template{
+                spec: Object.spec.template.spec{
+                  containers: object.spec.template.spec.containers
+                    .filter(c, !c.?env.orValue([]).exists(e, e.name == "TZ"))
+                    .map(c, Object.spec.template.spec.containers{
+                      name: c.name,
+                      env: [Object.spec.template.spec.containers.env{name: "TZ", value: "Europe/Amsterdam"}]
+                    })
+                }
+              }
+            }
+          }
+    - patchType: ApplyConfiguration
+      applyConfiguration:
+        expression: >-
+          object.spec.template.spec.?initContainers.orValue([]).size() == 0
+            ? Object{}
+            : Object{
+                spec: Object.spec{
+                  template: Object.spec.template{
+                    spec: Object.spec.template.spec{
+                      initContainers: object.spec.template.spec.initContainers
+                        .filter(c, !c.?env.orValue([]).exists(e, e.name == "TZ"))
+                        .map(c, Object.spec.template.spec.initContainers{
+                          name: c.name,
+                          env: [Object.spec.template.spec.initContainers.env{name: "TZ", value: "Europe/Amsterdam"}]
+                        })
+                    }
+                  }
+                }
+              }
+---
+apiVersion: admissionregistration.k8s.io/v1
+kind: MutatingAdmissionPolicyBinding
+metadata:
+  name: set-timezone-workloads
+spec:
+  policyName: set-timezone-workloads
