@@ -34,9 +34,13 @@ statefulset:
     requests:
       cpu: 10m
       memory: 112Mi
+    # Memory only, deliberately. Before chart 2.14.2 the chart defaulted
+    # limits.cpu, so `cpu: null` here meant "delete the inherited value". The
+    # chart has since dropped limits from its defaults, which leaves the null to
+    # be emitted as-is, and the API server reads a null Quantity as 0: 10m > 0
+    # fails validation and the StatefulSet is rejected. Just omit the key.
     limits:
       memory: 384Mi
-      cpu: null
   command: {}
   tolerations: {}
   nodeSelector: {}
