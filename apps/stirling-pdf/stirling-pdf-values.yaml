@@ -4,7 +4,8 @@ strategy:
 image:
   registry: docker.io
   repository: stirlingtools/stirling-pdf
-rootPath: null
+# Chart v4 requires a leading slash; '/' serves the app at the root, as the old null did.
+rootPath: /
 envs:
 - name: _JAVA_OPTIONS
   value: "-Djava.io.tmpdir=/tmp/stirling-pdf"
