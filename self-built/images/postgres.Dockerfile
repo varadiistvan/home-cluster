@@ -1,4 +1,4 @@
-ARG CNPG_IMAGE=ghcr.io/cloudnative-pg/postgresql:18-standard-bookworm
+ARG CNPG_IMAGE=ghcr.io/cloudnative-pg/postgresql:19-standard-bookworm
 # renovate: versioning=regex:^pg18-v(?<major>\d+)\.(?<minor>\d+)\.(?<patch>\d+)$
 FROM docker.io/tensorchord/vchord-postgres:pg18-v1.1.1 AS vchord
 FROM ${CNPG_IMAGE}
